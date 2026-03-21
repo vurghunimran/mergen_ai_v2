@@ -17,6 +17,7 @@ export async function POST(request: Request) {
     if (!toEmail || !resendApiKey) {
       return NextResponse.json({ success: false, error: "Missing email configuration" }, { status: 500 });
     }
+    const fromEmail = process.env.RESEND_FROM_EMAIL || "MERGEN AI Contact <onboarding@resend.dev>";
     const resend = new Resend(resendApiKey);
 
     const fullName = body.fullName ?? "Unknown";
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
     const message = body.message ?? "";
 
     await resend.emails.send({
-      from: "MERGEN AI Contact <onboarding@resend.dev>",
+      from: fromEmail,
       to: [toEmail],
       subject: `New Contact Request: ${purpose}`,
       text: [

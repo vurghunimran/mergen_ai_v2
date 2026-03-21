@@ -1,19 +1,18 @@
-# MERGEN AI Landing Page
+# MERGEN AI
 
-Next.js 14 App Router landing page for MERGEN AI, styled with Tailwind CSS and shadcn/ui primitives.
+Next.js 14 App Router project for the MERGEN landing page, auth flows, client dashboard, and community dashboard.
 
 ## Stack
 
-- Next.js 14 (App Router)
+- Next.js 14
+- React 18
 - TypeScript
 - Tailwind CSS
-- shadcn/ui base setup
 - react-hook-form
 - react-simple-maps
-- framer-motion
-- Resend (contact API)
+- Resend
 
-## Setup
+## Local setup
 
 1. Install dependencies:
 
@@ -21,37 +20,54 @@ Next.js 14 App Router landing page for MERGEN AI, styled with Tailwind CSS and s
 npm install
 ```
 
-2. Copy env template and fill values:
+2. Copy the env template:
 
 ```bash
 cp .env.local.example .env.local
 ```
 
-Required variables:
+3. Fill these variables in `.env.local`:
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `RESEND_API_KEY`
 - `TO_EMAIL`
+- `RESEND_FROM_EMAIL`
 
-3. Run development server:
+4. Start development:
 
 ```bash
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000)
+## Vercel deployment
 
-## Build
+This repo is ready for Vercel as a standard Next.js project.
+
+### Build settings
+
+- Framework preset: `Next.js`
+- Install command: `npm install`
+- Build command: `npm run build`
+- Output directory: leave default
+
+### Environment variables
+
+Add these in the Vercel project settings:
+
+- `RESEND_API_KEY`
+- `TO_EMAIL`
+- `RESEND_FROM_EMAIL`
+
+If you do not configure these, the contact form API will deploy, but sending email will return a server error.
+
+### Notes
+
+- The contact API uses Resend in [app/api/contact/route.ts](/Users/vurghun1903/Desktop/Mergen%20AI%20Education/app/api/contact/route.ts).
+- Remote images are already allowed for `images.unsplash.com` in [next.config.mjs](/Users/vurghun1903/Desktop/Mergen%20AI%20Education/next.config.mjs).
+- `vercel.json` is included for explicit Next.js detection.
+
+## Verification
 
 ```bash
+npm run lint
 npm run build
-npm run start
 ```
-
-## Notes
-
-- Hero background video currently uses a placeholder URL. Replace with `/public/hero-bg.mp4` in `components/HeroSection.tsx`.
-- Promo video iframe uses a placeholder YouTube ID. Replace in `components/PromoVideo.tsx`.
-- Social links are placeholders in `components/Footer.tsx`.
-- Auth page UI includes placeholders for Supabase integration in `app/auth/page.tsx`.

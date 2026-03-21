@@ -29,6 +29,7 @@ import {
   Users,
   BarChart3
 } from "lucide-react";
+type DashboardSection = "dashboard" | "active-surveys" | "analytics" | "settings" | "create-survey";
 import CreateSurveyFlow from "@/components/dashboard/CreateSurveyFlow";
 import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
 import {
@@ -37,14 +38,16 @@ import {
   type ClientSurvey
 } from "@/lib/dashboard-data";
 
-const navigationItems = [
+const navigationItems: Array<{
+  icon: typeof Home;
+  label: string;
+  section: Exclude<DashboardSection, "create-survey">;
+}> = [
   { icon: Home, label: "Dashboard", section: "dashboard" },
   { icon: ClipboardList, label: "Active Surveys", section: "active-surveys" },
   { icon: BarChart3, label: "Analytics", section: "analytics" },
   { icon: Settings, label: "Settings", section: "settings" }
 ];
-
-type DashboardSection = "dashboard" | "active-surveys" | "analytics" | "settings" | "create-survey";
 
 type DashboardSettings = {
   firstName: string;
