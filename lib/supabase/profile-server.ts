@@ -63,39 +63,44 @@ export function getDashboardPathForRole(role: UserRole) {
 }
 
 export async function getCurrentUserProfile(): Promise<AuthenticatedProfile | null> {
-  const supabase = createClient();
-  const {
-    data: { user },
-    error: userError
-  } = await supabase.auth.getUser();
+  try {
+    const supabase = createClient();
+    const {
+      data: { user },
+      error: userError
+    } = await supabase.auth.getUser();
 
-  if (userError || !user) {
+    if (userError || !user) {
+      return null;
+    }
+
+    const { data: baseRow } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+    const roleValue = baseRow?.role ?? user.user_metadata?.role;
+    const role: UserRole = isUserRole(roleValue) ? roleValue : "community";
+
+    const { data: clientRow } =
+      role === "client"
+        ? await supabase.from("client_profiles").select("*").eq("id", user.id).maybeSingle()
+        : { data: null };
+
+    const { data: communityRow } =
+      role === "community"
+        ? await supabase.from("community_profiles").select("*").eq("id", user.id).maybeSingle()
+        : { data: null };
+
+    return {
+      user,
+      profile: mapProfile(
+        user,
+        (baseRow as BaseProfileRow | null) ?? null,
+        (clientRow as ClientProfileRow | null) ?? null,
+        (communityRow as CommunityProfileRow | null) ?? null
+      )
+    };
+  } catch (error) {
+    console.error("Supabase server profile lookup failed.", error);
     return null;
   }
-
-  const { data: baseRow } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
-  const roleValue = baseRow?.role ?? user.user_metadata?.role;
-  const role: UserRole = isUserRole(roleValue) ? roleValue : "community";
-
-  const { data: clientRow } =
-    role === "client"
-      ? await supabase.from("client_profiles").select("*").eq("id", user.id).maybeSingle()
-      : { data: null };
-
-  const { data: communityRow } =
-    role === "community"
-      ? await supabase.from("community_profiles").select("*").eq("id", user.id).maybeSingle()
-      : { data: null };
-
-  return {
-    user,
-    profile: mapProfile(
-      user,
-      (baseRow as BaseProfileRow | null) ?? null,
-      (clientRow as ClientProfileRow | null) ?? null,
-      (communityRow as CommunityProfileRow | null) ?? null
-    )
-  };
 }
 
 export async function requireAuthenticatedProfile(requiredRole?: UserRole) {

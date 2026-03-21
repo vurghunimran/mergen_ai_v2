@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getCurrentUserProfile, getDashboardPathForRole } from "@/lib/supabase/profile-server";
 import AuthClient from "./AuthClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function AuthPage({
   searchParams
 }: {
