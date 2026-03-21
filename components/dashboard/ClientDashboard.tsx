@@ -32,8 +32,10 @@ import {
 type DashboardSection = "dashboard" | "active-surveys" | "analytics" | "settings" | "create-survey";
 import CreateSurveyFlow from "@/components/dashboard/CreateSurveyFlow";
 import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
+import { createClient as createSupabaseClient } from "@/lib/supabase/client";
+import { buildPersistedProfilePayload, upsertProfileRecords } from "@/lib/supabase/profile-db";
+import type { UserProfile } from "@/lib/supabase/types";
 import {
-  CLIENT_DASHBOARD_SETTINGS_STORAGE_KEY,
   CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY,
   type ClientSurvey
 } from "@/lib/dashboard-data";
@@ -114,15 +116,35 @@ const INITIAL_SURVEYS = [
   }
 ] satisfies ClientSurvey[];
 
-const INITIAL_SETTINGS: DashboardSettings = {
-  firstName: "Alex",
-  lastName: "Thompson",
-  email: "client.demo@mergen.ai",
-  phone: "+1 555 483 2190",
-  position: "Research Lead",
-  appearance: "light",
-  twoFactorEnabled: false
-};
+function buildInitialSettings(profile: UserProfile): DashboardSettings {
+  return {
+    firstName: profile.firstName || "Alex",
+    lastName: profile.lastName || "Thompson",
+    email: profile.email,
+    phone: profile.phoneNumber,
+    position: profile.position || "Research Lead",
+    appearance: profile.appearance,
+    twoFactorEnabled: profile.twoFactorEnabled
+  };
+}
+
+function getSettingsErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    const normalizedMessage = error.message.toLowerCase();
+
+    if (normalizedMessage.includes("profiles")) {
+      return "Supabase profile storage is not ready yet. Run the SQL in supabase/schema.sql.";
+    }
+
+    if (normalizedMessage.includes("email not confirmed")) {
+      return "Check your email inbox to confirm the email change.";
+    }
+
+    return error.message;
+  }
+
+  return "Could not save your changes. Please try again.";
+}
 
 function buildChartPoints(values: number[], width: number, height: number, padding: number) {
   const safeMax = Math.max(...values, 1);
@@ -143,11 +165,13 @@ function buildChartArea(values: number[], width: number, height: number, padding
   return `${padding},${height - padding} ${points} ${finalX},${height - padding}`;
 }
 
-export default function ClientDashboard() {
+export default function ClientDashboard({ initialProfile }: { initialProfile: UserProfile }) {
   const router = useRouter();
+  const supabase = createSupabaseClient();
+  const [profileSnapshot, setProfileSnapshot] = useState<UserProfile>(initialProfile);
   const [surveys, setSurveys] = useState<ClientSurvey[]>(INITIAL_SURVEYS);
-  const [savedSettings, setSavedSettings] = useState<DashboardSettings>(INITIAL_SETTINGS);
-  const [settingsForm, setSettingsForm] = useState<DashboardSettings>(INITIAL_SETTINGS);
+  const [savedSettings, setSavedSettings] = useState<DashboardSettings>(() => buildInitialSettings(initialProfile));
+  const [settingsForm, setSettingsForm] = useState<DashboardSettings>(() => buildInitialSettings(initialProfile));
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<DashboardSection>("dashboard");
@@ -155,6 +179,7 @@ export default function ClientDashboard() {
   const [hasHydratedData, setHasHydratedData] = useState(false);
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [settingsError, setSettingsError] = useState("");
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [securityForm, setSecurityForm] = useState({
     newPassword: "",
     confirmPassword: ""
@@ -164,7 +189,6 @@ export default function ClientDashboard() {
   useEffect(() => {
     try {
       const storedSurveys = window.localStorage.getItem(CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY);
-      const storedSettings = window.localStorage.getItem(CLIENT_DASHBOARD_SETTINGS_STORAGE_KEY);
 
       if (storedSurveys === null) {
         setSurveys(INITIAL_SURVEYS);
@@ -186,31 +210,9 @@ export default function ClientDashboard() {
           );
         }
       }
-
-      if (storedSettings) {
-        const parsedSettings = JSON.parse(storedSettings);
-
-        if (parsedSettings && typeof parsedSettings === "object") {
-          const nextSettings = {
-            ...INITIAL_SETTINGS,
-            ...parsedSettings
-          };
-
-          setSavedSettings(nextSettings);
-          setSettingsForm(nextSettings);
-        } else {
-          setSavedSettings(INITIAL_SETTINGS);
-          setSettingsForm(INITIAL_SETTINGS);
-        }
-      } else {
-        setSavedSettings(INITIAL_SETTINGS);
-        setSettingsForm(INITIAL_SETTINGS);
-      }
     } catch {
       // Ignore malformed local demo data.
       setSurveys(INITIAL_SURVEYS);
-      setSavedSettings(INITIAL_SETTINGS);
-      setSettingsForm(INITIAL_SETTINGS);
     } finally {
       setHasHydratedData(true);
     }
@@ -271,9 +273,9 @@ export default function ClientDashboard() {
   const chartPoints = buildChartPoints(engagementSeries, 720, 300, 28);
   const chartArea = buildChartArea(engagementSeries, 720, 300, 28);
   const sectionTitleClassName = "text-[34px] font-bold tracking-[-0.04em] text-[#7c3412]";
-  const displayName = `${savedSettings.firstName} ${savedSettings.lastName}`.trim() || `${INITIAL_SETTINGS.firstName} ${INITIAL_SETTINGS.lastName}`;
-  const displayFirstName = savedSettings.firstName.trim() || INITIAL_SETTINGS.firstName;
-  const displayPosition = savedSettings.position.trim() || INITIAL_SETTINGS.position;
+  const displayName = `${savedSettings.firstName} ${savedSettings.lastName}`.trim() || "Client account";
+  const displayFirstName = savedSettings.firstName.trim() || "Client";
+  const displayPosition = savedSettings.position.trim() || "Research Lead";
   const isSettingsDark = settingsForm.appearance === "dark";
   const settingsFormClassName = isSettingsDark
     ? "rounded-[28px] border border-[#312922] bg-[linear-gradient(180deg,#231d19_0%,#1a1512_100%)] p-8 text-white shadow-[0_22px_55px_rgba(15,23,42,0.18)]"
@@ -309,10 +311,11 @@ export default function ClientDashboard() {
     setOpenMenuId(null);
   }
 
-  function handleLogout() {
-    window.sessionStorage.removeItem("mergen-demo-role");
+  async function handleLogout() {
+    await supabase.auth.signOut();
     setIsProfileMenuOpen(false);
     router.push("/auth?type=client");
+    router.refresh();
   }
 
   function handleLaunchSurvey(payload: {
@@ -377,7 +380,7 @@ export default function ClientDashboard() {
     }));
   }
 
-  function handleSettingsSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSettingsSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (securityForm.newPassword || securityForm.confirmPassword) {
@@ -388,14 +391,77 @@ export default function ClientDashboard() {
       }
     }
 
-    window.localStorage.setItem(CLIENT_DASHBOARD_SETTINGS_STORAGE_KEY, JSON.stringify(settingsForm));
-    setSavedSettings(settingsForm);
-    setSecurityForm({
-      newPassword: "",
-      confirmPassword: ""
-    });
+    setIsSavingSettings(true);
+    setSettingsSaved(false);
     setSettingsError("");
-    setSettingsSaved(true);
+
+    const nextSettings = {
+      ...settingsForm,
+      firstName: settingsForm.firstName.trim(),
+      lastName: settingsForm.lastName.trim(),
+      email: settingsForm.email.trim().toLowerCase(),
+      phone: settingsForm.phone.trim()
+    };
+
+    try {
+      const authUpdatePayload: {
+        email?: string;
+        password?: string;
+        data: Record<string, unknown>;
+      } = {
+        data: {
+          role: "client",
+          first_name: nextSettings.firstName,
+          last_name: nextSettings.lastName,
+          phone_number: nextSettings.phone,
+          position: nextSettings.position,
+          country: profileSnapshot.country,
+          educational_institution: profileSnapshot.educationalInstitution,
+          appearance: nextSettings.appearance,
+          two_factor_enabled: nextSettings.twoFactorEnabled
+        }
+      };
+
+      if (nextSettings.email !== savedSettings.email.trim().toLowerCase()) {
+        authUpdatePayload.email = nextSettings.email;
+      }
+
+      if (securityForm.newPassword) {
+        authUpdatePayload.password = securityForm.newPassword;
+      }
+
+      const { error: authError } = await supabase.auth.updateUser(authUpdatePayload);
+
+      if (authError) {
+        throw authError;
+      }
+
+      const nextProfileSnapshot: UserProfile = {
+        ...profileSnapshot,
+        email: nextSettings.email,
+        firstName: nextSettings.firstName,
+        lastName: nextSettings.lastName,
+        phoneNumber: nextSettings.phone,
+        position: nextSettings.position,
+        appearance: nextSettings.appearance,
+        twoFactorEnabled: nextSettings.twoFactorEnabled
+      };
+
+      await upsertProfileRecords(supabase, nextProfileSnapshot.id, buildPersistedProfilePayload(nextProfileSnapshot));
+
+      setProfileSnapshot(nextProfileSnapshot);
+      setSavedSettings(nextSettings);
+      setSettingsForm(nextSettings);
+      setSecurityForm({
+        newPassword: "",
+        confirmPassword: ""
+      });
+      setSettingsSaved(true);
+    } catch (error) {
+      setSettingsError(getSettingsErrorMessage(error));
+    } finally {
+      setIsSavingSettings(false);
+    }
   }
 
   if (!hasHydratedData) {
@@ -1278,10 +1344,11 @@ export default function ClientDashboard() {
                     </p>
                     <button
                       type="submit"
+                      disabled={isSavingSettings}
                       className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff7a00_0%,#ea5f2d_100%)] px-6 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(255,106,0,0.22)] transition hover:opacity-90"
                     >
                       <Save className="h-4 w-4" />
-                      Save changes
+                      {isSavingSettings ? "Saving..." : "Save changes"}
                     </button>
                   </div>
                 </form>

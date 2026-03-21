@@ -26,10 +26,12 @@ import {
   Wallet
 } from "lucide-react";
 import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
+import { createClient as createSupabaseClient } from "@/lib/supabase/client";
+import { buildPersistedProfilePayload, upsertProfileRecords } from "@/lib/supabase/profile-db";
+import type { UserProfile } from "@/lib/supabase/types";
 import {
   CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY,
   COMMUNITY_DASHBOARD_PROGRESS_STORAGE_KEY,
-  COMMUNITY_DASHBOARD_SETTINGS_STORAGE_KEY,
   type ClientSurvey,
   type StoredSurveyQuestion
 } from "@/lib/dashboard-data";
@@ -75,21 +77,59 @@ type CommunityProgress = {
 type SurveyAnswerValue = string | string[];
 type SurveyAnswerMap = Record<string, SurveyAnswerValue>;
 
-const INITIAL_SETTINGS: CommunitySettings = {
-  firstName: "Maya",
-  lastName: "Chen",
-  email: "member.demo@mergen.ai",
-  appearance: "light",
-  twoFactorEnabled: false
-};
+function buildInitialSettings(profile: UserProfile): CommunitySettings {
+  return {
+    firstName: profile.firstName || "Maya",
+    lastName: profile.lastName || "Chen",
+    email: profile.email,
+    appearance: profile.appearance,
+    twoFactorEnabled: profile.twoFactorEnabled
+  };
+}
 
-const DEMO_MEMBER_PROFILE = {
-  age: 29,
-  country: "India",
-  gender: "Female",
-  education: "Bachelor's degree",
-  interests: ["Online learning", "Research", "Technology"]
-};
+function parseAgeSpanMidpoint(ageSpan: string) {
+  const matches = ageSpan.match(/\d+/g);
+
+  if (!matches || matches.length === 0) {
+    return 0;
+  }
+
+  if (matches.length === 1) {
+    return Number(matches[0]);
+  }
+
+  const minAge = Number(matches[0]);
+  const maxAge = Number(matches[1]);
+  return Math.round((minAge + maxAge) / 2);
+}
+
+function buildMemberProfile(profile: UserProfile) {
+  return {
+    age: parseAgeSpanMidpoint(profile.ageSpan),
+    country: profile.country,
+    gender: profile.gender,
+    education: profile.educationalLevel,
+    interests: profile.interests
+  };
+}
+
+function getSettingsErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    const normalizedMessage = error.message.toLowerCase();
+
+    if (normalizedMessage.includes("profiles")) {
+      return "Supabase profile storage is not ready yet. Run the SQL in supabase/schema.sql.";
+    }
+
+    if (normalizedMessage.includes("email not confirmed")) {
+      return "Check your email inbox to confirm the email change.";
+    }
+
+    return error.message;
+  }
+
+  return "Could not save your changes. Please try again.";
+}
 
 const REWARDS: RewardItem[] = [
   {
@@ -151,24 +191,24 @@ function calculateEarnedCredits(score: number) {
   return Math.max(30, Math.min(70, 30 + Math.round((score / 100) * 40)));
 }
 
-function matchesSurveyToMember(survey: ClientSurvey) {
+function matchesSurveyToMember(survey: ClientSurvey, memberProfile: ReturnType<typeof buildMemberProfile>) {
   const audience = survey.audience;
 
   if (!audience) {
     return true;
   }
 
-  const matchesCountry = audience.countries.length === 0 || audience.countries.includes(DEMO_MEMBER_PROFILE.country);
-  const matchesAge = DEMO_MEMBER_PROFILE.age >= audience.ageMin && DEMO_MEMBER_PROFILE.age <= audience.ageMax;
-  const matchesGender = audience.gender === "All genders" || audience.gender === DEMO_MEMBER_PROFILE.gender;
+  const matchesCountry = audience.countries.length === 0 || audience.countries.includes(memberProfile.country);
+  const matchesAge = memberProfile.age >= audience.ageMin && memberProfile.age <= audience.ageMax;
+  const matchesGender = audience.gender === "All genders" || audience.gender === memberProfile.gender;
   const matchesEducation =
     audience.education === "Any education level" ||
-    audience.education === DEMO_MEMBER_PROFILE.education ||
+    audience.education === memberProfile.education ||
     (audience.education === "Undergraduate" &&
-      (DEMO_MEMBER_PROFILE.education === "Bachelor's degree" || DEMO_MEMBER_PROFILE.education === "Undergraduate"));
+      (memberProfile.education === "Bachelor's degree" || memberProfile.education === "Undergraduate"));
   const matchesInterest =
     audience.interests.length === 0 ||
-    audience.interests.some((interest) => DEMO_MEMBER_PROFILE.interests.includes(interest));
+    audience.interests.some((interest) => memberProfile.interests.includes(interest));
 
   return matchesCountry && matchesAge && matchesGender && matchesEducation && matchesInterest;
 }
@@ -239,11 +279,13 @@ function formatCompletedDate(value: string) {
   }).format(new Date(value));
 }
 
-export default function CommunityDashboard() {
+export default function CommunityDashboard({ initialProfile }: { initialProfile: UserProfile }) {
   const router = useRouter();
+  const supabase = createSupabaseClient();
+  const [profileSnapshot, setProfileSnapshot] = useState<UserProfile>(initialProfile);
   const [clientSurveys, setClientSurveys] = useState<ClientSurvey[]>([]);
-  const [savedSettings, setSavedSettings] = useState<CommunitySettings>(INITIAL_SETTINGS);
-  const [settingsForm, setSettingsForm] = useState<CommunitySettings>(INITIAL_SETTINGS);
+  const [savedSettings, setSavedSettings] = useState<CommunitySettings>(() => buildInitialSettings(initialProfile));
+  const [settingsForm, setSettingsForm] = useState<CommunitySettings>(() => buildInitialSettings(initialProfile));
   const [securityForm, setSecurityForm] = useState({
     newPassword: "",
     confirmPassword: ""
@@ -253,6 +295,7 @@ export default function CommunityDashboard() {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [settingsError, setSettingsError] = useState("");
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [trustScoreOpen, setTrustScoreOpen] = useState(false);
   const [activatedRewardId, setActivatedRewardId] = useState<string | null>(null);
   const [rewardNotice, setRewardNotice] = useState<string | null>(null);
@@ -262,11 +305,11 @@ export default function CommunityDashboard() {
   const [selectedSurveyId, setSelectedSurveyId] = useState<number | null>(null);
   const [surveyAnswers, setSurveyAnswers] = useState<SurveyAnswerMap>({});
   const [surveyError, setSurveyError] = useState("");
+  const memberProfile = useMemo(() => buildMemberProfile(profileSnapshot), [profileSnapshot]);
 
   useEffect(() => {
     try {
       const storedSurveys = window.localStorage.getItem(CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY);
-      const storedSettings = window.localStorage.getItem(COMMUNITY_DASHBOARD_SETTINGS_STORAGE_KEY);
       const storedProgress = window.localStorage.getItem(COMMUNITY_DASHBOARD_PROGRESS_STORAGE_KEY);
 
       if (storedSurveys) {
@@ -275,17 +318,6 @@ export default function CommunityDashboard() {
         if (Array.isArray(parsedSurveys)) {
           setClientSurveys(parsedSurveys);
         }
-      }
-
-      if (storedSettings) {
-        const parsedSettings = JSON.parse(storedSettings) as Partial<CommunitySettings>;
-        const nextSettings = {
-          ...INITIAL_SETTINGS,
-          ...parsedSettings
-        };
-
-        setSavedSettings(nextSettings);
-        setSettingsForm(nextSettings);
       }
 
       if (storedProgress) {
@@ -297,8 +329,6 @@ export default function CommunityDashboard() {
       }
     } catch {
       setClientSurveys([]);
-      setSavedSettings(INITIAL_SETTINGS);
-      setSettingsForm(INITIAL_SETTINGS);
       setCompletedSurveys([]);
     } finally {
       setHasHydratedData(true);
@@ -326,9 +356,9 @@ export default function CommunityDashboard() {
     () =>
       clientSurveys
         .filter((survey) => survey.status !== "archived")
-        .filter(matchesSurveyToMember)
+        .filter((survey) => matchesSurveyToMember(survey, memberProfile))
         .filter((survey) => !completedSurveyIds.has(survey.id)),
-    [clientSurveys, completedSurveyIds]
+    [clientSurveys, completedSurveyIds, memberProfile]
   );
 
   const selectedSurvey = useMemo(
@@ -414,8 +444,8 @@ export default function CommunityDashboard() {
     return items;
   }, [availableSurveys, rewardError, rewardNotice, surveyNotice]);
 
-  const displayName = `${savedSettings.firstName} ${savedSettings.lastName}`.trim() || "Maya Chen";
-  const displayFirstName = savedSettings.firstName.trim() || "Maya";
+  const displayName = `${savedSettings.firstName} ${savedSettings.lastName}`.trim() || "Community member";
+  const displayFirstName = savedSettings.firstName.trim() || "Member";
   const sectionTitleClassName = "text-[34px] font-bold tracking-[-0.04em] text-[#4f2a78]";
   const isSettingsDark = settingsForm.appearance === "dark";
   const settingsFormClassName = isSettingsDark
@@ -434,10 +464,11 @@ export default function CommunityDashboard() {
   const settingsMutedTextClassName = isSettingsDark ? "text-[#a79bbc]" : "text-[#8a94a6]";
   const settingsBodyTextClassName = isSettingsDark ? "text-[#cbc3da]" : "text-[#6b7280]";
 
-  function handleLogout() {
-    window.sessionStorage.removeItem("mergen-demo-role");
+  async function handleLogout() {
+    await supabase.auth.signOut();
     setIsProfileMenuOpen(false);
     router.push("/auth?type=community");
+    router.refresh();
   }
 
   function handleSettingsChange<Key extends keyof CommunitySettings>(field: Key, value: CommunitySettings[Key]) {
@@ -458,7 +489,7 @@ export default function CommunityDashboard() {
     }));
   }
 
-  function handleSettingsSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSettingsSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (securityForm.newPassword || securityForm.confirmPassword) {
@@ -469,14 +500,80 @@ export default function CommunityDashboard() {
       }
     }
 
-    window.localStorage.setItem(COMMUNITY_DASHBOARD_SETTINGS_STORAGE_KEY, JSON.stringify(settingsForm));
-    setSavedSettings(settingsForm);
-    setSecurityForm({
-      newPassword: "",
-      confirmPassword: ""
-    });
+    setIsSavingSettings(true);
+    setSettingsSaved(false);
     setSettingsError("");
-    setSettingsSaved(true);
+
+    const nextSettings = {
+      ...settingsForm,
+      firstName: settingsForm.firstName.trim(),
+      lastName: settingsForm.lastName.trim(),
+      email: settingsForm.email.trim().toLowerCase()
+    };
+
+    try {
+      const authUpdatePayload: {
+        email?: string;
+        password?: string;
+        data: Record<string, unknown>;
+      } = {
+        data: {
+          role: "community",
+          first_name: nextSettings.firstName,
+          last_name: nextSettings.lastName,
+          phone_number: profileSnapshot.phoneNumber,
+          country: profileSnapshot.country,
+          age_span: profileSnapshot.ageSpan,
+          gender: profileSnapshot.gender,
+          salary_range: profileSnapshot.salaryRange,
+          educational_level: profileSnapshot.educationalLevel,
+          place_of_residence: profileSnapshot.placeOfResidence,
+          family_status: profileSnapshot.familyStatus,
+          interests: profileSnapshot.interests,
+          car_count: profileSnapshot.carCount,
+          appearance: nextSettings.appearance,
+          two_factor_enabled: nextSettings.twoFactorEnabled
+        }
+      };
+
+      if (nextSettings.email !== savedSettings.email.trim().toLowerCase()) {
+        authUpdatePayload.email = nextSettings.email;
+      }
+
+      if (securityForm.newPassword) {
+        authUpdatePayload.password = securityForm.newPassword;
+      }
+
+      const { error: authError } = await supabase.auth.updateUser(authUpdatePayload);
+
+      if (authError) {
+        throw authError;
+      }
+
+      const nextProfileSnapshot: UserProfile = {
+        ...profileSnapshot,
+        email: nextSettings.email,
+        firstName: nextSettings.firstName,
+        lastName: nextSettings.lastName,
+        appearance: nextSettings.appearance,
+        twoFactorEnabled: nextSettings.twoFactorEnabled
+      };
+
+      await upsertProfileRecords(supabase, nextProfileSnapshot.id, buildPersistedProfilePayload(nextProfileSnapshot));
+
+      setProfileSnapshot(nextProfileSnapshot);
+      setSavedSettings(nextSettings);
+      setSettingsForm(nextSettings);
+      setSecurityForm({
+        newPassword: "",
+        confirmPassword: ""
+      });
+      setSettingsSaved(true);
+    } catch (error) {
+      setSettingsError(getSettingsErrorMessage(error));
+    } finally {
+      setIsSavingSettings(false);
+    }
   }
 
   function handleActivateReward(reward: RewardItem) {
@@ -1380,10 +1477,11 @@ export default function CommunityDashboard() {
                       </div>
                       <button
                         type="submit"
+                        disabled={isSavingSettings}
                         className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#6d3fd1_0%,#8b5cf6_100%)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(124,58,237,0.22)] transition hover:opacity-90"
                       >
                         <Sparkles className="h-4 w-4" />
-                        Save changes
+                        {isSavingSettings ? "Saving..." : "Save changes"}
                       </button>
                     </div>
                   </div>

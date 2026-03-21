@@ -18,7 +18,8 @@ import {
   residenceOptions,
   salaryRangeOptions
 } from "@/lib/auth-options";
-import { CLIENT_DEMO_CREDENTIALS, COMMUNITY_DEMO_CREDENTIALS } from "@/lib/mock-auth";
+import { upsertProfileRecords, type PersistedProfilePayload } from "@/lib/supabase/profile-db";
+import { createClient } from "@/lib/supabase/client";
 
 type AuthRole = "client" | "community";
 
@@ -113,6 +114,78 @@ const inputClassName =
 
 const labelClassName = "mb-2 block text-sm font-semibold text-slate-700";
 
+function getDashboardPath(role: AuthRole) {
+  return role === "client" ? "/dashboard/client" : "/dashboard/community";
+}
+
+function getAuthErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    const normalizedMessage = error.message.toLowerCase();
+
+    if (normalizedMessage.includes("invalid login credentials")) {
+      return "Invalid email or password.";
+    }
+
+    if (normalizedMessage.includes("email not confirmed")) {
+      return "Confirm your email before logging in.";
+    }
+
+    if (normalizedMessage.includes("user already registered")) {
+      return "This email is already registered. Try logging in instead.";
+    }
+
+    if (normalizedMessage.includes("missing") && normalizedMessage.includes("supabase")) {
+      return error.message;
+    }
+
+    if (normalizedMessage.includes("profiles")) {
+      return "Supabase profile storage is not ready yet. Run the SQL in supabase/schema.sql.";
+    }
+
+    return error.message;
+  }
+
+  return "Something went wrong. Please try again.";
+}
+
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function buildProfilePayload(role: AuthRole, values: SignUpFormValues, normalizedInstitution: string): PersistedProfilePayload {
+  const commonPayload = {
+    role,
+    email: normalizeEmail(role === "client" ? values.universityEmail : values.email),
+    first_name: values.name.trim(),
+    last_name: values.surname.trim(),
+    phone_number: values.phoneNumber.trim(),
+    country: values.country,
+    appearance: "light" as const,
+    two_factor_enabled: false
+  };
+
+  if (role === "client") {
+    return {
+      ...commonPayload,
+      educational_institution: normalizedInstitution,
+      position: values.position,
+      interests: [] as string[]
+    };
+  }
+
+  return {
+    ...commonPayload,
+    age_span: values.ageSpan,
+    gender: values.gender,
+    salary_range: values.salaryRange,
+    educational_level: values.educationalLevel,
+    place_of_residence: values.placeOfResidence,
+    family_status: values.familyStatus,
+    interests: values.interests,
+    car_count: values.carCount
+  };
+}
+
 export default function AuthClient({ initialType }: { initialType?: string }) {
   const role: AuthRole = initialType === "community" ? "community" : "client";
   const copy = roleCopy[role];
@@ -124,6 +197,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
   const [institutionStatus, setInstitutionStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [interestsOpen, setInterestsOpen] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+  const [authPending, setAuthPending] = useState<"signup" | "login" | null>(null);
 
   const signUp = useForm<SignUpFormValues>({
     defaultValues: {
@@ -207,93 +281,98 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
   useEffect(() => {
     setSubmitMessage(null);
     setInterestsOpen(false);
+    setAuthPending(null);
     clearLoginErrors();
   }, [activeTab, clearLoginErrors, role]);
 
-  function handleRoleSubmit(values: SignUpFormValues) {
+  async function handleRoleSubmit(values: SignUpFormValues) {
     const normalizedInstitution =
       values.educationalInstitution === "Other" ? values.customInstitution.trim() : values.educationalInstitution;
 
-    const payload = isClient
-      ? {
-          name: values.name,
-          surname: values.surname,
-          universityEmail: values.universityEmail,
-          educationalInstitution: normalizedInstitution,
-          position: values.position,
-          country: values.country,
-          phoneNumber: values.phoneNumber,
-          password: values.password
-        }
-      : {
-          name: values.name,
-          surname: values.surname,
-          email: values.email,
-          ageSpan: values.ageSpan,
-          gender: values.gender,
-          salaryRange: values.salaryRange,
-          educationalLevel: values.educationalLevel,
-          country: values.country,
-          placeOfResidence: values.placeOfResidence,
-          familyStatus: values.familyStatus,
-          interests: values.interests,
-          carCount: values.carCount,
-          phoneNumber: values.phoneNumber,
-          password: values.password
-        };
-
-    console.info("Auth sign-up payload", payload);
-    setSubmitMessage(
-      isClient
-        ? "Client sign-up form is ready. The next step is connecting it to your auth backend."
-        : "Community sign-up form is ready. The next step is connecting it to your auth backend."
-    );
-  }
-
-  function handleRoleLogin(values: LoginFormValues) {
-    clearLoginErrors();
     setSubmitMessage(null);
+    setAuthPending("signup");
 
-    if (isClient) {
-      const normalizedEmail = values.email.trim().toLowerCase();
+    try {
+      const supabase = createClient();
+      const profilePayload = buildProfilePayload(role, values, normalizedInstitution);
+      const { data, error } = await supabase.auth.signUp({
+        email: profilePayload.email,
+        password: values.password,
+        options: {
+          emailRedirectTo:
+            typeof window !== "undefined"
+              ? `${window.location.origin}/auth/confirm?next=${encodeURIComponent(getDashboardPath(role))}`
+              : undefined,
+          data: profilePayload
+        }
+      });
 
-      if (
-        normalizedEmail === CLIENT_DEMO_CREDENTIALS.email &&
-        values.password === CLIENT_DEMO_CREDENTIALS.password
-      ) {
-        if (typeof window !== "undefined") {
-          window.sessionStorage.setItem("mergen-demo-role", "client");
+      if (error) {
+        throw error;
+      }
+
+      if (data.user && data.session) {
+        try {
+          await upsertProfileRecords(supabase, data.user.id, profilePayload);
+        } catch (profileError) {
+          console.warn("Supabase profile upsert during sign-up failed.", profileError);
         }
 
-        router.push("/dashboard/client");
+        router.push(getDashboardPath(role));
+        router.refresh();
         return;
       }
 
-      setLoginError("password", {
-        type: "manual",
-        message: "Use the client demo credentials to preview the dashboard."
-      });
-      return;
+      setSubmitMessage("Account created. Check your email to confirm your sign up, then log in.");
+      setActiveTab("login");
+    } catch (error) {
+      setSubmitMessage(getAuthErrorMessage(error));
+    } finally {
+      setAuthPending(null);
     }
+  }
 
-    const normalizedEmail = values.email.trim().toLowerCase();
+  async function handleRoleLogin(values: LoginFormValues) {
+    clearLoginErrors();
+    setSubmitMessage(null);
+    setAuthPending("login");
 
-    if (
-      normalizedEmail === COMMUNITY_DEMO_CREDENTIALS.email &&
-      values.password === COMMUNITY_DEMO_CREDENTIALS.password
-    ) {
-      if (typeof window !== "undefined") {
-        window.sessionStorage.setItem("mergen-demo-role", "community");
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: normalizeEmail(values.email),
+        password: values.password
+      });
+
+      if (error) {
+        throw error;
       }
 
-      router.push("/dashboard/community");
-      return;
-    }
+      const metadataRole = data.user.user_metadata?.role;
+      let resolvedRole: AuthRole = metadataRole === "client" || metadataRole === "community" ? metadataRole : role;
 
-    setLoginError("password", {
-      type: "manual",
-      message: "Use the community demo credentials to preview the dashboard."
-    });
+      if (!(metadataRole === "client" || metadataRole === "community")) {
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", data.user.id)
+          .maybeSingle();
+
+        if (!profileError && (profileData?.role === "client" || profileData?.role === "community")) {
+          resolvedRole = profileData.role;
+        }
+      }
+
+      router.push(getDashboardPath(resolvedRole));
+      router.refresh();
+    } catch (error) {
+      setLoginError("password", {
+        type: "manual",
+        message: getAuthErrorMessage(error)
+      });
+    } finally {
+      setAuthPending(null);
+    }
   }
 
   return (
@@ -971,9 +1050,10 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
 
                 <button
                   type="submit"
+                  disabled={authPending !== null}
                   className="w-full rounded-2xl bg-[#d85a2f] px-5 py-4 text-base font-bold text-white shadow-[0_20px_40px_rgba(216,90,47,0.2)] transition hover:bg-[#bf4c25]"
                 >
-                  {copy.submitLabel}
+                  {authPending === "signup" ? "Creating account..." : copy.submitLabel}
                 </button>
               </form>
             ) : (
@@ -1018,9 +1098,10 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
 
                 <button
                   type="submit"
+                  disabled={authPending !== null}
                   className="w-full rounded-2xl bg-[#d85a2f] px-5 py-4 text-base font-bold text-white shadow-[0_20px_40px_rgba(216,90,47,0.2)] transition hover:bg-[#bf4c25]"
                 >
-                  Log in
+                  {authPending === "login" ? "Logging in..." : "Log in"}
                 </button>
               </form>
             )}
