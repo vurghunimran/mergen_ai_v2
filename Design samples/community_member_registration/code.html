@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mergen | Wisdom in Data - Survey Platform</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#D14D28", // Based on the Mergen logo orange-red
+                        "background-light": "#F9FAFB",
+                        "background-dark": "#111827",
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                    },
+                },
+            },
+        };
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-primary', 'text-primary');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            event.currentTarget.classList.add('border-primary', 'text-primary');
+            event.currentTarget.classList.remove('border-transparent', 'text-gray-500');
+        }
+        function toggleMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+        }
+        .dark .glass {
+            background: rgba(17, 24, 39, 0.7);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-gray-900 dark:text-gray-100 transition-colors duration-200">
+<nav class="sticky top-0 z-50 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex justify-between h-16 items-center">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center overflow-hidden">
+<img alt="Mergen Logo" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnrTqUyF33oSQPKPAlQljwVcybaIuipC0xSouPrBpqm7P4AIMOTiKPrPiOZ5VAHr0MS626mIviiScyBrvIdddZ8rx3sdBsBit_yLorXTKTYLHze_4MhCPkInVOnbt6DldmGV_OtjgbTYrP_9RC8aEzHUQDsfIINYgG2wvkbZSA5rS2LZMBGZIWQL9NzYvGFTD7XAJsO9Jqs6NQvdUtOOVDD7e1lqU1q3pStiOJ_EAbVHW1-b_Q98d9jp1E-E3Zk-LIvb-RBlnIYs8"/>
+</div>
+<span class="text-xl font-bold tracking-tight text-primary">MERGEN</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" onclick="toggleMode()">
+<span class="material-icons text-xl">dark_mode</span>
+</button>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Documentation</a>
+<button class="bg-primary hover:opacity-90 text-white px-4 py-2 rounded-md font-medium transition-all">Sign In</button>
+</div>
+</div>
+</div>
+</nav>
+<main class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+<div class="text-center mb-12">
+<h1 class="text-4xl font-extrabold mb-4 tracking-tight">Wisdom in Data</h1>
+<p class="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">Empowering businesses with AI-driven insights while rewarding the community for their valuable contributions.</p>
+</div>
+<div class="flex justify-center mb-8">
+<div class="inline-flex border-b border-gray-200 dark:border-gray-800">
+<button class="tab-btn px-8 py-3 font-medium border-b-2 border-primary text-primary transition-all" onclick="switchTab('client-view')">
+                    I am a Client
+                </button>
+<button class="tab-btn px-8 py-3 font-medium border-b-2 border-transparent text-gray-500 hover:text-primary transition-all" onclick="switchTab('community-view')">
+                    I am a Community Member
+                </button>
+</div>
+</div>
+<div class="tab-content" id="client-view">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div class="lg:col-span-1 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+<h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+<span class="material-icons text-primary">business</span> Client Profile
+                    </h3>
+<form class="space-y-4">
+<div>
+<label class="block text-sm font-medium mb-1">Company Name</label>
+<input class="w-full bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg" placeholder="Acme Corp" type="text"/>
+</div>
+<div>
+<label class="block text-sm font-medium mb-1">Industry</label>
+<select class="w-full bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg">
+<option>Technology</option>
+<option>Finance</option>
+<option>Healthcare</option>
+<option>Retail</option>
+</select>
+</div>
+<div>
+<label class="block text-sm font-medium mb-1">Monthly Capacity</label>
+<input class="w-full bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg" placeholder="10,000 responses" type="number"/>
+</div>
+<button class="w-full bg-primary text-white py-2 rounded-lg font-semibold mt-4" type="submit">Update Profile</button>
+</form>
+</div>
+<div class="lg:col-span-2 space-y-8">
+<div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h2 class="text-2xl font-bold">Create New Survey</h2>
+<p class="text-sm text-gray-500">Define your audience and let AI handle the questions.</p>
+</div>
+<div class="bg-orange-50 dark:bg-orange-950/30 text-primary px-3 py-1 rounded-full text-sm font-bold border border-primary/20">
+                                Estimated: $149.00
+                            </div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+<div class="space-y-4">
+<h4 class="font-semibold text-sm uppercase tracking-wider text-gray-400">Target Audience</h4>
+<div>
+<label class="text-xs font-semibold">Age Span</label>
+<input class="w-full accent-primary mt-1" type="range"/>
+<div class="flex justify-between text-xs text-gray-500"><span>18</span><span>65+</span></div>
+</div>
+<div>
+<label class="text-xs font-semibold">Income Bracket</label>
+<select class="w-full text-sm bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg mt-1">
+<option>All Brackets</option>
+<option>High Income ($100k+)</option>
+<option>Middle Income ($50k-$100k)</option>
+</select>
+</div>
+</div>
+<div class="space-y-4">
+<h4 class="font-semibold text-sm uppercase tracking-wider text-gray-400">Sample Size</h4>
+<div>
+<label class="text-xs font-semibold">Audience Count</label>
+<input class="w-full text-sm bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg mt-1" type="number" value="500"/>
+</div>
+<div>
+<label class="text-xs font-semibold">Region</label>
+<input class="w-full text-sm bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg mt-1" placeholder="e.g. North America, EU" type="text"/>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<h4 class="font-semibold text-sm uppercase tracking-wider text-gray-400">AI Prompt</h4>
+<textarea class="w-full bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg" placeholder="Tell AI what insights you need... e.g. 'I want to understand why Gen Z prefers subscription models over one-time purchases for software.'" rows="4"></textarea>
+<button class="flex items-center justify-center gap-2 w-full bg-primary text-white py-3 rounded-lg font-bold hover:brightness-110 transition-all">
+<span class="material-icons">auto_awesome</span> Generate AI Survey
+                            </button>
+</div>
+</div>
+<div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+<h3 class="text-lg font-bold mb-4">Latest Insights Report</h3>
+<div class="flex items-center gap-4 bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
+<div class="p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg">
+<span class="material-icons">bar_chart</span>
+</div>
+<div class="flex-1">
+<p class="font-medium">Market Trends Q3 2023</p>
+<p class="text-xs text-gray-500 italic">"Gen Z users show 45% more engagement with mobile-first surveys."</p>
+</div>
+<button class="text-primary font-semibold text-sm hover:underline">Download CSV</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="tab-content hidden" id="community-view">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div class="lg:col-span-1 space-y-6">
+<div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+<div class="flex items-center gap-4 mb-6">
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl">
+                                JS
+                            </div>
+<div>
+<h3 class="font-bold">John Smith</h3>
+<div class="flex items-center gap-1 text-xs text-amber-500">
+<span class="material-icons text-sm">verified</span>
+                                    Trust Score: 98/100
+                                </div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+<p class="text-xs text-gray-500 uppercase">Earnings</p>
+<p class="text-xl font-bold">$124.50</p>
+</div>
+<div class="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
+<p class="text-xs text-gray-500 uppercase">Surveys</p>
+<p class="text-xl font-bold">42</p>
+</div>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between text-sm">
+<span class="text-gray-500">Status</span>
+<span class="text-green-500 font-medium">Active</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-gray-500">Region</span>
+<span class="font-medium">California, US</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-gray-500">Interests</span>
+<span class="font-medium">Tech, Gaming, DIY</span>
+</div>
+</div>
+</div>
+<div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+<h4 class="font-bold mb-4 flex items-center gap-2">
+<span class="material-icons text-primary">person_add</span> Profile Details
+                        </h4>
+<div class="space-y-4">
+<div class="grid grid-cols-2 gap-2">
+<input class="text-sm bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg" placeholder="Name" type="text"/>
+<input class="text-sm bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg" placeholder="Surname" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<input class="text-sm bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg" placeholder="Age" type="number"/>
+<select class="text-sm bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg">
+<option>Gender</option>
+<option>Male</option>
+<option>Female</option>
+<option>Other</option>
+</select>
+</div>
+<input class="w-full text-sm bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg" placeholder="Email Address" type="email"/>
+<select class="w-full text-sm bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg">
+<option>Financial Situation</option>
+<option>$0 - $30k</option>
+<option>$30k - $70k</option>
+<option>$70k+</option>
+</select>
+<button class="w-full py-2 border-2 border-primary text-primary font-bold rounded-lg hover:bg-primary hover:text-white transition-all">
+                                Update Data
+                            </button>
+</div>
+</div>
+</div>
+<div class="lg:col-span-2">
+<h2 class="text-2xl font-bold mb-6">Available Surveys</h2>
+<div class="space-y-4">
+<div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex gap-4">
+<div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center rounded-lg text-indigo-600">
+<span class="material-icons">smartphone</span>
+</div>
+<div>
+<h4 class="font-bold">Mobile App Usage Patterns</h4>
+<p class="text-sm text-gray-500">Duration: 5 mins • Est. Reward: $2.50</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden md:block">
+<span class="block text-xs text-gray-400">Match Rate</span>
+<span class="text-sm font-bold text-green-500">95% Match</span>
+</div>
+<button class="bg-primary text-white px-6 py-2 rounded-lg font-bold">Start Survey</button>
+</div>
+</div>
+<div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row md:items-center justify-between gap-4 opacity-75">
+<div class="flex gap-4">
+<div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center rounded-lg text-emerald-600">
+<span class="material-icons">eco</span>
+</div>
+<div>
+<h4 class="font-bold">Sustainability &amp; Shopping</h4>
+<p class="text-sm text-gray-500">Duration: 10 mins • Est. Reward: $5.00</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden md:block">
+<span class="block text-xs text-gray-400">Match Rate</span>
+<span class="text-sm font-bold text-amber-500">60% Match</span>
+</div>
+<button class="bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-300 px-6 py-2 rounded-lg font-bold cursor-not-allowed">Profile Incomplete</button>
+</div>
+</div>
+<div class="mt-12 bg-gray-50 dark:bg-gray-900/50 border-2 border-dashed border-gray-300 dark:border-gray-700 p-12 rounded-2xl text-center">
+<span class="material-icons text-5xl text-gray-300 dark:text-gray-600 mb-4">rate_review</span>
+<h3 class="text-xl font-bold text-gray-400">Survey Interface</h3>
+<p class="text-gray-400 max-w-sm mx-auto mt-2">When you start a survey, the AI-curated questions will appear here for you to answer.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<footer class="mt-20 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 py-12">
+<div class="max-w-7xl mx-auto px-4 text-center">
+<div class="flex justify-center items-center gap-2 mb-4">
+<div class="w-6 h-6 bg-primary rounded-full overflow-hidden">
+<img alt="Logo" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBJfX2fmtpuomlrV-LbEdbgkY6t_8wOTiYDqnRZ3498HhvyPxNWVVAeodb7b5Fq0pn4Wu210U68whrhdzv21LrcOu2aSpIldaQLZuvnX_fWipOGeD4rLvBS3r1EITmfKsO3E1JGrW-shZfhOOp7bDHR4UZG1rl8cwuFO_KfjIsOjbOETcyDHFhVoU3a-JzNfni_b5C2xNJdm_W5Ottr-UytxjC1I7ql8t4k7fu1Txo01sy3EQGsdukatP-FTBrPTcx-9vLvJzhtiE"/>
+</div>
+<span class="font-bold text-primary">MERGEN</span>
+</div>
+<p class="text-gray-500 text-sm">© 2023 Mergen AI Data Insights. All rights reserved.</p>
+</div>
+</footer>
+<script>
+        // Initial state logic if needed
+    </script>
+
+</body></html>

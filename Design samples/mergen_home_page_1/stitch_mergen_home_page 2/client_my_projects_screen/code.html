@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mergen - My Projects</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#E2663E",
+                        "background-light": "#FFFFFF",
+                        "background-dark": "#0F172A",
+                        "sidebar-light": "#FFFFFF",
+                        "sidebar-dark": "#1E293B",
+                        "active-light": "#FFF7ED",
+                        "active-dark": "rgba(226, 102, 62, 0.1)",
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.75rem",
+                    },
+                },
+            },
+        };
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .sidebar-item-active {
+            color: #E2663E;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200 transition-colors duration-200">
+<div class="flex min-h-screen">
+<aside class="w-72 border-r border-slate-200 dark:border-slate-800 bg-sidebar-light dark:bg-sidebar-dark flex-shrink-0 hidden lg:flex flex-col">
+<div class="p-8">
+<div class="flex items-center gap-3">
+<div class="text-primary">
+<svg fill="none" height="36" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24" width="36">
+<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+<circle cx="12" cy="12" r="3"></circle>
+</svg>
+</div>
+<span class="text-2xl font-black tracking-wider text-primary">MERGEN</span>
+</div>
+<nav class="mt-12 space-y-2">
+<a class="flex items-center gap-4 px-4 py-4 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-semibold" href="#">
+<span class="material-icons-outlined">grid_view</span>
+                        Dashboard
+                    </a>
+<a class="flex items-center gap-4 px-4 py-4 rounded-xl bg-active-light dark:bg-active-dark text-primary transition-all font-bold" href="#">
+<span class="material-icons-outlined">folder</span>
+                        My Projects
+                    </a>
+<a class="flex items-center gap-4 px-4 py-4 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-semibold" href="#">
+<span class="material-icons-outlined">bar_chart</span>
+                        Analytics
+                    </a>
+<a class="flex items-center gap-4 px-4 py-4 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-semibold" href="#">
+<span class="material-icons-outlined">settings</span>
+                        Settings
+                    </a>
+</nav>
+</div>
+<div class="mt-auto p-8 border-t border-slate-100 dark:border-slate-800">
+<div class="flex items-center gap-3">
+<img alt="Client User" class="w-10 h-10 rounded-full bg-slate-100" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-_Gvw5c429EL95q5ULMiRhaIesiOALiIO8zivTRi-xYqUcgYhwmF2juDJj9UsJ4GKBXopai5kiCm3AUUDOBWMAvoKHa9Nb94PhfpHPWj2AkK05aBmqorhlAgPbYjBf7FLWCYHoBmEZIdtKm_1tKcksXBDZccunB1yz6jIq9yXde1iypfBz86PImCUEKwVq7w43CGCoaENN1WmzpGnJ_nHWcRLAIrcFcWD7u9cG9mYmiR9XS2Wnt3aXb2n-qynAULmexTaey4IP0g"/>
+<div class="flex flex-col overflow-hidden">
+<span class="font-bold truncate">Sarah Jenkins</span>
+<span class="text-xs text-slate-500 truncate">Admin Account</span>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 flex flex-col bg-slate-50 dark:bg-background-dark/50">
+<header class="h-20 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 bg-background-light dark:bg-sidebar-dark">
+<div class="flex items-center gap-4 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-full w-96 max-w-full">
+<span class="material-icons-outlined text-slate-400">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full placeholder-slate-400" placeholder="Search projects..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 relative">
+<span class="material-icons-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full"></span>
+</button>
+<button class="bg-primary hover:bg-orange-600 text-white px-6 py-2.5 rounded-full font-bold flex items-center gap-2 shadow-lg shadow-primary/20 transition-all">
+<span class="material-icons-outlined text-sm">add</span>
+                        New Project
+                    </button>
+</div>
+</header>
+<div class="p-8 flex-1 overflow-y-auto">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h1 class="text-3xl font-black text-slate-900 dark:text-white">My Projects</h1>
+<p class="text-slate-500 dark:text-slate-400 mt-1">Manage and track your AI-powered community surveys.</p>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-sidebar-dark border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-semibold hover:border-primary transition-colors">
+<span class="material-icons-outlined text-sm">filter_list</span>
+                            Filter
+                        </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-sidebar-dark border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-semibold hover:border-primary transition-colors">
+<span class="material-icons-outlined text-sm">sort</span>
+                            Recently Updated
+                        </button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<div class="bg-white dark:bg-sidebar-dark border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:shadow-xl transition-all group flex flex-col">
+<div class="h-48 bg-slate-100 dark:bg-slate-800 relative overflow-hidden">
+<img alt="Market Analysis visualization" class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlYqFPpYlZxRoBiS0OiZpwTUdlmgjdZ6tHkqx1MAQmyot3-kUsBBVH1iVhC8n8gW00vWqP850R4dJ_io6K2_wG2_DFsy-3ZC3g6vPvI95KDXR_q8YFRguxXC4PJ1RWvD33xfqaQVEqFqhGo2dB0E2K-Hy6IOSo1do7pdWyVO-E3JmT8I3O1RSk6XE6AIyD6Mzk2DtKnsHFOG9Rv29Sfv1oVYkPOF6zeLnT4Ou7Uofp9kPAntLxNvqYHBs9fXrGYzlnW_lH5Z-s_UM"/>
+<div class="absolute top-4 right-4">
+<span class="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Completed</span>
+</div>
+</div>
+<div class="p-6 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<h3 class="text-lg font-bold text-slate-900 dark:text-white leading-tight">Gen-Z Coffee Preferences 2024</h3>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+<span class="material-icons-outlined">more_vert</span>
+</button>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm mb-6">Market depth study across metropolitan areas.</p>
+<div class="mt-auto space-y-4">
+<div class="flex items-center justify-between text-xs font-medium text-slate-400 uppercase tracking-wide">
+<span>Launched: Jan 12, 2024</span>
+<span class="flex items-center gap-1"><span class="material-icons-outlined text-sm">groups</span> 1,200 Respondents</span>
+</div>
+<button class="w-full bg-primary text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-orange-600 transition-colors shadow-lg shadow-primary/10">
+<span class="material-icons-outlined text-sm">insights</span>
+                                    View Report
+                                </button>
+</div>
+</div>
+</div>
+<div class="bg-white dark:bg-sidebar-dark border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:shadow-xl transition-all group flex flex-col">
+<div class="h-48 bg-slate-100 dark:bg-slate-800 relative overflow-hidden">
+<img alt="Tech survey dashboard" class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVBHyGcDrdaZcWLtVsl1FSiC0L4ywT3YAsjbW9F1SupT4wpSpIoSPyd5H0adPQvv1g8sgJk8gWn9Eo4WS-qAsNz3ZztFnrsy6FTiU7szPAPlBaPkIwENPIC4I3IMSTW6I2hxFxjFE44NXdnRd9rxtSbChzSqaoGelAG0qFoOIT4gn_427_ZIN7EQMjRi1J1LISVbRjU18-DvrGIttt6nxRXwA4SUZC4AK6JENT1J2G-OJj_4ZMkBNtvaLrGg5Fq3lT7FxCbef0WRs"/>
+<div class="absolute top-4 right-4">
+<span class="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">In Progress</span>
+</div>
+</div>
+<div class="p-6 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<h3 class="text-lg font-bold text-slate-900 dark:text-white leading-tight">Sustainable Fashion Survey</h3>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+<span class="material-icons-outlined">more_vert</span>
+</button>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm mb-4">Sentiment analysis on eco-friendly packaging.</p>
+<div class="mt-auto space-y-4">
+<div class="space-y-1">
+<div class="flex justify-between text-xs font-bold text-slate-500 mb-1">
+<span>75% Complete</span>
+<span>450 / 600</span>
+</div>
+<div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[75%] rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center justify-between text-xs font-medium text-slate-400 uppercase tracking-wide">
+<span>Launched: Feb 05, 2024</span>
+</div>
+<button class="w-full border-2 border-primary text-primary py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary/5 transition-colors">
+<span class="material-icons-outlined text-sm">visibility</span>
+                                    Monitor Live
+                                </button>
+</div>
+</div>
+</div>
+<div class="bg-white dark:bg-sidebar-dark border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:shadow-xl transition-all group flex flex-col">
+<div class="h-48 bg-slate-100 dark:bg-slate-800 relative overflow-hidden">
+<img alt="Abstract chart" class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBQmsh-nvqHohvLaXEtFFoLv2Q-nXZEy3406OfwHBu-FOtBCMIomcAbiH0gGaL6WikIsGTzEWiqMuPOSEgTupU6mtyBhvz7ITL7vWwTBct1nGGkDSipMHpLvpd93IIJuYpOFppQCkkSNuETu_Y8oDY1rEFZVWFEtrG3NJDalF4aQPqRpySeOnFa_vZ9a6rCLcRSUr2GWziM-50CVDbNvzNiHSuqwyZ6CKHObhPe3fTw2MLjk-2E7dLTRbBNE3-JPmQBVKO2SelgKjs"/>
+<div class="absolute top-4 right-4">
+<span class="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Completed</span>
+</div>
+</div>
+<div class="p-6 flex flex-col flex-1">
+<div class="flex justify-between items-start mb-2">
+<h3 class="text-lg font-bold text-slate-900 dark:text-white leading-tight">AI in Education Feedback</h3>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+<span class="material-icons-outlined">more_vert</span>
+</button>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm mb-6">Targeting high-school and university faculty.</p>
+<div class="mt-auto space-y-4">
+<div class="flex items-center justify-between text-xs font-medium text-slate-400 uppercase tracking-wide">
+<span>Launched: Dec 20, 2023</span>
+<span class="flex items-center gap-1"><span class="material-icons-outlined text-sm">groups</span> 850 Respondents</span>
+</div>
+<button class="w-full bg-primary text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-orange-600 transition-colors shadow-lg shadow-primary/10">
+<span class="material-icons-outlined text-sm">insights</span>
+                                    View Report
+                                </button>
+</div>
+</div>
+</div>
+<div class="bg-white dark:bg-sidebar-dark border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl overflow-hidden hover:border-primary transition-all group flex flex-col opacity-75 hover:opacity-100">
+<div class="p-6 flex flex-col h-full items-center justify-center text-center py-12">
+<div class="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+<span class="material-icons-outlined text-3xl">add_circle_outline</span>
+</div>
+<h3 class="text-lg font-bold text-slate-900 dark:text-white">Start New Project</h3>
+<p class="text-slate-500 dark:text-slate-400 text-sm mt-2 max-w-[200px]">Launch a new AI-powered survey and connect with your audience.</p>
+<button class="mt-6 px-6 py-2 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-full text-sm font-bold group-hover:bg-primary transition-colors">
+                                Create Survey
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<div class="fixed bottom-8 right-8 flex gap-2">
+<button class="w-12 h-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition-transform" onclick="document.documentElement.classList.toggle('dark')">
+<span class="material-icons-outlined">contrast</span>
+</button>
+</div>
+
+</body></html>

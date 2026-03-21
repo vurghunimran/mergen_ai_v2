@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mergen - Wisdom in Data</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --primary: #C44D34;
+            --primary-light: #F38D4F;
+            --bg-accent: #FFF9F5;
+            --secondary: #2D3E50;
+        }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: var(--bg-accent);
+        }
+        .glass-effect {
+            backdrop-filter: blur(16px);
+            background-color: rgba(255, 249, 245, 0.8);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-gradient:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(196, 77, 52, 0.4);
+        }
+        .mesh-bg {
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(196, 77, 52, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(243, 141, 79, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(196, 77, 52, 0.05) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, rgba(243, 141, 79, 0.05) 0px, transparent 50%);
+        }
+        .data-nodes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0.1;
+            pointer-events: none;
+            background-image: radial-gradient(circle, var(--primary) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+    </style>
+</head>
+<body class="text-slate-900 overflow-x-hidden mesh-bg">
+<header class="fixed top-0 w-full z-50 glass-effect border-b border-[#F38D4F]/10">
+<nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-10 h-10 flex items-center justify-center">
+<img alt="Mergen Logo" class="w-8 h-8" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuK83KvNVRzbIVKks8g8AgvD14E4JD2dQr2JsBZSQjEkAMQubEh8QdNGZYCI2L0DqdKubLA_tRhS1EZDqxJwbsZ7xdrV7xqCkUOAVxDRKhE62D9SVn1CZwxQ3xL52P-lZnyFXRDWwUq-ANAlinZI_SGUGJFUvfveytELk2kfjfv5qOybBLBk5-7iZ95g0JobdlPqflAIOEfbrUkyOvpn4uiFdAJpSp2yNZUa3nAfzWwKoamFsHTikVaSV_ipsyocNpzbRZ_hroLrk"/>
+</div>
+<span class="text-2xl font-extrabold tracking-tight text-[var(--primary)]">MERGEN</span>
+</div>
+<div class="hidden md:flex items-center space-x-8">
+<a class="text-sm font-semibold text-slate-600 hover:text-[var(--primary)] transition-colors" href="#clients">For Clients</a>
+<a class="text-sm font-semibold text-slate-600 hover:text-[var(--primary)] transition-colors" href="#community">For Community</a>
+<a class="text-sm font-semibold text-slate-600 hover:text-[var(--primary)] transition-colors" href="#how-it-works">How it Works</a>
+<a class="text-sm font-semibold text-slate-600 hover:text-[var(--primary)] transition-colors" href="#pricing">Pricing</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="px-5 py-2.5 text-sm font-bold text-slate-700 hover:text-[var(--primary)] transition-colors">Log in</button>
+<button class="btn-gradient text-white px-7 py-2.5 rounded-full text-sm font-bold">Sign up</button>
+</div>
+</nav>
+</header>
+<section class="relative pt-48 pb-32 px-4 overflow-hidden">
+<div class="data-nodes"></div>
+<div class="absolute -top-24 -right-24 w-96 h-96 bg-[var(--primary-light)]/10 rounded-full blur-3xl"></div>
+<div class="absolute top-1/2 -left-24 w-64 h-64 bg-[var(--primary)]/5 rounded-full blur-3xl"></div>
+<div class="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center relative z-10">
+<div class="space-y-8">
+<div class="inline-flex items-center px-4 py-1.5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-extrabold border border-[var(--primary)]/20 uppercase tracking-widest">
+<span class="material-symbols-outlined text-sm mr-2">auto_awesome</span> AI-Powered Market Research
+            </div>
+<h1 class="text-6xl md:text-7xl font-extrabold leading-[1.1] tracking-tight text-[var(--secondary)]">
+                Wisdom in <span class="gradient-text">the Data.</span>
+</h1>
+<p class="text-xl text-slate-600 max-w-xl leading-relaxed">
+                Empowering brands with hyper-targeted audience insights. We bridge the gap between complex questions and precise community wisdom through advanced neural analysis.
+            </p>
+<div class="flex flex-col sm:flex-row gap-5 pt-4">
+<button class="btn-gradient text-white px-10 py-4.5 rounded-2xl font-bold flex items-center justify-center gap-3 text-lg shadow-xl shadow-[var(--primary)]/20">
+<span class="material-symbols-outlined">rocket_launch</span>
+                    Start Survey
+                </button>
+<button class="bg-white border-2 border-slate-100 px-10 py-4.5 rounded-2xl font-bold flex items-center justify-center gap-3 text-lg hover:border-[var(--primary-light)] hover:text-[var(--primary-light)] transition-all shadow-sm">
+<span class="material-symbols-outlined">psychology</span>
+                    Answer Survey
+                </button>
+</div>
+<div class="pt-8 flex flex-col gap-4">
+<p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Trusted by industry leaders</p>
+<div class="flex items-center gap-8 grayscale opacity-40">
+<img alt="Visa" class="h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA56NXSl264g6TqDqoywhScIBYmM7AQtikpWs4e6SLi8_2TUsZ_3tgvT-mInn61ZJPNplN5_ovIBD-xsDPdVl__MzytQnacZLXjXfOx2tYTqCWEdNX7tVutTkvZVl5ad0BpCP2OQnygxL0mOBJrMADRO8cw3ejWFsE-rO49RAu5QnRb2NpA70YRHHy8TzEYf0RgKkYRk1as76FhY9tXhU5Gw2MfTJl7QGhc22kCxSNu2Cvd74q1l_gl_c92g2lAusFwUnP5pWHTuVQ"/>
+<img alt="Amazon" class="h-7" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2QubAn9NZRs7Hom4K7x8Pp2hUAUFiUt77tI6mLAEO4rrkcO92z-MOwAvLeZTDnLHjrs6KUB6AERIz1ScA94EkB320ImY9NeF2vmYG4lt7AB-_VWgxs69Kt57tDnsoCptcBcpJSdokH3KSLRi4yf3HPG2IaleV5BkiGKv1dmgizaxmNDNWuPcOqmoaG12gXy2-LVgjDRbPLWGumc5t5E3aW1_cz1qPfD-l1xhdCnU5vbIAZ2tXXBgQiNMEKFpsIc5V9KqrMkKbh6g"/>
+<img alt="Google" class="h-7" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4xvh7c6074GUd9JA1qHPZPi6IdVgS-cSFrxaQEHyxYj7av09FKU2Bg02ZW3YxNfH8wsNcROs9Ie8gL1NhAR5pePnuQwkk86QF40paAGFQQoPHP4c9tOuZC-cSUSzCw0DO89LJEBVuuew_hzHC43y7e7VWfRDUgHli8g16nTJIVzzjmlEaiJUDRhO4BQX2YxUzSmtLGIju2jMOWXwQvWx_2xvqSs8FRq4ZgwoEs0RSpu-wwjHh3UPBvVuSO9AD-RVaZsSbgxjlP2A"/>
+<img alt="Microsoft" class="h-7" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDCtE8hR5T1rprg-EUzNaTa2CBA0U7ZSnsoch7QYJpefh-JzRgY7YmDAbkOjdmtmnEiMqvCUiA8lCiFqu0akYbTH2fQgjj5KByxqAgzZ1qbzQMYMGwbj3MdcpMRjdPx06xgM04HEvID92OntybjfoUEJUIWoV7LQF196n6_bH-f7hgtLzXKmPCrR84V1nme-dYduFYfdnxWFBknnoi0IY_2O1tXzWB-eIoBvNlXoJnvK81nvxf1X0EaJfDtQr_DhZ2G77nqlrwuYEk"/>
+</div>
+</div>
+</div>
+<div class="relative group">
+<div class="absolute inset-0 bg-gradient-to-tr from-[var(--primary)]/30 to-[var(--primary-light)]/20 blur-[100px] rounded-full scale-110"></div>
+<div class="relative rounded-[2rem] border-8 border-slate-800/90 overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] bg-slate-900 aspect-video flex flex-col">
+<div class="h-6 bg-slate-800 flex items-center px-4 gap-1.5 border-b border-slate-700">
+<div class="w-2.5 h-2.5 rounded-full bg-red-500/50"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-yellow-500/50"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-green-500/50"></div>
+</div>
+<div class="flex-1 p-1">
+<img alt="Advanced monitor visualization" class="rounded-xl w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJ_xO0VHNDoQFOcdTyW2JS_3xUN16X_Tb7CEE3Fmfij4W6Q-PCGu5nf-0-vhnshPt8OrAXo2rzBqKI5TlPDZIsQbmTnc9lhIvf3cOsi_-JTgOaGYiZXu2WlHowYqGkfL6bk-X6mo_8wMq8ik8rLb4WAb1y7ybwbmedeoTcVG99xPJB2NQCTFaYTDguMs5lPg_1bn9UinXdqUUypmr7ueq52wPpDfvGGMzV-joI_gFcyVxSwIeBiErPnsS5mMvkbqme3bDKDcIfNf0"/>
+</div>
+</div>
+<div class="absolute -bottom-10 -left-10 bg-white p-6 rounded-2xl shadow-2xl border border-slate-100 hidden xl:block">
+<div class="flex items-center gap-4 mb-4">
+<div class="p-2 bg-[var(--primary-light)]/10 rounded-lg">
+<span class="material-symbols-outlined text-[var(--primary)]">hub</span>
+</div>
+<div>
+<div class="text-xs font-bold text-slate-400">Node Connections</div>
+<div class="text-xl font-bold text-[var(--secondary)]">14,284 Active</div>
+</div>
+</div>
+<div class="flex gap-1">
+<div class="h-12 w-2 bg-[var(--primary)]/20 rounded-full"></div>
+<div class="h-16 w-2 bg-[var(--primary)] rounded-full"></div>
+<div class="h-10 w-2 bg-[var(--primary-light)] rounded-full"></div>
+<div class="h-14 w-2 bg-[var(--primary)]/60 rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="py-32 bg-white relative overflow-hidden" id="how-it-works">
+<div class="max-w-7xl mx-auto px-4 relative z-10">
+<div class="text-center mb-20">
+<span class="text-[var(--primary)] font-extrabold text-sm uppercase tracking-[0.2em] mb-4 block">The Process</span>
+<h2 class="text-5xl font-extrabold text-[var(--secondary)] mb-6">How Mergen Works</h2>
+<p class="text-slate-500 max-w-2xl mx-auto text-lg">A seamless pipeline from initial query to actionable data visualization.</p>
+</div>
+<div class="grid md:grid-cols-4 gap-8 relative">
+<div class="hidden md:block absolute top-1/2 left-0 w-full h-0.5 border-t-2 border-dashed border-slate-100 -translate-y-12"></div>
+<div class="bg-[var(--bg-accent)] p-8 rounded-3xl border border-slate-100 shadow-sm relative text-center">
+<div class="w-16 h-16 btn-gradient text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+<span class="material-symbols-outlined text-3xl">prompt_suggestion</span>
+</div>
+<h4 class="text-xl font-bold mb-3">Define Prompt</h4>
+<p class="text-sm text-slate-600">Describe your research goals in simple natural language.</p>
+</div>
+<div class="bg-[var(--bg-accent)] p-8 rounded-3xl border border-slate-100 shadow-sm relative text-center">
+<div class="w-16 h-16 btn-gradient text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+<span class="material-symbols-outlined text-3xl">model_training</span>
+</div>
+<h4 class="text-xl font-bold mb-3">AI Generation</h4>
+<p class="text-sm text-slate-600">Our neural engine drafts high-conversion survey flows.</p>
+</div>
+<div class="bg-[var(--bg-accent)] p-8 rounded-3xl border border-slate-100 shadow-sm relative text-center">
+<div class="w-16 h-16 btn-gradient text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+<span class="material-symbols-outlined text-3xl">groups_3</span>
+</div>
+<h4 class="text-xl font-bold mb-3">Target Match</h4>
+<p class="text-sm text-slate-600">Surveys are distributed to verified community segments.</p>
+</div>
+<div class="bg-[var(--bg-accent)] p-8 rounded-3xl border border-slate-100 shadow-sm relative text-center">
+<div class="w-16 h-16 btn-gradient text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+<span class="material-symbols-outlined text-3xl">insights</span>
+</div>
+<h4 class="text-xl font-bold mb-3">Real-time Analysis</h4>
+<p class="text-sm text-slate-600">Get instant visualizations and AI-summarized insights.</p>
+</div>
+</div>
+</div>
+</section>
+<section class="py-32 px-4 relative">
+<div class="max-w-7xl mx-auto">
+<div class="grid lg:grid-cols-2 gap-12">
+<div class="group relative bg-white p-12 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden">
+<div class="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[120px] text-[var(--primary)]">apartment</span>
+</div>
+<div class="relative z-10">
+<div class="w-16 h-16 bg-[var(--primary)]/10 rounded-2xl flex items-center justify-center text-[var(--primary)] mb-8">
+<span class="material-symbols-outlined text-4xl">corporate_fare</span>
+</div>
+<h3 class="text-4xl font-extrabold mb-6 text-[var(--secondary)]">For Clients</h3>
+<p class="text-slate-600 mb-8 text-lg">Gain unprecedented access to consumer minds with tools built for scale.</p>
+<ul class="space-y-5 mb-10">
+<li class="flex items-center gap-4 text-slate-700 font-medium">
+<span class="material-symbols-outlined text-[var(--primary-light)]">check_circle</span>
+                            Precision demographic targeting engine
+                        </li>
+<li class="flex items-center gap-4 text-slate-700 font-medium">
+<span class="material-symbols-outlined text-[var(--primary-light)]">check_circle</span>
+                            Zero-delay AI question generation
+                        </li>
+<li class="flex items-center gap-4 text-slate-700 font-medium">
+<span class="material-symbols-outlined text-[var(--primary-light)]">check_circle</span>
+                            Interactive dashboard with deep-dive tools
+                        </li>
+</ul>
+<button class="w-full py-5 border-2 border-[var(--primary)] text-[var(--primary)] font-bold rounded-2xl hover:bg-[var(--primary)] hover:text-white transition-all text-lg">
+                        Register as Client
+                    </button>
+</div>
+</div>
+<div class="group relative bg-white p-12 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden">
+<div class="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[120px] text-[var(--primary-light)]">diversity_3</span>
+</div>
+<div class="relative z-10">
+<div class="w-16 h-16 bg-[var(--primary-light)]/10 rounded-2xl flex items-center justify-center text-[var(--primary-light)] mb-8">
+<span class="material-symbols-outlined text-4xl">groups</span>
+</div>
+<h3 class="text-4xl font-extrabold mb-6 text-[var(--secondary)]">For Community</h3>
+<p class="text-slate-600 mb-8 text-lg">Turn your unique perspective into rewards and impact global brands.</p>
+<ul class="space-y-5 mb-10">
+<li class="flex items-center gap-4 text-slate-700 font-medium">
+<span class="material-symbols-outlined text-[var(--primary-light)]">check_circle</span>
+                            Instant payouts for quality feedback
+                        </li>
+<li class="flex items-center gap-4 text-slate-700 font-medium">
+<span class="material-symbols-outlined text-[var(--primary-light)]">check_circle</span>
+                            Merit-based trust score system
+                        </li>
+<li class="flex items-center gap-4 text-slate-700 font-medium">
+<span class="material-symbols-outlined text-[var(--primary-light)]">check_circle</span>
+                            Mobile-first survey experience
+                        </li>
+</ul>
+<button class="w-full py-5 border-2 border-[var(--primary-light)] text-[var(--primary-light)] font-bold rounded-2xl hover:bg-[var(--primary-light)] hover:text-white transition-all text-lg">
+                        Join the Community
+                    </button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="py-32 bg-slate-900 text-white relative overflow-hidden" id="clients">
+<div class="data-nodes opacity-5"></div>
+<div class="max-w-7xl mx-auto px-4 relative z-10">
+<div class="grid lg:grid-cols-2 gap-24 items-center">
+<div class="space-y-10">
+<div class="inline-block px-4 py-1.5 rounded-full bg-white/10 text-[var(--primary-light)] text-xs font-bold uppercase tracking-widest border border-white/10">
+                    The Mergen Engine
+                </div>
+<h2 class="text-5xl md:text-6xl font-extrabold leading-tight">AI Generated Surveys in <span class="text-[var(--primary-light)]">Seconds.</span></h2>
+<p class="text-xl text-slate-400 leading-relaxed">
+                    Say goodbye to manual questionnaire building. Simply define your objectives, and our proprietary AI architect constructs psychologically optimized survey flows designed for maximum engagement.
+                </p>
+<div class="grid grid-cols-2 gap-8">
+<div class="p-8 rounded-[2rem] bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+<div class="text-4xl font-black text-[var(--primary-light)] mb-2">85%</div>
+<div class="text-sm font-bold text-slate-400 uppercase tracking-widest">Faster Creation</div>
+</div>
+<div class="p-8 rounded-[2rem] bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+<div class="text-4xl font-black text-[var(--primary-light)] mb-2">100k+</div>
+<div class="text-sm font-bold text-slate-400 uppercase tracking-widest">Active Members</div>
+</div>
+</div>
+</div>
+<div class="relative">
+<div class="absolute -inset-4 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-light)] rounded-[3rem] blur-2xl opacity-20"></div>
+<div class="relative bg-slate-800 border border-white/10 rounded-[2.5rem] p-10 shadow-3xl">
+<div class="flex items-center gap-3 mb-10 pb-6 border-b border-white/10">
+<div class="flex gap-1.5">
+<div class="w-3 h-3 rounded-full bg-red-400"></div>
+<div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+<div class="w-3 h-3 rounded-full bg-green-400"></div>
+</div>
+<span class="ml-auto text-[10px] font-mono text-slate-500 uppercase">mergen_neural_interface_v4</span>
+</div>
+<div class="space-y-8">
+<div>
+<label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-3 block">Input Prompt</label>
+<div class="p-5 bg-slate-900 rounded-2xl border border-white/5 italic text-slate-300">
+                                "Synthesize consumer sentiment regarding sustainable packaging in the luxury cosmetic sector across metropolitan hubs."
+                            </div>
+</div>
+<div class="space-y-4">
+<label class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-1 block">Neural Output Preview</label>
+<div class="p-5 border border-[var(--primary)]/30 rounded-2xl bg-[var(--primary)]/5">
+<p class="text-sm font-semibold text-white">1. How significantly does biodegradable packaging influence your luxury purchase decisions?</p>
+</div>
+<div class="p-5 border border-white/10 rounded-2xl bg-white/5">
+<p class="text-sm font-semibold text-slate-400">2. Which material do you associate most with 'premium sustainability'?</p>
+</div>
+</div>
+<button class="w-full btn-gradient text-white py-4.5 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg">
+                            Finalize Generation
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<footer class="bg-white border-t border-slate-100 pt-32 pb-16">
+<div class="max-w-7xl mx-auto px-4">
+<div class="grid md:grid-cols-4 gap-16 mb-24">
+<div class="col-span-2 md:col-span-1 space-y-8">
+<div class="flex items-center gap-2">
+<img alt="Mergen Logo" class="w-8 h-8" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzuGdv_0v-VSgbm-ZgtIkLqzivVxiansMniDl91djtYn7lZSDlyt-5r56hRZfSpm90-dR_u_gyGSlB3NxxDEz8IVmT1RSKx96B2Wo1nJvzXE_-PTPq00w-y41CgyDgXGlgORGqD0SdpI3DIMNG1DFUy47b582DLnR5JstxIDhyqhbCVxlmSd9ISmT7gIsqHCukcIlnaEuiC688lBvZGTQEdpCqBSE0iO9SdNVU-c7zlmvY2IsFEPZmZwpHrI7xdA4CogTUJu_oQaU"/>
+<span class="text-2xl font-black tracking-tighter text-[var(--primary)]">MERGEN</span>
+</div>
+<p class="text-slate-500 text-base leading-relaxed">
+                    Redefining human-data connection through ethical AI and community-centric research infrastructure.
+                </p>
+<div class="flex gap-5">
+<a class="w-10 h-10 rounded-xl border border-slate-100 flex items-center justify-center text-slate-400 hover:bg-[var(--primary)] hover:text-white hover:border-[var(--primary)] transition-all" href="#">
+<svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"></path></svg>
+</a>
+<a class="w-10 h-10 rounded-xl border border-slate-100 flex items-center justify-center text-slate-400 hover:bg-[var(--primary)] hover:text-white hover:border-[var(--primary)] transition-all" href="#">
+<svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"></path></svg>
+</a>
+</div>
+</div>
+<div>
+<h4 class="font-bold text-[var(--secondary)] mb-8 uppercase tracking-widest text-xs">Solutions</h4>
+<ul class="space-y-4 text-slate-500 font-medium">
+<li><a class="hover:text-[var(--primary)] transition-colors" href="#">Consumer Insights</a></li>
+<li><a class="hover:text-[var(--primary)] transition-colors" href="#">Market Segmentation</a></li>
+<li><a class="hover:text-[var(--primary)] transition-colors" href="#">Brand Tracking</a></li>
+<li><a class="hover:text-[var(--primary)] transition-colors" href="#">API Access</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-bold text-[var(--secondary)] mb-8 uppercase tracking-widest text-xs">Platform</h4>
+<ul class="space-y-4 text-slate-500 font-medium">
+<li><a class="hover:text-[var(--primary)] transition-colors" href="#">How it Works</a></li>
+<li><a class="hover:text-[var(--primary)] transition-colors" href="#">Success Stories</a></li>
+<li><a class="hover:text-[var(--primary)] transition-colors" href="#">Trust &amp; Safety</a></li>
+<li><a class="hover:text-[var(--primary)] transition-colors" href="#">Community Rewards</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-bold text-[var(--secondary)] mb-8 uppercase tracking-widest text-xs">Newsletter</h4>
+<p class="text-sm text-slate-500 mb-6">Stay ahead with the latest trends in data wisdom.</p>
+<div class="flex">
+<input class="w-full px-5 py-3.5 bg-slate-50 border-none rounded-l-2xl focus:ring-2 focus:ring-[var(--primary-light)] text-sm" placeholder="Email address" type="email"/>
+<button class="btn-gradient text-white px-5 rounded-r-2xl">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</div>
+</div>
+<div class="pt-12 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-8">
+<p class="text-xs font-bold text-slate-400 uppercase tracking-widest">© 2024 Mergen Global. All rights reserved.</p>
+<div class="flex gap-10">
+<a class="text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-[var(--primary)]" href="#">Privacy</a>
+<a class="text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-[var(--primary)]" href="#">Terms</a>
+<a class="text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-[var(--primary)]" href="#">Cookies</a>
+</div>
+</div>
+</div>
+</footer>
+
+</body></html>

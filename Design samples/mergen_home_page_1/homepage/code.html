@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SurveyConnect - Insights &amp; Rewards</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;family=Noto+Sans:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with Config -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                        "card-dark": "#192233",
+                        "border-dark": "#324467",
+                        "text-secondary": "#92a4c9",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem", 
+                        "lg": "0.5rem", 
+                        "xl": "0.75rem", 
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for better dark mode look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #101622;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #324467;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4a5d85;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-x-hidden antialiased selection:bg-primary/30 selection:text-white">
+<div class="relative flex min-h-screen flex-col">
+<!-- Top Navigation -->
+<header class="sticky top-0 z-50 w-full border-b border-solid dark:border-border-dark border-slate-200 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md">
+<div class="flex items-center justify-between px-6 py-4 max-w-[1280px] mx-auto w-full">
+<div class="flex items-center gap-4">
+<div class="size-8 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-3xl">query_stats</span>
+</div>
+<h2 class="text-xl font-bold leading-tight tracking-tight">SurveyConnect</h2>
+</div>
+<div class="hidden lg:flex flex-1 justify-center gap-8">
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">For Business</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">For Community</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Resources</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Pricing</a>
+</div>
+<div class="flex gap-3">
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-transparent border border-transparent dark:hover:bg-white/5 hover:bg-slate-200 text-sm font-bold transition-colors">
+<span class="truncate">Login</span>
+</button>
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center rounded-lg h-10 px-4 bg-primary hover:bg-blue-600 text-white text-sm font-bold shadow-lg shadow-blue-900/20 transition-all">
+<span class="truncate">Sign Up</span>
+</button>
+</div>
+</div>
+</header>
+<main class="flex-grow flex flex-col items-center w-full">
+<!-- Hero Section -->
+<section class="w-full px-6 py-12 md:py-20 lg:py-24 max-w-[1280px]">
+<div class="grid lg:grid-cols-2 gap-12 items-center">
+<div class="flex flex-col gap-6 order-2 lg:order-1">
+<h1 class="text-4xl md:text-5xl lg:text-6xl font-black leading-tight tracking-tight">
+                            Insights for Business. <br/>
+<span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-primary">Rewards for Opinions.</span>
+</h1>
+<p class="text-lg text-slate-600 dark:text-text-secondary max-w-lg">
+                            The bridge between questions that matter and answers that pay. Join the platform connecting data-driven companies with engaged communities.
+                        </p>
+<div class="flex flex-wrap gap-4 pt-2">
+<button class="flex h-12 px-8 items-center justify-center rounded-lg bg-primary hover:bg-blue-600 text-white font-bold transition-all shadow-lg shadow-primary/25">
+                                Start a Survey
+                            </button>
+<button class="flex h-12 px-8 items-center justify-center rounded-lg bg-slate-200 dark:bg-card-dark hover:bg-slate-300 dark:hover:bg-slate-700 dark:border dark:border-border-dark text-slate-900 dark:text-white font-bold transition-all">
+                                Answer a Survey
+                            </button>
+</div>
+<div class="flex items-center gap-4 text-sm text-text-secondary pt-4">
+<div class="flex -space-x-2">
+<img alt="User avatar" class="w-8 h-8 rounded-full border-2 border-background-dark" data-alt="Portrait of a user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAN8gfGiJsYd5E-QIIeZji2cESnPxpS76lWlbwK9GfWiZXZjDSJbKrL1uW36xB5-tFvjRk9OD-ZadyxwT9d3c8k_jmrz1wSZeHgSggmXn2-bkhsN9i0MWy_hPA_qVovcv9bGlFC2b7zdBU2jb9hRgPdSHgvx8OGQozYsE7Flj2_L1UaF14FcwzlNZIoBv9WQaDsUyn2Y_MPSwCa7NeVHnUgFYHgGUIG6I2k784JvNr1gLRibEO04ZAvjkFvMg3_gg8cLdZVf2W1racx"/>
+<img alt="User avatar" class="w-8 h-8 rounded-full border-2 border-background-dark" data-alt="Portrait of a user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCF9ZAqnJUOZvb9R163VpiRI1QAxg76UZEqRzUnq-LoEMQjU73yp563xqXCNU1hbS-Ow-zw3-qD-6LSjn_qa4hMdm0HWKWMzX_hKhuWdxrxNrMQaAqMkCwLITd0iPiJ30dJxruyrFlSZqzc_2jeUZNGsRISTfJq6udW8qRN0kSsBgVn1J6SvzLzhiDodnkvXfDSx2nn02C27uK4mBy8qVPN1XvemxVRFOANLor20FFKA6zA0ruF8f_yutCGvjSKOnzTqRGGxoDCsJMt"/>
+<img alt="User avatar" class="w-8 h-8 rounded-full border-2 border-background-dark" data-alt="Portrait of a user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1lSQ7DqUuwZ8RqXlTi2fvVh5cxAQ9f2P7D7M8lQI5Ar9F8UgYJmRgn6B5S0Z6TbFIeyGANK_3RnxQ2tWrOmxqot-sKy0nuevZwa16VG962BlPaawiRpv2bleTbTEmgbsI7PtzJOk26tTDZ1YokZpgNLsE59V1g9Vf8R11fDTymfXbIYAwZyP1qJkqThO8GARjvLHZCL778SBICHtCleX6K_x4OOOsbFeKjI7jf6azX3HAuGJHt-4Tt6mDCkawd8k3pMj6X_N0wOHk"/>
+</div>
+<p>Trusted by 10,000+ active users</p>
+</div>
+</div>
+<div class="order-1 lg:order-2 w-full h-full min-h-[300px] lg:min-h-[500px] relative rounded-2xl overflow-hidden bg-card-dark border border-border-dark shadow-2xl">
+<!-- Abstract Dashboard Representation -->
+<div class="absolute inset-0 bg-gradient-to-br from-card-dark via-[#1a253a] to-primary/20 p-8 flex flex-col justify-center items-center" data-alt="Data analytics dashboard displayed on a monitor screen with graphs and charts" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCVdsIwWiNtXrBmEbkXUgHJIBxASrtr2bid6aYHU1lxwbseyo7_g8CLzvlERoHPqKBdaR6czKSiiXcqjlLGgHjrYApmh_QsLUHvcq31OH3fag1yDvL9s2_DYiZ0Zd87aomVhzGmDXfc5Iq-sIcOEnK8adRWX2Gqqh2SfbuAWBq1HCgX-SK50eb0FoK6cCm13dsZtuFhaMOeStj-MCDDavBZUsWDVyNDGwI1y36RZ6Lp37N6crTWImo52KRTZz78Bd4jhhnrVXEwpCXe'); background-size: cover; background-position: center;">
+<div class="absolute inset-0 bg-background-dark/80 backdrop-blur-[2px]"></div>
+<!-- Floating Card UI Mockup -->
+<div class="relative w-full max-w-sm bg-background-dark/90 backdrop-blur-xl border border-border-dark rounded-xl p-6 shadow-2xl transform rotate-[-2deg] hover:rotate-0 transition-transform duration-500">
+<div class="flex justify-between items-center mb-4">
+<div class="h-3 w-24 bg-primary/40 rounded-full"></div>
+<div class="h-3 w-8 bg-green-500/40 rounded-full"></div>
+</div>
+<div class="space-y-3">
+<div class="h-2 w-full bg-border-dark rounded-full"></div>
+<div class="h-2 w-5/6 bg-border-dark rounded-full"></div>
+<div class="h-2 w-4/6 bg-border-dark rounded-full"></div>
+</div>
+<div class="mt-6 flex gap-4">
+<div class="flex-1 h-20 bg-primary/10 rounded-lg border border-primary/20 flex flex-col items-center justify-center gap-1">
+<span class="material-symbols-outlined text-primary text-xl">payments</span>
+<span class="text-[10px] text-text-secondary">Earnings</span>
+</div>
+<div class="flex-1 h-20 bg-primary/10 rounded-lg border border-primary/20 flex flex-col items-center justify-center gap-1">
+<span class="material-symbols-outlined text-primary text-xl">bar_chart</span>
+<span class="text-[10px] text-text-secondary">Responses</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Trust Indicators -->
+<section class="w-full border-y border-border-dark/50 bg-background-dark/50">
+<div class="max-w-[1280px] mx-auto px-6 py-8">
+<p class="text-center text-sm font-medium text-text-secondary mb-6">TRUSTED BY INNOVATIVE TEAMS WORLDWIDE</p>
+<div class="flex flex-wrap justify-center items-center gap-x-12 gap-y-8 opacity-60 grayscale">
+<!-- Placeholder Logos using simple text/icons for demo -->
+<div class="flex items-center gap-2 font-bold text-xl"><span class="material-symbols-outlined">diamond</span> ACME Corp</div>
+<div class="flex items-center gap-2 font-bold text-xl"><span class="material-symbols-outlined">rocket_launch</span> StarTech</div>
+<div class="flex items-center gap-2 font-bold text-xl"><span class="material-symbols-outlined">pets</span> FoxRun</div>
+<div class="flex items-center gap-2 font-bold text-xl"><span class="material-symbols-outlined">bolt</span> EnergyX</div>
+<div class="flex items-center gap-2 font-bold text-xl"><span class="material-symbols-outlined">water_drop</span> BlueWave</div>
+</div>
+</div>
+</section>
+<!-- Toggle Segment -->
+<section class="w-full px-6 pt-20 pb-10 max-w-[1280px]">
+<div class="flex justify-center mb-8">
+<div class="flex p-1 bg-card-dark border border-border-dark rounded-lg">
+<label class="cursor-pointer">
+<input checked="" class="peer sr-only" name="view_mode" type="radio"/>
+<span class="block px-6 py-2 rounded-md text-sm font-medium text-text-secondary transition-all peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm">
+                                I want to create surveys
+                            </span>
+</label>
+<label class="cursor-pointer">
+<input class="peer sr-only" name="view_mode" type="radio"/>
+<span class="block px-6 py-2 rounded-md text-sm font-medium text-text-secondary transition-all peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm">
+                                I want to take surveys
+                            </span>
+</label>
+</div>
+</div>
+<div class="text-center max-w-3xl mx-auto mb-16">
+<h2 class="text-3xl md:text-4xl font-bold mb-4">Why Choose SurveyConnect?</h2>
+<p class="text-text-secondary text-lg">Whether you need answers or want to share your opinion, we have the tools you need to succeed.</p>
+</div>
+<!-- Features Grid -->
+<div class="grid md:grid-cols-3 gap-6">
+<!-- Feature 1 -->
+<div class="group relative flex flex-col gap-4 p-8 rounded-xl bg-card-dark border border-border-dark hover:border-primary/50 transition-colors">
+<div class="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center text-primary mb-2 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-2xl">target</span>
+</div>
+<h3 class="text-xl font-bold text-white">Targeted Demographics</h3>
+<p class="text-text-secondary leading-relaxed">
+                            Reach the exact audience you need with granular filtering options based on age, location, occupation, and interests.
+                        </p>
+</div>
+<!-- Feature 2 -->
+<div class="group relative flex flex-col gap-4 p-8 rounded-xl bg-card-dark border border-border-dark hover:border-primary/50 transition-colors">
+<div class="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center text-primary mb-2 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-2xl">psychology</span>
+</div>
+<h3 class="text-xl font-bold text-white">AI-Powered Analysis</h3>
+<p class="text-text-secondary leading-relaxed">
+                            Get instant insights with our machine learning data processing that highlights trends and sentiment automatically.
+                        </p>
+</div>
+<!-- Feature 3 -->
+<div class="group relative flex flex-col gap-4 p-8 rounded-xl bg-card-dark border border-border-dark hover:border-primary/50 transition-colors">
+<div class="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center text-primary mb-2 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-2xl">bolt</span>
+</div>
+<h3 class="text-xl font-bold text-white">Fast Turnaround</h3>
+<p class="text-text-secondary leading-relaxed">
+                            Receive completed survey results in hours, not weeks. Our active community is ready to engage immediately.
+                        </p>
+</div>
+</div>
+</section>
+<!-- Pricing Section -->
+<section class="w-full px-6 py-20 bg-background-dark/30 max-w-[1280px]">
+<div class="text-center mb-16">
+<h2 class="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
+<p class="text-text-secondary">Start for free, scale as you grow.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Basic Card -->
+<div class="flex flex-col p-6 bg-card-dark border border-border-dark rounded-xl hover:border-border-dark/80 transition-shadow shadow-lg">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-bold text-lg">Basic</h3>
+<div class="mt-2 flex items-baseline gap-1">
+<span class="text-4xl font-black">$0</span>
+<span class="text-sm font-medium text-text-secondary">/mo</span>
+</div>
+</div>
+<span class="px-3 py-1 bg-primary/20 text-primary text-xs font-bold rounded-full">Free</span>
+</div>
+<button class="w-full py-2.5 rounded-lg bg-border-dark hover:bg-slate-600 text-white font-bold text-sm mb-6 transition-colors">
+                            Get Started
+                        </button>
+<div class="space-y-3">
+<div class="flex items-center gap-3 text-sm text-text-secondary">
+<span class="material-symbols-outlined text-primary text-lg">check</span>
+                                100 Responses/mo
+                            </div>
+<div class="flex items-center gap-3 text-sm text-text-secondary">
+<span class="material-symbols-outlined text-primary text-lg">check</span>
+                                Basic Analytics
+                            </div>
+<div class="flex items-center gap-3 text-sm text-text-secondary">
+<span class="material-symbols-outlined text-primary text-lg">check</span>
+                                Email Support
+                            </div>
+</div>
+</div>
+<!-- Pro Card -->
+<div class="relative flex flex-col p-6 bg-card-dark border-2 border-primary rounded-xl shadow-2xl shadow-primary/10">
+<div class="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-primary text-white text-xs font-bold rounded-full">Most Popular</div>
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-bold text-lg">Professional</h3>
+<div class="mt-2 flex items-baseline gap-1">
+<span class="text-4xl font-black">$49</span>
+<span class="text-sm font-medium text-text-secondary">/mo</span>
+</div>
+</div>
+</div>
+<button class="w-full py-2.5 rounded-lg bg-primary hover:bg-blue-600 text-white font-bold text-sm mb-6 transition-colors shadow-lg shadow-primary/25">
+                            Start Trial
+                        </button>
+<div class="space-y-3">
+<div class="flex items-center gap-3 text-sm text-text-secondary">
+<span class="material-symbols-outlined text-primary text-lg">check</span>
+                                1,000 Responses/mo
+                            </div>
+<div class="flex items-center gap-3 text-sm text-text-secondary">
+<span class="material-symbols-outlined text-primary text-lg">check</span>
+                                Advanced Filtering
+                            </div>
+<div class="flex items-center gap-3 text-sm text-text-secondary">
+<span class="material-symbols-outlined text-primary text-lg">check</span>
+                                Export to CSV/PDF
+                            </div>
+<div class="flex items-center gap-3 text-sm text-text-secondary">
+<span class="material-symbols-outlined text-primary text-lg">check</span>
+                                Priority Support
+                            </div>
+</div>
+</div>
+<!-- Enterprise Card -->
+<div class="flex flex-col p-6 bg-card-dark border border-border-dark rounded-xl hover:border-border-dark/80 transition-shadow shadow-lg">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-bold text-lg">Enterprise</h3>
+<div class="mt-2 flex items-baseline gap-1">
+<span class="text-4xl font-black">$199</span>
+<span class="text-sm font-medium text-text-secondary">/mo</span>
+</div>
+</div>
+<span class="px-3 py-1 bg-primary/20 text-primary text-xs font-bold rounded-full">Best Value</span>
+</div>
+<button class="w-full py-2.5 rounded-lg bg-border-dark hover:bg-slate-600 text-white font-bold text-sm mb-6 transition-colors">
+                            Contact Sales
+                        </button>
+<div class="space-y-3">
+<div class="flex items-center gap-3 text-sm text-text-secondary">
+<span class="material-symbols-outlined text-primary text-lg">check</span>
+                                Unlimited Responses
+                            </div>
+<div class="flex items-center gap-3 text-sm text-text-secondary">
+<span class="material-symbols-outlined text-primary text-lg">check</span>
+                                Custom API Integrations
+                            </div>
+<div class="flex items-center gap-3 text-sm text-text-secondary">
+<span class="material-symbols-outlined text-primary text-lg">check</span>
+                                White-label Solutions
+                            </div>
+<div class="flex items-center gap-3 text-sm text-text-secondary">
+<span class="material-symbols-outlined text-primary text-lg">check</span>
+                                Dedicated Manager
+                            </div>
+</div>
+</div>
+</div>
+</section>
+<!-- Call To Action -->
+<section class="w-full px-6 py-20 max-w-[1280px]">
+<div class="rounded-2xl overflow-hidden relative bg-primary px-8 py-16 md:px-16 flex flex-col md:flex-row items-center justify-between gap-8">
+<!-- Background Pattern -->
+<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 24px 24px;"></div>
+<div class="relative z-10 flex flex-col gap-4 max-w-xl">
+<h2 class="text-3xl md:text-4xl font-black text-white leading-tight">Ready to gather insights?</h2>
+<p class="text-blue-100 text-lg">Join thousands of businesses making better decisions today.</p>
+</div>
+<div class="relative z-10 flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+<button class="px-8 py-3 bg-white text-primary font-bold rounded-lg hover:bg-blue-50 transition-colors shadow-lg">
+                            Get Started Free
+                        </button>
+<button class="px-8 py-3 bg-blue-700 text-white font-bold rounded-lg hover:bg-blue-800 transition-colors border border-blue-500">
+                            Book a Demo
+                        </button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full bg-background-dark border-t border-border-dark py-12 px-6">
+<div class="max-w-[1280px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+<div class="flex flex-col gap-4">
+<div class="flex items-center gap-2 text-white">
+<span class="material-symbols-outlined text-primary">query_stats</span>
+<span class="font-bold text-lg">SurveyConnect</span>
+</div>
+<p class="text-text-secondary text-sm leading-relaxed">
+                        The leading platform for connecting businesses with real people for real insights.
+                    </p>
+<div class="flex gap-4 mt-2">
+<a class="text-text-secondary hover:text-white transition-colors" href="#"><span class="sr-only">Twitter</span><svg class="w-5 h-5" fill="currentColor" viewbox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"></path></svg></a>
+<a class="text-text-secondary hover:text-white transition-colors" href="#"><span class="sr-only">LinkedIn</span><svg class="w-5 h-5" fill="currentColor" viewbox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"></path></svg></a>
+</div>
+</div>
+<div class="flex flex-col gap-4">
+<h4 class="font-bold text-white">Product</h4>
+<a class="text-text-secondary hover:text-primary text-sm transition-colors" href="#">Features</a>
+<a class="text-text-secondary hover:text-primary text-sm transition-colors" href="#">Pricing</a>
+<a class="text-text-secondary hover:text-primary text-sm transition-colors" href="#">Case Studies</a>
+<a class="text-text-secondary hover:text-primary text-sm transition-colors" href="#">Reviews</a>
+</div>
+<div class="flex flex-col gap-4">
+<h4 class="font-bold text-white">Company</h4>
+<a class="text-text-secondary hover:text-primary text-sm transition-colors" href="#">About Us</a>
+<a class="text-text-secondary hover:text-primary text-sm transition-colors" href="#">Careers</a>
+<a class="text-text-secondary hover:text-primary text-sm transition-colors" href="#">Press</a>
+<a class="text-text-secondary hover:text-primary text-sm transition-colors" href="#">Contact</a>
+</div>
+<div class="flex flex-col gap-4">
+<h4 class="font-bold text-white">Legal</h4>
+<a class="text-text-secondary hover:text-primary text-sm transition-colors" href="#">Terms of Service</a>
+<a class="text-text-secondary hover:text-primary text-sm transition-colors" href="#">Privacy Policy</a>
+<a class="text-text-secondary hover:text-primary text-sm transition-colors" href="#">Cookie Policy</a>
+<a class="text-text-secondary hover:text-primary text-sm transition-colors" href="#">Security</a>
+</div>
+</div>
+<div class="max-w-[1280px] mx-auto mt-12 pt-8 border-t border-border-dark flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="text-text-secondary text-xs">© 2024 SurveyConnect Inc. All rights reserved.</p>
+<div class="flex gap-2 items-center text-text-secondary text-xs">
+<div class="w-2 h-2 rounded-full bg-green-500"></div>
+                    Systems Operational
+                </div>
+</div>
+</footer>
+</div>
+</body></html>
