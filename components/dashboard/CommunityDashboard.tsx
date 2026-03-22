@@ -26,6 +26,7 @@ import {
   Wallet
 } from "lucide-react";
 import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
+import { buildCommunityAudienceProfile, matchesSurveyAudience } from "@/lib/audience-matching";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { buildPersistedProfilePayload, upsertProfileRecords } from "@/lib/supabase/profile-db";
 import type { UserProfile } from "@/lib/supabase/types";
@@ -87,30 +88,17 @@ function buildInitialSettings(profile: UserProfile): CommunitySettings {
   };
 }
 
-function parseAgeSpanMidpoint(ageSpan: string) {
-  const matches = ageSpan.match(/\d+/g);
-
-  if (!matches || matches.length === 0) {
-    return 0;
-  }
-
-  if (matches.length === 1) {
-    return Number(matches[0]);
-  }
-
-  const minAge = Number(matches[0]);
-  const maxAge = Number(matches[1]);
-  return Math.round((minAge + maxAge) / 2);
-}
-
 function buildMemberProfile(profile: UserProfile) {
-  return {
-    age: parseAgeSpanMidpoint(profile.ageSpan),
+  return buildCommunityAudienceProfile({
+    ageSpan: profile.ageSpan,
     country: profile.country,
     gender: profile.gender,
     education: profile.educationalLevel,
-    interests: profile.interests
-  };
+    interests: profile.interests,
+    salaryRange: profile.salaryRange,
+    residence: profile.placeOfResidence,
+    familyStatus: profile.familyStatus
+  });
 }
 
 function getSettingsErrorMessage(error: unknown) {
@@ -192,25 +180,7 @@ function calculateEarnedCredits(score: number) {
 }
 
 function matchesSurveyToMember(survey: ClientSurvey, memberProfile: ReturnType<typeof buildMemberProfile>) {
-  const audience = survey.audience;
-
-  if (!audience) {
-    return true;
-  }
-
-  const matchesCountry = audience.countries.length === 0 || audience.countries.includes(memberProfile.country);
-  const matchesAge = memberProfile.age >= audience.ageMin && memberProfile.age <= audience.ageMax;
-  const matchesGender = audience.gender === "All genders" || audience.gender === memberProfile.gender;
-  const matchesEducation =
-    audience.education === "Any education level" ||
-    audience.education === memberProfile.education ||
-    (audience.education === "Undergraduate" &&
-      (memberProfile.education === "Bachelor's degree" || memberProfile.education === "Undergraduate"));
-  const matchesInterest =
-    audience.interests.length === 0 ||
-    audience.interests.some((interest) => memberProfile.interests.includes(interest));
-
-  return matchesCountry && matchesAge && matchesGender && matchesEducation && matchesInterest;
+  return matchesSurveyAudience(survey.audience, memberProfile);
 }
 
 function buildFallbackQuestions(survey: ClientSurvey): StoredSurveyQuestion[] {

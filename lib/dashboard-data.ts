@@ -26,6 +26,9 @@ export type SurveyAudience = {
   gender: string;
   education: string;
   interests: string[];
+  salaryRange?: string;
+  residence?: string;
+  familyStatus?: string;
   researchArea: string;
 };
 

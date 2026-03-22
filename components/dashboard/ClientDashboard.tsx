@@ -318,7 +318,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
     router.refresh();
   }
 
-  function handleLaunchSurvey(payload: {
+  async function handleLaunchSurvey(payload: {
     title: string;
     targetResponses: number;
     questionCount: number;
@@ -351,6 +351,48 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
       window.localStorage.setItem(CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY, JSON.stringify(nextSurveys));
       return nextSurveys;
     });
+
+    try {
+      const response = await fetch("/api/surveys/notify-community", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          title: payload.title,
+          description: payload.description,
+          targetResponses: payload.targetResponses,
+          questionCount: payload.questionCount,
+          audience: payload.audience
+        })
+      });
+
+      const data = (await response.json()) as {
+        matchedRecipients?: number;
+        sentEmails?: number;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        return {
+          matchedRecipients: 0,
+          sentEmails: 0,
+          notificationError: data.error ?? "Survey published, but community emails could not be sent."
+        };
+      }
+
+      return {
+        matchedRecipients: data.matchedRecipients ?? 0,
+        sentEmails: data.sentEmails ?? 0,
+        notificationError: ""
+      };
+    } catch {
+      return {
+        matchedRecipients: 0,
+        sentEmails: 0,
+        notificationError: "Survey published, but community emails could not be sent."
+      };
+    }
   }
 
   function handleSettingsChange<Key extends keyof DashboardSettings>(field: Key, value: DashboardSettings[Key]) {

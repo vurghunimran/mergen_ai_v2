@@ -71,9 +71,15 @@ type LaunchPayload = {
   questions: StoredSurveyQuestion[];
 };
 
+type LaunchResult = {
+  matchedRecipients: number;
+  sentEmails: number;
+  notificationError: string;
+};
+
 type Props = {
   onBackToDashboard: () => void;
-  onLaunchSurvey: (payload: LaunchPayload) => void;
+  onLaunchSurvey: (payload: LaunchPayload) => Promise<LaunchResult>;
 };
 
 const researchAreas = [
@@ -324,8 +330,12 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
   const [draftNotice, setDraftNotice] = useState("");
   const [generationError, setGenerationError] = useState("");
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+  const [isCompletingPayment, setIsCompletingPayment] = useState(false);
   const [launchComplete, setLaunchComplete] = useState(false);
   const [launchTimestamp, setLaunchTimestamp] = useState("");
+  const [launchMatchedRecipients, setLaunchMatchedRecipients] = useState(0);
+  const [launchSentEmails, setLaunchSentEmails] = useState(0);
+  const [launchNotificationError, setLaunchNotificationError] = useState("");
 
   useEffect(() => {
     try {
@@ -857,9 +867,16 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
     previewWindow.document.close();
   }
 
-  function handleCompletePayment() {
-    if (!launchComplete) {
-      onLaunchSurvey({
+  async function handleCompletePayment() {
+    if (launchComplete || isCompletingPayment) {
+      return;
+    }
+
+    setIsCompletingPayment(true);
+    setLaunchNotificationError("");
+
+    try {
+      const launchResult = await onLaunchSurvey({
         title: draft.surveyTitle,
         targetResponses: draft.respondentCount,
         questionCount: draft.questions.length || draft.questionCount,
@@ -871,10 +888,23 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
           gender: draft.gender,
           education: draft.education,
           interests: draft.interests,
+          salaryRange: draft.financialSituation,
+          residence: draft.residence,
+          familyStatus: draft.familyStatus,
           researchArea: draft.researchArea
         },
         questions: draft.questions
       });
+
+      setLaunchMatchedRecipients(launchResult.matchedRecipients);
+      setLaunchSentEmails(launchResult.sentEmails);
+      setLaunchNotificationError(launchResult.notificationError);
+    } catch {
+      setLaunchMatchedRecipients(0);
+      setLaunchSentEmails(0);
+      setLaunchNotificationError("Survey published, but the community email notification request failed.");
+    } finally {
+      setIsCompletingPayment(false);
     }
 
     setLaunchComplete(true);
@@ -896,6 +926,9 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
     setGenerationError("");
     setLaunchComplete(false);
     setLaunchTimestamp("");
+    setLaunchMatchedRecipients(0);
+    setLaunchSentEmails(0);
+    setLaunchNotificationError("");
     onBackToDashboard();
   }
 
@@ -1561,10 +1594,11 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
             <button
               type="button"
               onClick={handleCompletePayment}
-              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff7a00_0%,#ea5f2d_100%)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(255,106,0,0.22)] transition hover:opacity-90"
+              disabled={isCompletingPayment}
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff7a00_0%,#ea5f2d_100%)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(255,106,0,0.22)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
             >
               <CreditCard className="h-4 w-4" />
-              Complete Payment
+              {isCompletingPayment ? "Publishing..." : "Complete Payment"}
             </button>
           </div>
         </div>
@@ -1589,6 +1623,19 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
               <p className="mx-auto mt-3 max-w-2xl text-[16px] leading-7 text-[#667085]">
                 Your payment has been processed successfully and the survey has been added to your dashboard with launch-ready status.
               </p>
+              {launchNotificationError ? (
+                <p className="mx-auto mt-4 max-w-2xl rounded-2xl border border-[#ffd9bf] bg-[#fff4ea] px-4 py-3 text-sm text-[#c2410c]">
+                  {launchNotificationError}
+                </p>
+              ) : launchSentEmails > 0 ? (
+                <p className="mx-auto mt-4 max-w-2xl rounded-2xl border border-[#d5eadf] bg-[#f3fbf6] px-4 py-3 text-sm text-[#166534]">
+                  {launchSentEmails} matching community members were notified by email.
+                </p>
+              ) : (
+                <p className="mx-auto mt-4 max-w-2xl rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-[#667085]">
+                  Survey published successfully. No community members matched the current audience criteria yet.
+                </p>
+              )}
             </div>
           </div>
 
@@ -1625,6 +1672,11 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
               <p className="text-[15px] leading-7 text-[#667085]">
                 {draft.researchArea} study for {draft.gender.toLowerCase()} respondents aged {draft.ageMin}-{draft.ageMax} in {buildTargetLabel(draft)}, focused on {draft.interests.join(", ").toLowerCase()}.
               </p>
+              {launchMatchedRecipients > 0 ? (
+                <p className="text-sm text-[#7c3412]">
+                  Matching recipients found: {launchMatchedRecipients}. Emails sent: {launchSentEmails}.
+                </p>
+              ) : null}
             </div>
 
             <div className="mt-8 flex justify-center">

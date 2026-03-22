@@ -32,6 +32,7 @@ cp .env.local.example .env.local
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
 - `OPENAI_API_KEY`
 - `RESEND_API_KEY`
 - `TO_EMAIL`
@@ -79,12 +80,13 @@ Add these in the Vercel project settings:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
 - `OPENAI_API_KEY`
 - `RESEND_API_KEY`
 - `TO_EMAIL`
 - `RESEND_FROM_EMAIL`
 
-If you do not configure the Supabase variables, sign-up, login, dashboard protection, and profile storage will fail. If you do not configure the OpenAI key, the survey builder can still fall back to template questions locally, but the server-side AI assistant will not generate tailored survey content. If you do not configure the Resend variables, the contact form API will deploy, but sending email will return a server error.
+If you do not configure the Supabase variables, sign-up, login, dashboard protection, and profile storage will fail. If you do not configure `SUPABASE_SERVICE_ROLE_KEY`, survey publish will still work locally in the client dashboard, but the server cannot read matching community profiles to send launch emails. If you do not configure the OpenAI key, the survey builder can still fall back to template questions locally, but the server-side AI assistant will not generate tailored survey content. If you do not configure the Resend variables, the contact form API and community notification API will deploy, but sending email will return a server error.
 
 ### Supabase auth settings
 
@@ -111,6 +113,7 @@ The app now uses:
 - The server-side survey AI route lives in [app/api/survey-assistant/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/survey-assistant/route.ts).
 - Route session refresh runs in [middleware.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/middleware.ts).
 - The contact API uses Resend in [app/api/contact/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/contact/route.ts).
+- Community launch emails are sent from [app/api/surveys/notify-community/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/surveys/notify-community/route.ts).
 - Remote images are already allowed for `images.unsplash.com` in [next.config.mjs](/Users/vurghun1903/Desktop/mergen_ai_v2/next.config.mjs).
 - `vercel.json` is included for explicit Next.js detection.
 - Supabase currently expects Node 20+, so Vercel should use Node 20 or later.
