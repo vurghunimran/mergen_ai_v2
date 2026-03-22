@@ -20,6 +20,13 @@ import {
 } from "lucide-react";
 import { type StoredSurveyQuestion, type SurveyAudience, type SurveyQuestionType } from "@/lib/dashboard-data";
 import {
+  AI_DETAILED_SURVEY_FEE,
+  academicQuestionCountOptions,
+  academicRespondentCountOptions,
+  formatUsd,
+  getAcademicSurveyBasePrice
+} from "@/lib/survey-pricing";
+import {
   questionOptionsForType,
   surveyQuestionTypes,
   type SurveyAssistantRequest,
@@ -141,14 +148,6 @@ const interestOptions = [
 ] as const;
 
 const questionTypeOptions: QuestionType[] = surveyQuestionTypes;
-
-const respondentPricing: Record<SurveyDraft["respondentCount"], number> = {
-  50: 45,
-  100: 75,
-  250: 145,
-  500: 265,
-  1000: 460
-};
 
 const stageItems: Array<{ id: CreateSurveyStage; label: string }> = [
   { id: "define", label: "Define" },
@@ -364,18 +363,20 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
   }, [draftNotice]);
 
   const pricing = useMemo(() => {
-    const questionsFee = draft.questionCount * 3;
-    const respondentsFee = respondentPricing[draft.respondentCount];
-    const aiDetailedFee = draft.includeDetailedAI ? 20 : 0;
-    const total = questionsFee + respondentsFee + aiDetailedFee;
+    const selectedQuestionCount = draft.questions.length || draft.questionCount;
+    const { questionTier, basePrice } = getAcademicSurveyBasePrice(selectedQuestionCount, draft.respondentCount);
+    const aiDetailedFee = draft.includeDetailedAI ? AI_DETAILED_SURVEY_FEE : 0;
+    const total = basePrice + aiDetailedFee;
 
     return {
-      questionsFee,
-      respondentsFee,
+      selectedQuestionCount,
+      questionTier,
+      basePrice,
       aiDetailedFee,
+      isTierAdjusted: selectedQuestionCount !== questionTier,
       total
     };
-  }, [draft.includeDetailedAI, draft.questionCount, draft.respondentCount]);
+  }, [draft.includeDetailedAI, draft.questionCount, draft.questions.length, draft.respondentCount]);
 
   const currentStageIndex = stageItems.findIndex((item) => item.id === stage);
   const availableCountries = regionCountries[draft.targetRegion as keyof typeof regionCountries].filter(
@@ -632,22 +633,28 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
   function handleAddQuestion() {
     setDraft((currentDraft) => ({
       ...currentDraft,
-      questions: [
-        ...currentDraft.questions,
-        {
-          id: `question-${currentDraft.questions.length + 1}-${Date.now()}`,
-          text: `New question ${currentDraft.questions.length + 1}`,
-          type: "Open question",
-          options: questionOptionsForType("Open question")
-        }
-      ]
+      questions:
+        currentDraft.questions.length >= 25
+          ? currentDraft.questions
+          : [
+              ...currentDraft.questions,
+              {
+                id: `question-${currentDraft.questions.length + 1}-${Date.now()}`,
+                text: `New question ${currentDraft.questions.length + 1}`,
+                type: "Open question",
+                options: questionOptionsForType("Open question")
+              }
+            ]
     }));
   }
 
   function handleRemoveQuestion(questionId: string) {
     setDraft((currentDraft) => ({
       ...currentDraft,
-      questions: currentDraft.questions.filter((question) => question.id !== questionId)
+      questions:
+        currentDraft.questions.length <= 5
+          ? currentDraft.questions
+          : currentDraft.questions.filter((question) => question.id !== questionId)
     }));
   }
 
@@ -1256,18 +1263,26 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-sm font-medium text-[#4b5563]">Number of questions</p>
-                    <p className="mt-1 text-xs text-[#98a2b3]">Minimum 5, maximum 25</p>
+                    <p className="mt-1 text-xs text-[#98a2b3]">Academic pricing tiers: 5, 10, 15, 20, 25</p>
                   </div>
                   <div className="rounded-2xl bg-[#fff0f1] px-4 py-2 text-xl font-semibold text-[#ef476f]">{draft.questionCount}</div>
                 </div>
-                <input
-                  type="range"
-                  min={5}
-                  max={25}
-                  value={draft.questionCount}
-                  onChange={(event) => updateDraft("questionCount", Number(event.target.value))}
-                  className="mt-6 h-2 w-full appearance-none rounded-full bg-[#e5e7eb] accent-[#ef6b39]"
-                />
+                <div className="mt-6 grid grid-cols-5 gap-2">
+                  {academicQuestionCountOptions.map((count) => (
+                    <button
+                      key={count}
+                      type="button"
+                      onClick={() => updateDraft("questionCount", count)}
+                      className={`rounded-2xl border px-3 py-3 text-sm font-semibold transition ${
+                        draft.questionCount === count
+                          ? "border-[#ef6b39] bg-[#fff0e8] text-[#c2410c]"
+                          : "border-gray-200 bg-white text-[#667085] hover:border-[#ffd1ad] hover:text-[#d85d1c]"
+                      }`}
+                    >
+                      {count}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <label className="block rounded-[24px] border border-gray-200 bg-[#fcfcfd] p-5">
@@ -1277,7 +1292,7 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
                   onChange={(event) => updateDraft("respondentCount", Number(event.target.value) as SurveyDraft["respondentCount"])}
                   className="mt-3 w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-[16px] text-gray-900 outline-none transition focus:border-[#ff6a00]"
                 >
-                  {[50, 100, 250, 500, 1000].map((count) => (
+                  {academicRespondentCountOptions.map((count) => (
                     <option key={count} value={count}>
                       {count}
                     </option>
@@ -1418,7 +1433,8 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
                       <button
                         type="button"
                         onClick={() => handleRemoveQuestion(question.id)}
-                        className="rounded-xl border border-gray-200 bg-white p-2 text-[#98a2b3] transition hover:border-[#ffd1ad] hover:text-[#d85d1c]"
+                        disabled={draft.questions.length <= 5}
+                        className="rounded-xl border border-gray-200 bg-white p-2 text-[#98a2b3] transition hover:border-[#ffd1ad] hover:text-[#d85d1c] disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -1481,7 +1497,8 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
               <button
                 type="button"
                 onClick={handleAddQuestion}
-                className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2.5 text-sm font-semibold text-[#4b5563] transition hover:border-[#ffd1ad] hover:text-[#d85d1c]"
+                disabled={draft.questions.length >= 25}
+                className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2.5 text-sm font-semibold text-[#4b5563] transition hover:border-[#ffd1ad] hover:text-[#d85d1c] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Plus className="h-4 w-4" />
                 Add Question
@@ -1524,7 +1541,7 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
               </div>
               <div className="rounded-[24px] border border-gray-200 bg-[#fcfcfd] p-5">
                 <p className="text-sm font-medium text-[#98a2b3]">Questions</p>
-                <p className="mt-2 text-[20px] font-semibold text-[#111827]">{draft.questions.length || draft.questionCount}</p>
+                <p className="mt-2 text-[20px] font-semibold text-[#111827]">{pricing.selectedQuestionCount}</p>
               </div>
               <div className="rounded-[24px] border border-gray-200 bg-[#fcfcfd] p-5">
                 <p className="text-sm font-medium text-[#98a2b3]">Respondents</p>
@@ -1560,24 +1577,31 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
             <h2 className="text-[22px] font-semibold text-[#111827]">Receipt</h2>
             <div className="mt-6 space-y-4">
               <div className="flex items-center justify-between text-sm text-[#667085]">
-                <span>Question setup</span>
-                <span>${pricing.questionsFee}</span>
+                <span>Academic survey package</span>
+                <span>{formatUsd(pricing.basePrice)}</span>
               </div>
               <div className="flex items-center justify-between text-sm text-[#667085]">
-                <span>Respondent package</span>
-                <span>${pricing.respondentsFee}</span>
+                <span>{pricing.questionTier} questions x {draft.respondentCount} respondents</span>
+                <span>Included</span>
               </div>
               <div className="flex items-center justify-between text-sm text-[#667085]">
                 <span>AI-based detailed survey</span>
-                <span>${pricing.aiDetailedFee}</span>
+                <span>{formatUsd(pricing.aiDetailedFee)}</span>
               </div>
               <div className="border-t border-dashed border-gray-200 pt-4">
                 <div className="flex items-center justify-between text-[18px] font-semibold text-[#111827]">
                   <span>Total</span>
-                  <span>${pricing.total}</span>
+                  <span>{formatUsd(pricing.total)}</span>
                 </div>
               </div>
             </div>
+
+            {pricing.isTierAdjusted ? (
+              <p className="mt-4 rounded-2xl bg-[#fff9f4] px-4 py-3 text-xs leading-6 text-[#8a5a3d]">
+                You currently have {pricing.selectedQuestionCount} prepared questions. Pricing rounds this up to the{" "}
+                {pricing.questionTier}-question academic tier.
+              </p>
+            ) : null}
 
             <p className="mt-6 rounded-2xl bg-[#fcfcfd] px-4 py-3 text-sm text-[#8a94a6]">
               DodoPayment gateway will be connected here later. This button currently simulates a successful payment.
