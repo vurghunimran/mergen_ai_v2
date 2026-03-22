@@ -10,7 +10,7 @@ export function createClient() {
     return browserClient;
   }
 
-  const { url, anonKey } = getSupabaseEnv();
-  browserClient = createBrowserClient(url, anonKey);
+  const { url, key } = getSupabaseEnv();
+  browserClient = createBrowserClient(url, key);
   return browserClient;
 }

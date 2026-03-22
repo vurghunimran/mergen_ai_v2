@@ -19,6 +19,12 @@ import {
   X
 } from "lucide-react";
 import { type StoredSurveyQuestion, type SurveyAudience, type SurveyQuestionType } from "@/lib/dashboard-data";
+import {
+  questionOptionsForType,
+  surveyQuestionTypes,
+  type SurveyAssistantRequest,
+  type SurveyAssistantResponse
+} from "@/lib/survey-assistant";
 
 const CREATE_SURVEY_DRAFT_STORAGE_KEY = "mergen-client-create-survey-draft";
 const STEP_TITLE_CLASS_NAME = "text-[34px] font-bold tracking-[-0.04em] text-[#7c3412]";
@@ -128,15 +134,7 @@ const interestOptions = [
   "Entrepreneurship"
 ] as const;
 
-const questionTypeOptions: QuestionType[] = [
-  "Multiple choice",
-  "Single select",
-  "Likert scale",
-  "Open question",
-  "Yes / No",
-  "Rating scale",
-  "Ranking"
-];
+const questionTypeOptions: QuestionType[] = surveyQuestionTypes;
 
 const respondentPricing: Record<SurveyDraft["respondentCount"], number> = {
   50: 45,
@@ -195,25 +193,6 @@ function buildDefaultScope(draft: SurveyDraft) {
 
 function buildDefaultHypothesis(draft: SurveyDraft) {
   return `Respondents across ${buildTargetLabel(draft)} will show clear preference differences around ${draft.surveyTitle || "the topic"} based on education level and financial situation.`;
-}
-
-function questionOptionsForType(type: QuestionType) {
-  switch (type) {
-    case "Likert scale":
-      return ["Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"];
-    case "Open question":
-      return ["Free-text response"];
-    case "Single select":
-      return ["Option A", "Option B", "Option C", "Option D"];
-    case "Yes / No":
-      return ["Yes", "No"];
-    case "Rating scale":
-      return ["1", "2", "3", "4", "5"];
-    case "Ranking":
-      return ["Option A", "Option B", "Option C", "Option D"];
-    default:
-      return ["Option A", "Option B", "Option C", "Option D"];
-  }
 }
 
 function generateQuestionText(index: number, draft: SurveyDraft) {
@@ -343,6 +322,8 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
   const [stage, setStage] = useState<CreateSurveyStage>("define");
   const [draft, setDraft] = useState<SurveyDraft>(buildInitialDraft);
   const [draftNotice, setDraftNotice] = useState("");
+  const [generationError, setGenerationError] = useState("");
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const [launchComplete, setLaunchComplete] = useState(false);
   const [launchTimestamp, setLaunchTimestamp] = useState("");
 
@@ -474,24 +455,100 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
     };
   }
 
-  function handleGenerateFromDefine() {
-    const enrichedDraft = buildEnrichedDraft();
+  async function requestAIGeneration(nextDraft: SurveyDraft) {
+    const payload: SurveyAssistantRequest = {
+      surveyTitle: nextDraft.surveyTitle,
+      researchArea: nextDraft.researchArea,
+      targetRegion: nextDraft.targetRegion,
+      selectedCountries: nextDraft.selectedCountries,
+      ageMin: nextDraft.ageMin,
+      ageMax: nextDraft.ageMax,
+      financialSituation: nextDraft.financialSituation,
+      gender: nextDraft.gender,
+      education: nextDraft.education,
+      residence: nextDraft.residence,
+      familyStatus: nextDraft.familyStatus,
+      interests: nextDraft.interests,
+      questionCount: nextDraft.questionCount,
+      respondentCount: nextDraft.respondentCount,
+      assistantPrompt: nextDraft.assistantPrompt,
+      researchScope: nextDraft.researchScope,
+      hypothesis: nextDraft.hypothesis
+    };
 
-    setDraft({
-      ...enrichedDraft,
-      questions: generateQuestions(enrichedDraft)
+    const response = await fetch("/api/survey-assistant", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
     });
-    setStage("generate");
+
+    const responseBody = (await response.json()) as Partial<SurveyAssistantResponse> & { error?: string };
+
+    if (!response.ok || !responseBody.questions) {
+      throw new Error(responseBody.error ?? "AI survey generation failed.");
+    }
+
+    return responseBody as SurveyAssistantResponse;
   }
 
-  function handleGenerateQuestions() {
+  async function handleGenerateFromDefine() {
     const enrichedDraft = buildEnrichedDraft();
+    setGenerationError("");
+    setDraftNotice("");
+    setIsGeneratingQuestions(true);
 
-    setDraft({
-      ...enrichedDraft,
-      questions: generateQuestions(enrichedDraft)
-    });
-    setDraftNotice("Questions generated.");
+    try {
+      const aiResult = await requestAIGeneration(enrichedDraft);
+
+      setDraft({
+        ...enrichedDraft,
+        assistantPrompt: aiResult.assistantPrompt,
+        researchScope: aiResult.researchScope,
+        hypothesis: aiResult.hypothesis,
+        questions: aiResult.questions
+      });
+      setDraftNotice("AI questions generated.");
+      setStage("generate");
+    } catch (error) {
+      setDraft({
+        ...enrichedDraft,
+        questions: generateQuestions(enrichedDraft)
+      });
+      setGenerationError(
+        error instanceof Error
+          ? `${error.message} Template questions were generated so you can keep editing.`
+          : "AI survey generation failed. Template questions were generated so you can keep editing."
+      );
+      setStage("generate");
+    } finally {
+      setIsGeneratingQuestions(false);
+    }
+  }
+
+  async function handleGenerateQuestions() {
+    const enrichedDraft = buildEnrichedDraft();
+    setGenerationError("");
+    setDraftNotice("");
+    setIsGeneratingQuestions(true);
+
+    try {
+      const aiResult = await requestAIGeneration(enrichedDraft);
+
+      setDraft({
+        ...enrichedDraft,
+        assistantPrompt: aiResult.assistantPrompt,
+        researchScope: aiResult.researchScope,
+        hypothesis: aiResult.hypothesis,
+        questions: aiResult.questions
+      });
+      setDraftNotice("AI questions generated.");
+    } catch (error) {
+      setGenerationError(error instanceof Error ? error.message : "AI survey generation failed.");
+    } finally {
+      setIsGeneratingQuestions(false);
+    }
   }
 
   function handleQuestionChange(questionId: string, nextText: string) {
@@ -836,6 +893,7 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
     setStage("define");
     setDraft(buildInitialDraft());
     setDraftNotice("");
+    setGenerationError("");
     setLaunchComplete(false);
     setLaunchTimestamp("");
     onBackToDashboard();
@@ -1207,11 +1265,11 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
               <button
                 type="button"
                 onClick={handleGenerateFromDefine}
-                disabled={!draft.surveyTitle.trim() || draft.selectedCountries.length === 0}
+                disabled={!draft.surveyTitle.trim() || draft.selectedCountries.length === 0 || isGeneratingQuestions}
                 className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff7a00_0%,#ea5f2d_100%)] px-7 py-3.5 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(255,106,0,0.22)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Wand2 className="h-4 w-4" />
-                Generate Questions
+                {isGeneratingQuestions ? "Generating..." : "Generate Questions"}
               </button>
             </div>
           </div>
@@ -1266,11 +1324,14 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
                 <button
                   type="button"
                   onClick={handleGenerateQuestions}
+                  disabled={isGeneratingQuestions}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff7a00_0%,#ea5f2d_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(255,106,0,0.22)] transition hover:opacity-90"
                 >
                   <Sparkles className="h-4 w-4" />
-                  Generate Questions
+                  {isGeneratingQuestions ? "Generating..." : "Generate Questions"}
                 </button>
+
+                {generationError ? <p className="text-sm font-medium text-[#d85a2f]">{generationError}</p> : null}
               </div>
             </div>
           </div>

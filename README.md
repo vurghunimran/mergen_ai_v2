@@ -11,6 +11,7 @@ Next.js 14 App Router project for the MERGEN landing page, auth flows, client da
 - react-hook-form
 - react-simple-maps
 - Supabase Auth + Postgres
+- OpenAI Responses API
 - Resend
 
 ## Local setup
@@ -30,7 +31,8 @@ cp .env.local.example .env.local
 3. Fill these variables in `.env.local`:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `OPENAI_API_KEY`
 - `RESEND_API_KEY`
 - `TO_EMAIL`
 - `RESEND_FROM_EMAIL`
@@ -76,12 +78,13 @@ This repo is ready for Vercel as a standard Next.js project.
 Add these in the Vercel project settings:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `OPENAI_API_KEY`
 - `RESEND_API_KEY`
 - `TO_EMAIL`
 - `RESEND_FROM_EMAIL`
 
-If you do not configure the Supabase variables, sign-up, login, dashboard protection, and profile storage will fail. If you do not configure the Resend variables, the contact form API will deploy, but sending email will return a server error.
+If you do not configure the Supabase variables, sign-up, login, dashboard protection, and profile storage will fail. If you do not configure the OpenAI key, the survey builder can still fall back to template questions locally, but the server-side AI assistant will not generate tailored survey content. If you do not configure the Resend variables, the contact form API will deploy, but sending email will return a server error.
 
 ### Supabase auth settings
 
@@ -105,6 +108,7 @@ The app now uses:
 - The Supabase schema is in [supabase/schema.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/schema.sql).
 - The migration for existing mixed-profile setups is in [supabase/migrate-separate-profiles.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-separate-profiles.sql).
 - Browser/server Supabase helpers are in [lib/supabase/client.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/lib/supabase/client.ts) and [lib/supabase/server.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/lib/supabase/server.ts).
+- The server-side survey AI route lives in [app/api/survey-assistant/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/survey-assistant/route.ts).
 - Route session refresh runs in [middleware.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/middleware.ts).
 - The contact API uses Resend in [app/api/contact/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/contact/route.ts).
 - Remote images are already allowed for `images.unsplash.com` in [next.config.mjs](/Users/vurghun1903/Desktop/mergen_ai_v2/next.config.mjs).

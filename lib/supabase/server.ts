@@ -4,9 +4,9 @@ import { getSupabaseEnv } from "@/lib/supabase/config";
 
 export function createClient() {
   const cookieStore = cookies();
-  const { url, anonKey } = getSupabaseEnv();
+  const { url, key } = getSupabaseEnv();
 
-  return createServerClient(url, anonKey, {
+  return createServerClient(url, key, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
