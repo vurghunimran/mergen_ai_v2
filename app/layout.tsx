@@ -17,7 +17,11 @@ const merriweather = Merriweather({
 export const metadata: Metadata = {
   title: "MERGEN AI | Verified Research Communities",
   description:
-    "Launch AI-generated surveys, connect with verified communities, and turn responses into clear insight reports."
+    "Launch AI-generated surveys, connect with verified communities, and turn responses into clear insight reports.",
+  icons: {
+    icon: "/logo-symbol-orange-hq.svg",
+    shortcut: "/logo-symbol-orange-hq.svg"
+  }
 };
 
 export default function RootLayout({

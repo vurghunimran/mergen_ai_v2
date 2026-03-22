@@ -4,8 +4,8 @@ import AISection from "@/components/AISection";
 import CommunityMap from "@/components/CommunityMap";
 import Footer from "@/components/Footer";
 import HowItWorks from "@/components/HowItWorks";
-import MergenLogo, { MergenLogoMark } from "@/components/MergenLogo";
 import PromoVideo from "@/components/PromoVideo";
+import SiteLogo from "@/components/SiteLogo";
 
 const navItems = [
   { href: "#promo-video", label: "Vision" },
@@ -21,8 +21,8 @@ export default function HomePage() {
       <header className="fixed inset-x-0 top-0 z-50">
         <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between rounded-full border border-white/70 bg-white/80 px-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl">
-            <Link href="/" aria-label="MERGEN AI home">
-              <MergenLogo markClassName="h-9 w-9 rounded-[12px] sm:h-10 sm:w-10" wordmarkClassName="text-base sm:text-xl" />
+            <Link href="/" aria-label="MERGEN home">
+              <SiteLogo markClassName="h-9 sm:h-10" />
             </Link>
 
             <nav className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
@@ -70,16 +70,7 @@ export default function HomePage() {
               <div className="absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(180deg,transparent_0%,rgba(255,208,126,0.10)_100%)]" />
 
               <div className="relative z-10">
-                <div className="mx-auto flex w-fit items-center gap-3 rounded-full border border-white/60 bg-white/70 px-4 py-3 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl">
-                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-[16px] bg-[#fff1e7] text-[#e56a1c] shadow-[0_16px_36px_rgba(229,106,28,0.14)]">
-                    <MergenLogoMark className="h-7 w-7" />
-                  </span>
-                  <span className="text-sm font-extrabold uppercase tracking-[0.28em] text-slate-800 sm:text-base">
-                    MERGEN AI
-                  </span>
-                </div>
-
-                <span className="mt-6 inline-flex items-center gap-2 rounded-full border border-[#d85a2f]/15 bg-[#fff2ea] px-4 py-2 text-sm font-semibold text-[#d85a2f] shadow-[0_10px_30px_rgba(216,90,47,0.08)]">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#d85a2f]/15 bg-[#fff2ea] px-4 py-2 text-sm font-semibold text-[#d85a2f] shadow-[0_10px_30px_rgba(216,90,47,0.08)]">
                   <Sparkles className="h-4 w-4" />
                   AI-powered research workflows
                 </span>

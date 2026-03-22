@@ -699,18 +699,10 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
               justify-content: center;
               margin-bottom: 32px;
             }
-            .brand-badge {
-              width: 64px;
-              height: 64px;
-              border-radius: 22px;
-              background: linear-gradient(135deg, #ff7a00 0%, #ea5f2d 100%);
-              color: white;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-weight: 800;
-              font-size: 28px;
-              box-shadow: 0 18px 35px rgba(255, 106, 0, 0.22);
+            .brand-mark {
+              display: block;
+              width: 42px;
+              height: auto;
             }
             .brand-name {
               margin-top: 14px;
@@ -845,7 +837,7 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
         <body>
           <div class="page">
             <div class="brand">
-              <div class="brand-badge">M</div>
+              <img class="brand-mark" src="/logo-symbol-orange-hq.svg" alt="MERGEN AI logo" />
               <div class="brand-name">MERGEN AI</div>
             </div>
             <div class="hero">

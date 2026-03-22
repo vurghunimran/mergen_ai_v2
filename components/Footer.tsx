@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Instagram, Linkedin, Sparkles, Twitter } from "lucide-react";
+import { Instagram, Linkedin, Twitter } from "lucide-react";
+import SiteLogo from "@/components/SiteLogo";
 
 const socialLinks = [
   {
@@ -25,12 +26,9 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl rounded-[34px] border border-[#eadfce] bg-[#fff7ee] px-6 py-8 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:px-8 sm:py-10">
         <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
           <div>
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#fff1e7] text-[#d85a2f]">
-                <Sparkles className="h-5 w-5" />
-              </span>
+            <div className="flex items-center gap-4">
+              <SiteLogo markClassName="h-12" textClassName="text-2xl" />
               <div>
-                <p className="text-2xl font-extrabold tracking-tight text-[#d85a2f]">MERGEN</p>
                 <p className="text-sm text-slate-500">Wisdom in the Data.</p>
               </div>
             </div>

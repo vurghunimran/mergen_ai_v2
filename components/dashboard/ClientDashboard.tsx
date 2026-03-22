@@ -21,7 +21,6 @@ import {
   Settings,
   Shield,
   Sparkles,
-  Star,
   Sun,
   Trash2,
   TrendingUp,
@@ -32,6 +31,7 @@ import {
 type DashboardSection = "dashboard" | "active-surveys" | "analytics" | "settings" | "create-survey";
 import CreateSurveyFlow from "@/components/dashboard/CreateSurveyFlow";
 import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
+import SiteLogo from "@/components/SiteLogo";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { buildPersistedProfilePayload, upsertProfileRecords } from "@/lib/supabase/profile-db";
 import type { UserProfile } from "@/lib/supabase/types";
@@ -525,10 +525,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
             aria-label="Go to landing page"
             className="mb-8 flex items-center space-x-3 transition-opacity hover:opacity-85"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#ff7a00] via-[#ff6700] to-[#ff5500] shadow-[0_10px_26px_rgba(255,102,0,0.26)]">
-              <Star className="h-6 w-6 fill-white text-white" />
-            </div>
-            <span className="text-[17px] font-semibold text-gray-900">Mergen AI</span>
+            <SiteLogo label="MERGEN AI" markClassName="h-11" textClassName="text-[17px] font-semibold text-gray-900 sm:text-[17px]" />
           </Link>
 
           {isCreateSurveySection ? (
@@ -569,10 +566,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
             aria-label="Go to landing page"
             className="flex items-center space-x-3 transition-opacity hover:opacity-85 lg:hidden"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#ff7a00] via-[#ff6700] to-[#ff5500] shadow-[0_10px_26px_rgba(255,102,0,0.22)]">
-              <Star className="h-5 w-5 fill-white text-white" />
-            </div>
-            <span className="font-semibold text-gray-900">Mergen AI</span>
+            <SiteLogo label="MERGEN AI" markClassName="h-10" textClassName="font-semibold text-gray-900 sm:text-lg" />
           </Link>
 
           <div className="flex items-center space-x-4">

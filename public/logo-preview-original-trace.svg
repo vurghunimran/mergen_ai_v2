@@ -1,0 +1,42 @@
+<svg width="360" height="360" viewBox="0 0 360 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="360" height="360" rx="84" fill="#FFF7F1"/>
+  <path
+    d="M118 76L196 154L158 192L120 154L158 116L196 154L158 232"
+    stroke="#E5681B"
+    stroke-width="28"
+    stroke-linecap="square"
+    stroke-linejoin="miter"
+  />
+  <path
+    d="M158 116L118 76"
+    stroke="#E5681B"
+    stroke-width="28"
+    stroke-linecap="square"
+  />
+  <path
+    d="M196 154L234 116"
+    stroke="#E5681B"
+    stroke-width="28"
+    stroke-linecap="square"
+  />
+  <path
+    d="M234 116L158 40"
+    stroke="#E5681B"
+    stroke-width="28"
+    stroke-linecap="square"
+    stroke-linejoin="miter"
+  />
+  <path
+    d="M120 154L82 192"
+    stroke="#E5681B"
+    stroke-width="28"
+    stroke-linecap="square"
+  />
+  <path
+    d="M82 192L158 268"
+    stroke="#E5681B"
+    stroke-width="28"
+    stroke-linecap="square"
+    stroke-linejoin="miter"
+  />
+</svg>

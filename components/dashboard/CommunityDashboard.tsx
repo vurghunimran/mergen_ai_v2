@@ -19,13 +19,13 @@ import {
   Settings,
   Shield,
   Sparkles,
-  Star,
   Sun,
   TrendingUp,
   User,
   Wallet
 } from "lucide-react";
 import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
+import SiteLogo from "@/components/SiteLogo";
 import { buildCommunityAudienceProfile, matchesSurveyAudience } from "@/lib/audience-matching";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { buildPersistedProfilePayload, upsertProfileRecords } from "@/lib/supabase/profile-db";
@@ -769,10 +769,7 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
             aria-label="Go to landing page"
             className="mb-8 flex items-center space-x-3 transition-opacity hover:opacity-85"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#5b2d91] via-[#7c3aed] to-[#9b6bff] shadow-[0_10px_26px_rgba(124,58,237,0.28)]">
-              <Star className="h-6 w-6 fill-white text-white" />
-            </div>
-            <span className="text-[17px] font-semibold text-gray-900">Mergen AI</span>
+            <SiteLogo label="MERGEN AI" markClassName="h-11" textClassName="text-[17px] font-semibold text-gray-900 sm:text-[17px]" />
           </Link>
 
           <nav className="space-y-2">
@@ -807,10 +804,7 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
             aria-label="Go to landing page"
             className="flex items-center space-x-3 transition-opacity hover:opacity-85 lg:hidden"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#5b2d91] via-[#7c3aed] to-[#9b6bff] shadow-[0_10px_26px_rgba(124,58,237,0.24)]">
-              <Star className="h-5 w-5 fill-white text-white" />
-            </div>
-            <span className="font-semibold text-gray-900">Mergen AI</span>
+            <SiteLogo label="MERGEN AI" markClassName="h-10" textClassName="font-semibold text-gray-900 sm:text-lg" />
           </Link>
 
           <div className="flex items-center space-x-4">

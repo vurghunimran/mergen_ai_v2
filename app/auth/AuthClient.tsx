@@ -18,6 +18,7 @@ import {
   residenceOptions,
   salaryRangeOptions
 } from "@/lib/auth-options";
+import SiteLogo from "@/components/SiteLogo";
 import { upsertProfileRecords, type PersistedProfilePayload } from "@/lib/supabase/profile-db";
 import { createClient } from "@/lib/supabase/client";
 
@@ -380,11 +381,8 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
       <div className="mx-auto max-w-7xl">
         <header className="rounded-full border border-white/70 bg-white/85 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <Link href="/" className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fff1e7] text-[#d85a2f]">
-                <Sparkles className="h-4 w-4" />
-              </span>
-              <span className="text-lg font-extrabold tracking-tight text-[#d85a2f] sm:text-xl">MERGEN</span>
+            <Link href="/" aria-label="MERGEN home">
+              <SiteLogo />
             </Link>
 
             <div className="flex items-center gap-2">
