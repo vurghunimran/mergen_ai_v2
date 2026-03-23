@@ -240,6 +240,14 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
   }, [hasHydratedData, surveys]);
 
   useEffect(() => {
+    const section = searchParams.get("section");
+
+    if (section === "create-survey") {
+      setActiveSection("create-survey");
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
       if (!(event.target instanceof Element)) return;
       if (!event.target.closest("[data-survey-actions]")) {

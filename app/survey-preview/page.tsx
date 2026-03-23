@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import SiteLogo from "@/components/SiteLogo";
 import {
   SURVEY_PREVIEW_STORAGE_KEY,
@@ -116,6 +118,13 @@ export default function SurveyPreviewPage() {
           <p className="mt-3 text-[16px] leading-7 text-[#667085]">
             No survey preview is stored in this browser yet. Return to the survey builder and click Preview again.
           </p>
+          <Link
+            href="/dashboard/client?section=create-survey"
+            className="mt-6 inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#4b5563] transition hover:border-[#ffd1ad] hover:text-[#d85d1c]"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Builder
+          </Link>
         </div>
       </main>
     );
@@ -124,6 +133,16 @@ export default function SurveyPreviewPage() {
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fffaf6_0%,#ffffff_100%)] px-6 py-12">
       <div className="mx-auto max-w-5xl">
+        <div className="mb-8">
+          <Link
+            href="/dashboard/client?section=create-survey"
+            className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#4b5563] shadow-[0_12px_24px_rgba(15,23,42,0.04)] transition hover:border-[#ffd1ad] hover:text-[#d85d1c]"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Builder
+          </Link>
+        </div>
+
         <div className="mb-10 flex flex-col items-center justify-center text-center">
           <SiteLogo label="MERGEN AI" markClassName="h-11" textClassName="mt-4 text-[15px] font-bold tracking-[0.18em] text-[#d85d1c]" />
           <h1 className="mt-8 text-[40px] font-bold tracking-[-0.04em] text-[#7c3412]">{preview.title}</h1>

@@ -231,6 +231,16 @@ function syncQuestionsToCount(questions: SurveyQuestion[], draft: SurveyDraft) {
   return [...trimmedQuestions, ...fallbackQuestions.slice(trimmedQuestions.length, draft.questionCount)];
 }
 
+function formatDraftSavedAt() {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(new Date());
+}
+
 export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }: Props) {
   const [stage, setStage] = useState<CreateSurveyStage>("define");
   const [draft, setDraft] = useState<SurveyDraft>(buildInitialDraft);
@@ -573,13 +583,7 @@ export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }:
     const payload: SavedCreateSurveyDraft = {
       stage,
       draft,
-      savedAt: new Intl.DateTimeFormat("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit"
-      }).format(new Date())
+      savedAt: formatDraftSavedAt()
     };
 
     window.localStorage.setItem(CREATE_SURVEY_DRAFT_STORAGE_KEY, JSON.stringify(payload));
@@ -594,8 +598,16 @@ export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }:
       createdAt: new Date().toISOString()
     };
 
+    window.localStorage.setItem(
+      CREATE_SURVEY_DRAFT_STORAGE_KEY,
+      JSON.stringify({
+        stage,
+        draft,
+        savedAt: formatDraftSavedAt()
+      } satisfies SavedCreateSurveyDraft)
+    );
     window.localStorage.setItem(SURVEY_PREVIEW_STORAGE_KEY, JSON.stringify(previewPayload));
-    window.open(`${window.location.origin}/survey-preview`, "_blank", "noopener");
+    window.location.assign("/survey-preview?section=create-survey");
   }
 
   async function handleCompletePayment() {
