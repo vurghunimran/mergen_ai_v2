@@ -22,7 +22,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between rounded-full border border-white/70 bg-white/80 px-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl">
             <Link href="/" aria-label="MERGEN home">
-              <SiteLogo markClassName="h-9 sm:h-10" />
+              <SiteLogo markClassName="h-9 sm:h-10" textClassName="landing-text-gradient" />
             </Link>
 
             <nav className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">

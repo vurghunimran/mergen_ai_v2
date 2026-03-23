@@ -27,7 +27,7 @@ export default function Footer() {
         <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
           <div>
             <div className="flex items-center gap-4">
-              <SiteLogo markClassName="h-12" textClassName="text-2xl" />
+              <SiteLogo markClassName="h-12" textClassName="text-2xl landing-text-gradient" />
               <div>
                 <p className="text-sm text-slate-500">Wisdom in the Data.</p>
               </div>
