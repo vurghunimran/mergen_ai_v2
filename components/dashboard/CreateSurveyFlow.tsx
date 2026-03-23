@@ -889,8 +889,12 @@ export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }:
 
       window.location.assign(checkoutUrl);
       return;
-    } catch {
-      setCheckoutError("Could not start Polar checkout. Check Polar env settings and try again.");
+    } catch (error) {
+      setCheckoutError(
+        error instanceof Error
+          ? error.message
+          : "Could not start Polar checkout. Check Polar env settings and try again."
+      );
     } finally {
       setIsCompletingPayment(false);
     }
