@@ -96,6 +96,8 @@ Add these in the Vercel project settings:
 
 If you do not configure the Supabase variables, sign-up, login, dashboard protection, and profile storage will fail. If you do not configure `SUPABASE_SERVICE_ROLE_KEY`, survey publish will still work locally in the client dashboard, but the server cannot read matching community profiles to send launch emails. If you do not configure the Gemini key, the survey builder can still fall back to template questions locally, but the server-side AI assistant will not generate tailored survey content. If you do not configure the Resend variables, the contact form API and community notification API will deploy, but sending email will return a server error. If you do not configure the Polar variables, the payment button cannot create a checkout session. `POLAR_SURVEY_PRODUCT_ID` must be a one-time product, not a recurring monthly subscription product.
 
+Custom uploaded avatar images are intentionally kept in browser local storage, not Supabase auth metadata. Supabase exposes `raw_user_meta_data` in JWTs, so storing large base64 images there can make cookies too large for Vercel requests.
+
 ### Supabase auth settings
 
 Set these in Supabase Auth:

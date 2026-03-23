@@ -38,6 +38,7 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { buildPersistedProfilePayload, upsertProfileRecords } from "@/lib/supabase/profile-db";
 import type { UserProfile } from "@/lib/supabase/types";
 import {
+  CLIENT_DASHBOARD_SETTINGS_STORAGE_KEY,
   CLIENT_PENDING_POLAR_CHECKOUT_STORAGE_KEY,
   CREATE_SURVEY_DRAFT_STORAGE_KEY,
   CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY,
@@ -158,6 +159,35 @@ function getSettingsErrorMessage(error: unknown) {
   return "Could not save your changes. Please try again.";
 }
 
+function readLocalAvatarSettings(storageKey: string) {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(storageKey);
+
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsedValue = JSON.parse(rawValue) as Partial<
+      Pick<DashboardSettings, "avatarMode" | "avatarPreset" | "avatarCustomDataUrl">
+    >;
+
+    return {
+      avatarMode:
+        parsedValue.avatarMode === "custom" || parsedValue.avatarMode === "preset" || parsedValue.avatarMode === "default"
+          ? parsedValue.avatarMode
+          : null,
+      avatarPreset: typeof parsedValue.avatarPreset === "string" ? parsedValue.avatarPreset : null,
+      avatarCustomDataUrl: typeof parsedValue.avatarCustomDataUrl === "string" ? parsedValue.avatarCustomDataUrl : null
+    };
+  } catch {
+    return null;
+  }
+}
+
 function buildChartPoints(values: number[], width: number, height: number, padding: number) {
   const safeMax = Math.max(...values, 1);
   const stepX = values.length > 1 ? (width - padding * 2) / (values.length - 1) : 0;
@@ -246,6 +276,33 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
       setActiveSection("create-survey");
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    const localAvatarSettings = readLocalAvatarSettings(CLIENT_DASHBOARD_SETTINGS_STORAGE_KEY);
+
+    if (!localAvatarSettings?.avatarMode) {
+      return;
+    }
+
+    setSavedSettings((currentSettings) => ({
+      ...currentSettings,
+      avatarMode: localAvatarSettings.avatarMode ?? currentSettings.avatarMode,
+      avatarPreset: localAvatarSettings.avatarPreset ?? currentSettings.avatarPreset,
+      avatarCustomDataUrl: localAvatarSettings.avatarCustomDataUrl ?? currentSettings.avatarCustomDataUrl
+    }));
+    setSettingsForm((currentSettings) => ({
+      ...currentSettings,
+      avatarMode: localAvatarSettings.avatarMode ?? currentSettings.avatarMode,
+      avatarPreset: localAvatarSettings.avatarPreset ?? currentSettings.avatarPreset,
+      avatarCustomDataUrl: localAvatarSettings.avatarCustomDataUrl ?? currentSettings.avatarCustomDataUrl
+    }));
+    setProfileSnapshot((currentProfile) => ({
+      ...currentProfile,
+      avatarMode: localAvatarSettings.avatarMode ?? currentProfile.avatarMode,
+      avatarPreset: localAvatarSettings.avatarPreset ?? currentProfile.avatarPreset,
+      avatarCustomDataUrl: localAvatarSettings.avatarCustomDataUrl ?? currentProfile.avatarCustomDataUrl
+    }));
+  }, []);
 
   useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
@@ -625,9 +682,9 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
           educational_institution: profileSnapshot.educationalInstitution,
           appearance: nextSettings.appearance,
           two_factor_enabled: nextSettings.twoFactorEnabled,
-          [AVATAR_METADATA_KEYS.mode]: nextSettings.avatarMode,
+          [AVATAR_METADATA_KEYS.mode]: nextSettings.avatarMode === "custom" ? "default" : nextSettings.avatarMode,
           [AVATAR_METADATA_KEYS.preset]: nextSettings.avatarPreset,
-          [AVATAR_METADATA_KEYS.customDataUrl]: nextSettings.avatarCustomDataUrl
+          [AVATAR_METADATA_KEYS.customDataUrl]: ""
         }
       };
 
@@ -660,6 +717,15 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
       };
 
       await upsertProfileRecords(supabase, nextProfileSnapshot.id, buildPersistedProfilePayload(nextProfileSnapshot));
+
+      window.localStorage.setItem(
+        CLIENT_DASHBOARD_SETTINGS_STORAGE_KEY,
+        JSON.stringify({
+          avatarMode: nextSettings.avatarMode,
+          avatarPreset: nextSettings.avatarPreset,
+          avatarCustomDataUrl: nextSettings.avatarCustomDataUrl
+        })
+      );
 
       setProfileSnapshot(nextProfileSnapshot);
       setSavedSettings(nextSettings);
