@@ -4,6 +4,7 @@ export const COMMUNITY_DASHBOARD_SETTINGS_STORAGE_KEY = "mergen-community-dashbo
 export const COMMUNITY_DASHBOARD_PROGRESS_STORAGE_KEY = "mergen-community-dashboard-progress";
 export const CREATE_SURVEY_DRAFT_STORAGE_KEY = "mergen-client-create-survey-draft";
 export const CLIENT_PENDING_POLAR_CHECKOUT_STORAGE_KEY = "mergen-client-pending-polar-checkout";
+export const SURVEY_PREVIEW_STORAGE_KEY = "mergen-survey-preview";
 
 export type SurveyQuestionType =
   | "Multiple choice"
@@ -88,5 +89,12 @@ export type SurveyCheckoutPayload = {
 
 export type PendingPolarCheckout = {
   payload: SurveyCheckoutPayload;
+  createdAt: string;
+};
+
+export type SurveyPreviewPayload = {
+  title: string;
+  subtitle: string;
+  questions: StoredSurveyQuestion[];
   createdAt: string;
 };

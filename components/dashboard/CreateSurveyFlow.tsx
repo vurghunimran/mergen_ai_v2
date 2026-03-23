@@ -20,7 +20,9 @@ import {
 } from "lucide-react";
 import {
   CREATE_SURVEY_DRAFT_STORAGE_KEY,
+  SURVEY_PREVIEW_STORAGE_KEY,
   type StoredSurveyQuestion,
+  type SurveyPreviewPayload,
   type SurveyAudience,
   type SurveyCheckoutPayload,
   type SurveyQuestionType
@@ -227,101 +229,6 @@ function syncQuestionsToCount(questions: SurveyQuestion[], draft: SurveyDraft) {
 
   const fallbackQuestions = generateQuestions(draft);
   return [...trimmedQuestions, ...fallbackQuestions.slice(trimmedQuestions.length, draft.questionCount)];
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-function renderPreviewQuestionHtml(question: SurveyQuestion, index: number) {
-  const title = escapeHtml(question.text);
-  const type = escapeHtml(question.type);
-
-  if (question.type === "Open question") {
-    return `
-      <div class="question-card">
-        <div class="question-number">Question ${index + 1}</div>
-        <h3>${title}</h3>
-        <div class="question-type">${type}</div>
-        <textarea class="preview-textarea" placeholder="Type your answer here..." disabled></textarea>
-      </div>
-    `;
-  }
-
-  if (question.type === "Likert scale") {
-    return `
-      <div class="question-card">
-        <div class="question-number">Question ${index + 1}</div>
-        <h3>${title}</h3>
-        <div class="question-type">${type}</div>
-        <div class="likert-grid">
-          ${question.options.map((option) => `<div class="likert-pill">${escapeHtml(option)}</div>`).join("")}
-        </div>
-      </div>
-    `;
-  }
-
-  if (question.type === "Rating scale") {
-    return `
-      <div class="question-card">
-        <div class="question-number">Question ${index + 1}</div>
-        <h3>${title}</h3>
-        <div class="question-type">${type}</div>
-        <div class="rating-row">
-          ${question.options.map((option) => `<div class="rating-pill">${escapeHtml(option)}</div>`).join("")}
-        </div>
-      </div>
-    `;
-  }
-
-  if (question.type === "Ranking") {
-    return `
-      <div class="question-card">
-        <div class="question-number">Question ${index + 1}</div>
-        <h3>${title}</h3>
-        <div class="question-type">${type}</div>
-        <div class="ranking-list">
-          ${question.options
-            .map(
-              (option, optionIndex) => `
-                <div class="ranking-item">
-                  <span class="ranking-index">${optionIndex + 1}</span>
-                  ${escapeHtml(option)}
-                </div>
-              `
-            )
-            .join("")}
-        </div>
-      </div>
-    `;
-  }
-
-  const inputType = question.type === "Multiple choice" ? "checkbox" : "radio";
-
-  return `
-    <div class="question-card">
-      <div class="question-number">Question ${index + 1}</div>
-      <h3>${title}</h3>
-      <div class="question-type">${type}</div>
-      <div class="option-list">
-        ${question.options
-          .map(
-            (option) => `
-              <label class="option-row">
-                <input type="${inputType}" disabled />
-                <span>${escapeHtml(option)}</span>
-              </label>
-            `
-          )
-          .join("")}
-      </div>
-    </div>
-  `;
 }
 
 export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }: Props) {
@@ -680,194 +587,15 @@ export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }:
   }
 
   function handleOpenPreview() {
-    const previewWindow = window.open("", "_blank", "noopener,noreferrer");
-    if (!previewWindow) return;
+    const previewPayload: SurveyPreviewPayload = {
+      title: draft.surveyTitle || "Survey Preview",
+      subtitle: `${draft.researchArea} survey for respondents in ${buildTargetLabel(draft)} aged ${draft.ageMin}-${draft.ageMax}.`,
+      questions: syncQuestionsToCount(draft.questions.length ? draft.questions : generateQuestions(draft), draft),
+      createdAt: new Date().toISOString()
+    };
 
-    const html = `
-      <!doctype html>
-      <html lang="en">
-        <head>
-          <meta charset="utf-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <title>${escapeHtml(draft.surveyTitle || "Survey Preview")}</title>
-          <style>
-            * { box-sizing: border-box; }
-            body {
-              margin: 0;
-              font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-              background: linear-gradient(180deg, #fffaf6 0%, #ffffff 100%);
-              color: #1f2937;
-            }
-            .page {
-              max-width: 900px;
-              margin: 0 auto;
-              padding: 48px 24px 72px;
-            }
-            .brand {
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              margin-bottom: 32px;
-            }
-            .brand-mark {
-              display: block;
-              width: 42px;
-              height: auto;
-            }
-            .brand-name {
-              margin-top: 14px;
-              font-size: 15px;
-              letter-spacing: 0.18em;
-              font-weight: 700;
-              color: #d85d1c;
-            }
-            .hero {
-              text-align: center;
-              margin-bottom: 36px;
-            }
-            .hero h1 {
-              margin: 0;
-              font-size: 40px;
-              line-height: 1.1;
-              color: #7c3412;
-            }
-            .hero p {
-              margin: 12px auto 0;
-              max-width: 640px;
-              color: #667085;
-              font-size: 16px;
-              line-height: 1.7;
-            }
-            .question-list {
-              display: grid;
-              gap: 20px;
-            }
-            .question-card {
-              border: 1px solid #e5e7eb;
-              border-radius: 28px;
-              background: white;
-              padding: 24px;
-              box-shadow: 0 18px 44px rgba(15, 23, 42, 0.04);
-            }
-            .question-number {
-              display: inline-flex;
-              padding: 6px 12px;
-              border-radius: 999px;
-              background: #fff3e7;
-              color: #d85d1c;
-              font-size: 12px;
-              font-weight: 700;
-              letter-spacing: 0.12em;
-              text-transform: uppercase;
-            }
-            .question-card h3 {
-              margin: 16px 0 8px;
-              font-size: 20px;
-              line-height: 1.5;
-              color: #101828;
-            }
-            .question-type {
-              margin-bottom: 16px;
-              color: #98a2b3;
-              font-size: 13px;
-              text-transform: uppercase;
-              letter-spacing: 0.1em;
-              font-weight: 700;
-            }
-            .option-list, .ranking-list {
-              display: grid;
-              gap: 10px;
-            }
-            .option-row, .ranking-item {
-              display: flex;
-              align-items: center;
-              gap: 12px;
-              border-radius: 16px;
-              background: #fcfcfd;
-              padding: 14px 16px;
-              color: #475467;
-              font-size: 15px;
-            }
-            .likert-grid {
-              display: grid;
-              grid-template-columns: repeat(5, minmax(0, 1fr));
-              gap: 10px;
-            }
-            .likert-pill, .rating-pill {
-              border-radius: 16px;
-              background: #fcfcfd;
-              padding: 14px 12px;
-              text-align: center;
-              color: #475467;
-              font-size: 14px;
-              font-weight: 600;
-            }
-            .rating-row {
-              display: flex;
-              gap: 10px;
-              flex-wrap: wrap;
-            }
-            .rating-pill {
-              width: 52px;
-              height: 52px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: #d85d1c;
-            }
-            .ranking-index {
-              width: 28px;
-              height: 28px;
-              border-radius: 999px;
-              background: #fff3e7;
-              display: inline-flex;
-              align-items: center;
-              justify-content: center;
-              color: #d85d1c;
-              font-size: 13px;
-              font-weight: 700;
-            }
-            .preview-textarea {
-              min-height: 120px;
-              width: 100%;
-              border-radius: 18px;
-              border: 1px dashed #d0d5dd;
-              background: #fcfcfd;
-              padding: 16px;
-              color: #98a2b3;
-              font-size: 15px;
-              resize: vertical;
-            }
-            @media (max-width: 700px) {
-              .hero h1 { font-size: 30px; }
-              .likert-grid { grid-template-columns: 1fr; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="page">
-            <div class="brand">
-              <img class="brand-mark" src="/logo-symbol-orange-hq.svg" alt="MERGEN AI logo" />
-              <div class="brand-name">MERGEN AI</div>
-            </div>
-            <div class="hero">
-              <h1>${escapeHtml(draft.surveyTitle || "Survey Preview")}</h1>
-              <p>${escapeHtml(
-                `${draft.researchArea} survey for respondents in ${buildTargetLabel(draft)} aged ${draft.ageMin}-${draft.ageMax}.`
-              )}</p>
-            </div>
-            <div class="question-list">
-              ${draft.questions.map((question, index) => renderPreviewQuestionHtml(question, index)).join("")}
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    previewWindow.document.open();
-    previewWindow.document.write(html);
-    previewWindow.document.close();
+    window.localStorage.setItem(SURVEY_PREVIEW_STORAGE_KEY, JSON.stringify(previewPayload));
+    window.open(`${window.location.origin}/survey-preview`, "_blank", "noopener");
   }
 
   async function handleCompletePayment() {
