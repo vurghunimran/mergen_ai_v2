@@ -37,6 +37,7 @@ import {
   COMMUNITY_DASHBOARD_SETTINGS_STORAGE_KEY,
   COMMUNITY_DASHBOARD_PROGRESS_STORAGE_KEY,
   type ClientSurvey,
+  type SurveyResponseRecord,
   type SurveyAnswerValue,
   type StoredSurveyQuestion,
   type SurveyAnswerMap,
@@ -195,7 +196,7 @@ function estimateSurveyCredits(survey: ClientSurvey) {
 }
 
 function matchesSurveyToMember(survey: ClientSurvey, memberProfile: ReturnType<typeof buildMemberProfile>) {
-  return matchesSurveyAudience(survey.audience, memberProfile);
+  return matchesSurveyAudience(survey.audience, memberProfile, { allowCountryFallback: true });
 }
 
 function buildFallbackQuestions(survey: ClientSurvey): StoredSurveyQuestion[] {
@@ -804,6 +805,16 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
         durationSeconds: evaluation.completionTimeSeconds,
         source: evaluation.source
       };
+      const rawResponse: SurveyResponseRecord = {
+        id: `response-${selectedSurvey.id}-${Date.now()}`,
+        respondentId: profileSnapshot.id,
+        submittedAt: completion.completedAt,
+        completionTimeSeconds: evaluation.completionTimeSeconds,
+        trustScore: evaluation.trustScore,
+        earnedCredits: evaluation.credits,
+        summary: evaluation.summary,
+        answers: evaluationRequest.answers
+      };
 
       const nextCompletions = [completion, ...completedSurveys];
       window.localStorage.setItem(
@@ -816,7 +827,8 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
         survey.id === selectedSurvey.id
           ? {
               ...survey,
-              responses: Math.min(survey.targetResponses, survey.responses + 1)
+              responses: Math.min(survey.targetResponses, survey.responses + 1),
+              rawResponses: [rawResponse, ...(survey.rawResponses ?? [])]
             }
           : survey
       );

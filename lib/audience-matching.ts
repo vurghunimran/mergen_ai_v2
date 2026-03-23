@@ -22,6 +22,24 @@ type CommunityAudienceSource = {
   familyStatus?: string | null;
 };
 
+export type AudienceMatchTier = "country_priority" | "demographic_fallback" | "none";
+
+export type AudienceMatchResult = {
+  matchesCountry: boolean;
+  matchesAge: boolean;
+  matchesGender: boolean;
+  matchesEducation: boolean;
+  matchesInterests: boolean;
+  matchesSalary: boolean;
+  matchesResidence: boolean;
+  matchesFamilyStatus: boolean;
+  matchesCoreDemographics: boolean;
+  matchesSocioEconomic: boolean;
+  score: number;
+  tier: AudienceMatchTier;
+  isQualified: boolean;
+};
+
 function normalizeText(value: string) {
   return value.trim().toLowerCase();
 }
@@ -244,9 +262,49 @@ export function buildCommunityAudienceProfile(source: CommunityAudienceSource): 
   };
 }
 
-export function matchesSurveyAudience(audience: SurveyAudience | undefined, memberProfile: CommunityAudienceProfile) {
+function buildAudienceMatchScore(result: {
+  matchesCountry: boolean;
+  matchesAge: boolean;
+  matchesGender: boolean;
+  matchesEducation: boolean;
+  matchesInterests: boolean;
+  matchesSalary: boolean;
+  matchesResidence: boolean;
+  matchesFamilyStatus: boolean;
+}) {
+  return (
+    (result.matchesCountry ? 40 : 0) +
+    (result.matchesAge ? 15 : 0) +
+    (result.matchesGender ? 10 : 0) +
+    (result.matchesEducation ? 10 : 0) +
+    (result.matchesSalary ? 10 : 0) +
+    (result.matchesResidence ? 5 : 0) +
+    (result.matchesFamilyStatus ? 5 : 0) +
+    (result.matchesInterests ? 5 : 0)
+  );
+}
+
+export function evaluateSurveyAudienceMatch(
+  audience: SurveyAudience | undefined,
+  memberProfile: CommunityAudienceProfile,
+  options?: { allowCountryFallback?: boolean }
+): AudienceMatchResult {
   if (!audience) {
-    return true;
+    return {
+      matchesCountry: true,
+      matchesAge: true,
+      matchesGender: true,
+      matchesEducation: true,
+      matchesInterests: true,
+      matchesSalary: true,
+      matchesResidence: true,
+      matchesFamilyStatus: true,
+      matchesCoreDemographics: true,
+      matchesSocioEconomic: true,
+      score: 100,
+      tier: "country_priority",
+      isQualified: true
+    };
   }
 
   const matchesCountry =
@@ -265,17 +323,108 @@ export function matchesSurveyAudience(audience: SurveyAudience | undefined, memb
     normalizeResidence(audience.residence ?? "") === "any" ||
     normalizeResidence(audience.residence ?? "") === normalizeResidence(memberProfile.residence);
   const matchesFamilyValue = matchesFamilyStatus(audience.familyStatus ?? "", memberProfile.familyStatus);
+  const matchesCoreDemographics = matchesAge && matchesGender && matchesEducationValue;
+  const matchesSocioEconomic = matchesSalary && matchesResidenceValue && matchesFamilyValue;
+  const strictCountryMatch = matchesCountry && matchesCoreDemographics && matchesSocioEconomic && matchesInterestValue;
+  const demographicFallbackMatch =
+    !matchesCountry && matchesCoreDemographics && matchesSocioEconomic && matchesInterestValue;
+  const allowCountryFallback = options?.allowCountryFallback ?? false;
+  const isQualified = strictCountryMatch || (allowCountryFallback && demographicFallbackMatch);
 
-  return (
-    matchesCountry &&
-    matchesAge &&
-    matchesGender &&
-    matchesEducationValue &&
-    matchesInterestValue &&
-    matchesSalary &&
-    matchesResidenceValue &&
-    matchesFamilyValue
-  );
+  return {
+    matchesCountry,
+    matchesAge,
+    matchesGender,
+    matchesEducation: matchesEducationValue,
+    matchesInterests: matchesInterestValue,
+    matchesSalary,
+    matchesResidence: matchesResidenceValue,
+    matchesFamilyStatus: matchesFamilyValue,
+    matchesCoreDemographics,
+    matchesSocioEconomic,
+    score: buildAudienceMatchScore({
+      matchesCountry,
+      matchesAge,
+      matchesGender,
+      matchesEducation: matchesEducationValue,
+      matchesInterests: matchesInterestValue,
+      matchesSalary,
+      matchesResidence: matchesResidenceValue,
+      matchesFamilyStatus: matchesFamilyValue
+    }),
+    tier: strictCountryMatch ? "country_priority" : allowCountryFallback && demographicFallbackMatch ? "demographic_fallback" : "none",
+    isQualified
+  };
+}
+
+export function matchesSurveyAudience(
+  audience: SurveyAudience | undefined,
+  memberProfile: CommunityAudienceProfile,
+  options?: { allowCountryFallback?: boolean }
+) {
+  return evaluateSurveyAudienceMatch(audience, memberProfile, options).isQualified;
+}
+
+type RankedAudienceCandidate<T> = {
+  candidate: T;
+  memberProfile: CommunityAudienceProfile;
+  match: AudienceMatchResult;
+};
+
+function compareAudienceCandidates<T>(left: RankedAudienceCandidate<T>, right: RankedAudienceCandidate<T>) {
+  const tierOrder: Record<AudienceMatchTier, number> = {
+    country_priority: 0,
+    demographic_fallback: 1,
+    none: 2
+  };
+
+  if (tierOrder[left.match.tier] !== tierOrder[right.match.tier]) {
+    return tierOrder[left.match.tier] - tierOrder[right.match.tier];
+  }
+
+  if (left.match.score !== right.match.score) {
+    return right.match.score - left.match.score;
+  }
+
+  if (left.match.matchesInterests !== right.match.matchesInterests) {
+    return Number(right.match.matchesInterests) - Number(left.match.matchesInterests);
+  }
+
+  return 0;
+}
+
+export function prioritizeAudienceCandidates<T>(
+  audience: SurveyAudience | undefined,
+  candidates: T[],
+  getMemberProfile: (candidate: T) => CommunityAudienceProfile,
+  targetResponses = 0
+) {
+  const evaluatedCandidates = candidates
+    .map((candidate) => {
+      const memberProfile = getMemberProfile(candidate);
+
+      return {
+        candidate,
+        memberProfile,
+        match: evaluateSurveyAudienceMatch(audience, memberProfile, { allowCountryFallback: true })
+      };
+    })
+    .filter((item) => item.match.isQualified);
+
+  const prioritizedCountryMatches = evaluatedCandidates
+    .filter((item) => item.match.tier === "country_priority")
+    .sort(compareAudienceCandidates);
+
+  if (!audience || audience.countries.length === 0 || prioritizedCountryMatches.length >= targetResponses) {
+    return prioritizedCountryMatches.map((item) => item.candidate);
+  }
+
+  const fallbackCandidates = evaluatedCandidates
+    .filter((item) => item.match.tier === "demographic_fallback")
+    .sort(compareAudienceCandidates);
+  const fallbackSlots = Math.max(0, targetResponses - prioritizedCountryMatches.length);
+
+  return [...prioritizedCountryMatches, ...fallbackCandidates.slice(0, fallbackSlots)].map((item) => item.candidate);
 }
 
 export function buildAudienceCriteriaEntries(audience: SurveyAudience) {

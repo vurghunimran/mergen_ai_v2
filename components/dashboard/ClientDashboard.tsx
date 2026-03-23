@@ -8,8 +8,11 @@ import {
   CheckCircle,
   ClipboardList,
   Clock,
+  Download,
+  FileText,
   Home,
   Lock,
+  Loader2,
   LogOut,
   Mail,
   Moon,
@@ -46,6 +49,15 @@ import {
   type PendingPolarCheckout,
   type SurveyCheckoutPayload
 } from "@/lib/dashboard-data";
+import type { SurveyReportResponse } from "@/lib/dashboard-data";
+import {
+  buildQuestionCharts,
+  buildRawDataCsv,
+  buildTrustDistribution,
+  getAverageCompletionMinutes,
+  getAverageTrustScore,
+  getSurveyResponseCount
+} from "@/lib/survey-report";
 
 const navigationItems: Array<{
   icon: typeof Home;
@@ -94,6 +106,11 @@ const INITIAL_SURVEYS = [
     createdDate: "Mar 15, 2026",
     description: "Published survey project focused on women in education communities across Asia.",
     questionCount: 10,
+    researchDescription: "A study about how women in education communities across Asia evaluate online learning opportunities.",
+    researchScope: "Women aged 25-55 in India and Singapore interested in online learning.",
+    hypothesis: "Women in education communities will prioritize flexibility and certification quality.",
+    includeDetailedAI: false,
+    rawResponses: [],
     audience: {
       countries: ["India", "Singapore"],
       ageMin: 25,
@@ -207,6 +224,16 @@ function buildChartArea(values: number[], width: number, height: number, padding
   return `${padding},${height - padding} ${points} ${finalX},${height - padding}`;
 }
 
+function downloadTextFile(filename: string, content: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType });
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(objectUrl);
+}
+
 export default function ClientDashboard({ initialProfile }: { initialProfile: UserProfile }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -226,6 +253,10 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
   const [paymentNotice, setPaymentNotice] = useState("");
   const [paymentError, setPaymentError] = useState("");
   const [isConfirmingPolarCheckout, setIsConfirmingPolarCheckout] = useState(false);
+  const [selectedReportSurveyId, setSelectedReportSurveyId] = useState<number | null>(null);
+  const [reportCache, setReportCache] = useState<Record<number, SurveyReportResponse>>({});
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [reportError, setReportError] = useState("");
   const [securityForm, setSecurityForm] = useState({
     newPassword: "",
     confirmPassword: ""
@@ -251,7 +282,12 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
                 "Published survey project.",
               questions:
                 survey.questions ??
-                INITIAL_SURVEYS.find((initialSurvey) => initialSurvey.id === survey.id)?.questions
+                INITIAL_SURVEYS.find((initialSurvey) => initialSurvey.id === survey.id)?.questions,
+              researchDescription: survey.researchDescription ?? survey.description,
+              researchScope: survey.researchScope ?? "",
+              hypothesis: survey.hypothesis ?? "",
+              includeDetailedAI: Boolean(survey.includeDetailedAI),
+              rawResponses: Array.isArray(survey.rawResponses) ? survey.rawResponses : []
             }))
           );
         }
@@ -337,8 +373,23 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
   const totalTargetResponses = surveys.reduce((sum, survey) => sum + survey.targetResponses, 0);
   const completionRate = totalTargetResponses > 0 ? Math.round((totalResponses / totalTargetResponses) * 100) : 0;
   const filteredProjects = surveys.filter((survey) => survey.name.toLowerCase().includes(projectSearch.toLowerCase()));
-  const averageTrustScore = surveys.length > 0 ? 92 : 0;
-  const averageResponseTime = surveys.length > 0 ? 0.5 : 0;
+  const totalRawResponses = surveys.reduce((sum, survey) => sum + getSurveyResponseCount(survey), 0);
+  const averageTrustScore =
+    totalRawResponses > 0
+      ? Math.round(surveys.reduce((sum, survey) => sum + getAverageTrustScore(survey) * getSurveyResponseCount(survey), 0) / totalRawResponses)
+      : 0;
+  const averageResponseTime =
+    totalRawResponses > 0
+      ? surveys.reduce((sum, survey) => sum + getAverageCompletionMinutes(survey) * getSurveyResponseCount(survey), 0) / totalRawResponses
+      : 0;
+  const aiTargetedSurveys = surveys.filter((survey) => survey.includeDetailedAI);
+  const selectedReportSurvey = surveys.find((survey) => survey.id === selectedReportSurveyId) ?? null;
+  const selectedReport = selectedReportSurveyId ? reportCache[selectedReportSurveyId] ?? null : null;
+  const selectedReportCharts = selectedReportSurvey ? buildQuestionCharts(selectedReportSurvey) : [];
+  const selectedTrustDistribution = selectedReportSurvey ? buildTrustDistribution(selectedReportSurvey) : [];
+  const selectedReportAverageTrust = selectedReportSurvey ? getAverageTrustScore(selectedReportSurvey) : 0;
+  const selectedReportAverageMinutes = selectedReportSurvey ? getAverageCompletionMinutes(selectedReportSurvey) : 0;
+  const selectedReportResponseCount = selectedReportSurvey ? getSurveyResponseCount(selectedReportSurvey) : 0;
   const engagementSeries =
     surveys.length > 0
       ? [
@@ -426,7 +477,12 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
       description: payload.description,
       questionCount: payload.questionCount,
       audience: payload.audience,
-      questions: payload.questions
+      questions: payload.questions,
+      researchDescription: payload.researchDescription,
+      researchScope: payload.researchScope,
+      hypothesis: payload.hypothesis,
+      includeDetailedAI: payload.includeDetailedAI,
+      rawResponses: []
     };
 
     setSurveys((currentSurveys) => {
@@ -476,6 +532,71 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
         notificationError: "Survey published, but community emails could not be sent."
       };
     }
+  }
+
+  async function handleOpenAiReport(survey: ClientSurvey) {
+    if (!survey.includeDetailedAI) {
+      setReportError("AI report is only available for surveys that purchased the AI report add-on.");
+      return;
+    }
+
+    if (!survey.rawResponses?.length) {
+      setReportError("Raw data is not available yet for this survey.");
+      return;
+    }
+
+    setSelectedReportSurveyId(survey.id);
+    setReportError("");
+
+    if (reportCache[survey.id]) {
+      return;
+    }
+
+    setIsGeneratingReport(true);
+
+    try {
+      const response = await fetch("/api/survey-report", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ survey })
+      });
+
+      const report = (await response.json()) as Partial<SurveyReportResponse> & { error?: string };
+
+      if (!response.ok || !report.executiveSummary) {
+        throw new Error(report.error ?? "AI report could not be generated.");
+      }
+
+      const normalizedReport: SurveyReportResponse = {
+        executiveSummary: report.executiveSummary,
+        keyInsights: Array.isArray(report.keyInsights) ? report.keyInsights : [],
+        futurePredictions: Array.isArray(report.futurePredictions) ? report.futurePredictions : [],
+        recommendations: Array.isArray(report.recommendations) ? report.recommendations : [],
+        methodologyNote: report.methodologyNote ?? "",
+        dataQualityNote: report.dataQualityNote ?? ""
+      };
+
+      setReportCache((currentCache) => ({
+        ...currentCache,
+        [survey.id]: normalizedReport
+      }));
+    } catch (error) {
+      setReportError(error instanceof Error ? error.message : "AI report could not be generated.");
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  }
+
+  function handleDownloadRawData(survey: ClientSurvey) {
+    if (!survey.rawResponses?.length) {
+      setReportError("No raw data is available to download yet.");
+      return;
+    }
+
+    const filename = `${survey.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "survey"}-raw-data.csv`;
+    downloadTextFile(filename, buildRawDataCsv(survey), "text/csv;charset=utf-8;");
   }
 
   async function handleStartCheckout(payload: SurveyCheckoutPayload) {
@@ -1351,6 +1472,155 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
                   </div>
                 </div>
 
+                {reportError ? (
+                  <div className="rounded-[24px] border border-[#ffd9bf] bg-[#fff4ea] p-5 text-sm text-[#c2410c] shadow-sm">
+                    {reportError}
+                  </div>
+                ) : null}
+
+                {selectedReportSurvey ? (
+                  <div className="space-y-5 rounded-[28px] border border-[#eadfce] bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_100%)] p-6 shadow-[0_18px_44px_rgba(15,23,42,0.04)] sm:p-7">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#c56b36]">AI Report</p>
+                        <h2 className="mt-2 text-[28px] font-bold tracking-[-0.03em] text-[#1f2937]">{selectedReportSurvey.name}</h2>
+                        <p className="mt-3 max-w-3xl text-[15px] leading-7 text-[#667085]">
+                          {selectedReport?.executiveSummary ?? "Generating AI report..."}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadRawData(selectedReportSurvey)}
+                          className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#4b5563] transition hover:border-[#ffd1ad] hover:text-[#d85d1c]"
+                        >
+                          <Download className="h-4 w-4" />
+                          Download Raw Data
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedReportSurveyId(null)}
+                          className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#4b5563] transition hover:border-[#ffd1ad] hover:text-[#d85d1c]"
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <div className="rounded-[24px] border border-gray-200 bg-white p-5">
+                        <p className="text-sm font-medium text-[#8a94a6]">Validated responses</p>
+                        <p className="mt-3 text-[34px] font-bold text-[#111827]">{selectedReportResponseCount}</p>
+                      </div>
+                      <div className="rounded-[24px] border border-gray-200 bg-white p-5">
+                        <p className="text-sm font-medium text-[#8a94a6]">Average trust</p>
+                        <p className="mt-3 text-[34px] font-bold text-[#111827]">{selectedReportAverageTrust}/100</p>
+                      </div>
+                      <div className="rounded-[24px] border border-gray-200 bg-white p-5">
+                        <p className="text-sm font-medium text-[#8a94a6]">Avg. completion time</p>
+                        <p className="mt-3 text-[34px] font-bold text-[#111827]">{selectedReportAverageMinutes.toFixed(1)}m</p>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                      <div className="rounded-[24px] border border-gray-200 bg-white p-5">
+                        <h3 className="text-[20px] font-bold tracking-[-0.03em] text-[#1f2937]">Trust distribution</h3>
+                        <div className="mt-5 space-y-4">
+                          {selectedTrustDistribution.map((bucket) => (
+                            <div key={bucket.label}>
+                              <div className="mb-2 flex items-center justify-between text-sm font-medium text-[#4b5563]">
+                                <span>{bucket.label}</span>
+                                <span>{bucket.value}</span>
+                              </div>
+                              <div className="h-3 rounded-full bg-[#fff1e5]">
+                                <div
+                                  className="h-3 rounded-full bg-[linear-gradient(90deg,#ff7a00_0%,#f35b04_100%)]"
+                                  style={{
+                                    width: `${Math.min(100, (bucket.value / Math.max(selectedReportResponseCount, 1)) * 100)}%`
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="rounded-[24px] border border-gray-200 bg-white p-5">
+                        <h3 className="text-[20px] font-bold tracking-[-0.03em] text-[#1f2937]">Report notes</h3>
+                        <div className="mt-5 space-y-4 text-sm leading-7 text-[#667085]">
+                          <p>{selectedReport?.dataQualityNote ?? "Evaluating data quality..."}</p>
+                          <p>{selectedReport?.methodologyNote ?? "Preparing methodology note..."}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {selectedReportCharts.length > 0 ? (
+                      <div className="grid gap-5 lg:grid-cols-2">
+                        {selectedReportCharts.map((chart) => (
+                          <div key={chart.questionId} className="rounded-[24px] border border-gray-200 bg-white p-5">
+                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#c56b36]">{chart.questionType}</p>
+                            <h3 className="mt-2 text-[18px] font-semibold leading-7 text-[#1f2937]">{chart.questionText}</h3>
+                            <div className="mt-5 space-y-4">
+                              {chart.dataPoints.map((point) => (
+                                <div key={`${chart.questionId}-${point.label}`}>
+                                  <div className="mb-2 flex items-center justify-between gap-4 text-sm font-medium text-[#4b5563]">
+                                    <span className="max-w-[75%] truncate">{point.label}</span>
+                                    <span>{point.value}</span>
+                                  </div>
+                                  <div className="h-3 rounded-full bg-[#f5f5f5]">
+                                    <div
+                                      className="h-3 rounded-full bg-[linear-gradient(90deg,#ea643a_0%,#f35b04_100%)]"
+                                      style={{
+                                        width: `${Math.min(100, (point.value / Math.max(selectedReportResponseCount, 1)) * 100)}%`
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    <div className="grid gap-5 xl:grid-cols-3">
+                      <div className="rounded-[24px] border border-gray-200 bg-white p-5 xl:col-span-1">
+                        <h3 className="text-[20px] font-bold tracking-[-0.03em] text-[#1f2937]">Key insights</h3>
+                        <div className="mt-4 space-y-3">
+                          {(selectedReport?.keyInsights ?? []).map((insight) => (
+                            <div key={insight} className="rounded-2xl bg-[#fff7ef] px-4 py-3 text-sm leading-7 text-[#5b4636]">
+                              {insight}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="rounded-[24px] border border-gray-200 bg-white p-5 xl:col-span-1">
+                        <h3 className="text-[20px] font-bold tracking-[-0.03em] text-[#1f2937]">Future prediction</h3>
+                        <div className="mt-4 space-y-3">
+                          {(selectedReport?.futurePredictions ?? []).map((prediction) => (
+                            <div key={prediction} className="rounded-2xl bg-[#f5f9ff] px-4 py-3 text-sm leading-7 text-[#43526b]">
+                              {prediction}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="rounded-[24px] border border-gray-200 bg-white p-5 xl:col-span-1">
+                        <h3 className="text-[20px] font-bold tracking-[-0.03em] text-[#1f2937]">Recommended next steps</h3>
+                        <div className="mt-4 space-y-3">
+                          {(selectedReport?.recommendations ?? []).map((recommendation) => (
+                            <div key={recommendation} className="rounded-2xl bg-[#f6fbf6] px-4 py-3 text-sm leading-7 text-[#44584a]">
+                              {recommendation}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-[0_18px_44px_rgba(15,23,42,0.04)] sm:p-6">
                   <div className="mb-6 flex items-center justify-between gap-4">
                     <h2 className="text-[22px] font-bold tracking-[-0.03em] text-[#1f2937]">Recent AI-Targeted Surveys</h2>
@@ -1363,7 +1633,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
                     </button>
                   </div>
 
-                  {surveys.length > 0 ? (
+                  {aiTargetedSurveys.length > 0 ? (
                     <div className="overflow-x-auto">
                       <table className="min-w-full border-separate border-spacing-0">
                         <thead>
@@ -1372,11 +1642,12 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
                             <th className="border-b border-gray-200 pb-4 pr-6">Audience Group</th>
                             <th className="border-b border-gray-200 pb-4 pr-6">Status</th>
                             <th className="border-b border-gray-200 pb-4 pr-6">Responses</th>
-                            <th className="border-b border-gray-200 pb-4">Sentiment</th>
+                            <th className="border-b border-gray-200 pb-4 pr-6">Sentiment</th>
+                            <th className="border-b border-gray-200 pb-4">Actions</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {surveys.map((survey) => (
+                          {aiTargetedSurveys.map((survey) => (
                             <tr key={survey.id}>
                               <td className="border-b border-gray-100 py-6 pr-6 align-top">
                                 <div>
@@ -1400,8 +1671,34 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
                               <td className="border-b border-gray-100 py-6 pr-6 align-top text-[15px] font-medium text-[#4b5563]">
                                 {survey.responses} / {survey.targetResponses}
                               </td>
-                              <td className="border-b border-gray-100 py-6 align-top text-[15px] font-medium text-[#667085]">
+                              <td className="border-b border-gray-100 py-6 pr-6 align-top text-[15px] font-medium text-[#667085]">
                                 Live
+                              </td>
+                              <td className="border-b border-gray-100 py-6 align-top">
+                                <div className="flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => void handleOpenAiReport(survey)}
+                                    disabled={isGeneratingReport || !survey.rawResponses?.length}
+                                    className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff7a00_0%,#ea5f2d_100%)] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(234,95,45,0.2)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    {isGeneratingReport && selectedReportSurveyId === survey.id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <FileText className="h-4 w-4" />
+                                    )}
+                                    AI REPORT
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDownloadRawData(survey)}
+                                    disabled={!survey.rawResponses?.length}
+                                    className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-[#4b5563] transition hover:border-[#ffd1ad] hover:text-[#d85d1c] disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    <Download className="h-4 w-4" />
+                                    Download Raw Data
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -1410,7 +1707,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
                     </div>
                   ) : (
                     <div className="flex min-h-[180px] items-center justify-center rounded-2xl bg-[#fafafa] text-center">
-                      <p className="text-[16px] text-[#8a94a6]">No survey analytics available yet.</p>
+                      <p className="text-[16px] text-[#8a94a6]">No paid AI-report surveys are available yet.</p>
                     </div>
                   )}
                 </div>

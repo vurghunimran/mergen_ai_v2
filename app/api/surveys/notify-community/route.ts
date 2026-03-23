@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
-import { buildAudienceCriteriaEntries, buildCommunityAudienceProfile, matchesSurveyAudience } from "@/lib/audience-matching";
+import {
+  buildAudienceCriteriaEntries,
+  buildCommunityAudienceProfile,
+  prioritizeAudienceCandidates
+} from "@/lib/audience-matching";
 import type { SurveyAudience } from "@/lib/dashboard-data";
 import { getCurrentUserProfile } from "@/lib/supabase/profile-server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -130,7 +134,7 @@ export async function POST(request: Request) {
       ((communityRows as CommunityProfileRow[] | null) ?? []).map((row) => [row.id, row])
     );
 
-    const matchingRecipients = ((baseRows as CommunityBaseRow[] | null) ?? [])
+    const candidateRecipients = ((baseRows as CommunityBaseRow[] | null) ?? [])
       .map((baseRow) => {
         const communityRow = communityById.get(baseRow.id);
 
@@ -149,16 +153,31 @@ export async function POST(request: Request) {
           familyStatus: communityRow.family_status
         });
 
-        if (!matchesSurveyAudience(body.audience, memberProfile)) {
-          return null;
-        }
-
         return {
           email: baseRow.email,
-          firstName: baseRow.first_name?.trim() || "there"
+          firstName: baseRow.first_name?.trim() || "there",
+          memberProfile
         };
       })
-      .filter((recipient): recipient is { email: string; firstName: string } => recipient !== null);
+      .filter(
+        (
+          recipient
+        ): recipient is {
+          email: string;
+          firstName: string;
+          memberProfile: ReturnType<typeof buildCommunityAudienceProfile>;
+        } => recipient !== null
+      );
+
+    const matchingRecipients = prioritizeAudienceCandidates(
+      body.audience,
+      candidateRecipients,
+      (candidate) => candidate.memberProfile,
+      body.targetResponses
+    ).map(({ email, firstName }) => ({
+      email,
+      firstName
+    }));
 
     if (matchingRecipients.length === 0) {
       return NextResponse.json({

@@ -63,6 +63,17 @@ export type SurveyAudience = {
   researchArea: string;
 };
 
+export type SurveyResponseRecord = {
+  id: string;
+  respondentId: string;
+  submittedAt: string;
+  completionTimeSeconds: number;
+  trustScore: number;
+  earnedCredits: number;
+  summary: string;
+  answers: SurveySubmissionAnswer[];
+};
+
 export type ClientSurvey = {
   id: number;
   name: string;
@@ -75,6 +86,11 @@ export type ClientSurvey = {
   questionCount?: number;
   audience?: SurveyAudience;
   questions?: StoredSurveyQuestion[];
+  researchDescription?: string;
+  researchScope?: string;
+  hypothesis?: string;
+  includeDetailedAI?: boolean;
+  rawResponses?: SurveyResponseRecord[];
 };
 
 export type SurveyCheckoutPayload = {
@@ -82,6 +98,9 @@ export type SurveyCheckoutPayload = {
   targetResponses: number;
   questionCount: number;
   description: string;
+  researchDescription: string;
+  researchScope: string;
+  hypothesis: string;
   audience: SurveyAudience;
   questions: StoredSurveyQuestion[];
   includeDetailedAI: boolean;
@@ -97,4 +116,17 @@ export type SurveyPreviewPayload = {
   subtitle: string;
   questions: StoredSurveyQuestion[];
   createdAt: string;
+};
+
+export type SurveyReportRequest = {
+  survey: ClientSurvey;
+};
+
+export type SurveyReportResponse = {
+  executiveSummary: string;
+  keyInsights: string[];
+  futurePredictions: string[];
+  recommendations: string[];
+  methodologyNote: string;
+  dataQualityNote: string;
 };

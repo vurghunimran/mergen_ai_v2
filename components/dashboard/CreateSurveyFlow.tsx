@@ -34,6 +34,7 @@ import {
   formatUsd,
   getAcademicSurveyBasePrice
 } from "@/lib/survey-pricing";
+import { surveyRegionCountries, surveyRegionGroups, type SurveyRegion } from "@/lib/country-regions";
 import {
   questionOptionsForType,
   surveyQuestionTypes,
@@ -93,17 +94,6 @@ const researchAreas = [
   "Business",
   "Communication Studies"
 ] as const;
-
-const regionCountries = {
-  Europe: ["United Kingdom", "Germany", "France", "Netherlands", "Italy", "Spain", "Sweden", "Poland", "Portugal"],
-  "North America": ["United States", "Canada", "Mexico"],
-  "Latin America": ["Brazil", "Argentina", "Chile", "Colombia", "Peru", "Uruguay"],
-  MENA: ["United Arab Emirates", "Saudi Arabia", "Egypt", "Morocco", "Jordan", "Qatar", "Turkey"],
-  "Asia Pacific": ["India", "Indonesia", "Singapore", "Malaysia", "Thailand", "Vietnam", "Philippines", "Japan", "South Korea"],
-  Africa: ["South Africa", "Nigeria", "Kenya", "Ghana", "Morocco", "Egypt"]
-} as const;
-
-const regionGroups = Object.keys(regionCountries) as Array<keyof typeof regionCountries>;
 
 const financialRanges = [
   "All salary ranges",
@@ -298,7 +288,10 @@ export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }:
   }, [draft.includeDetailedAI, draft.questionCount, draft.questions.length, draft.respondentCount]);
 
   const currentStageIndex = stageItems.findIndex((item) => item.id === stage);
-  const availableCountries = regionCountries[draft.targetRegion as keyof typeof regionCountries].filter(
+  const currentRegion = surveyRegionGroups.includes(draft.targetRegion as SurveyRegion)
+    ? (draft.targetRegion as SurveyRegion)
+    : surveyRegionGroups[0];
+  const availableCountries = surveyRegionCountries[currentRegion].filter(
     (country) => !draft.selectedCountries.includes(country)
   );
   const ageMinPercentage = ((draft.ageMin - 18) / (80 - 18)) * 100;
@@ -624,6 +617,9 @@ export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }:
         targetResponses: draft.respondentCount,
         questionCount: draft.questions.length || draft.questionCount,
         description: `${draft.researchArea} survey for ${draft.gender.toLowerCase()} respondents aged ${draft.ageMin}-${draft.ageMax} in ${buildTargetLabel(draft)}.`,
+        researchDescription: draft.assistantPrompt || buildDefaultPrompt(draft),
+        researchScope: draft.researchScope || buildDefaultScope(draft),
+        hypothesis: draft.hypothesis || buildDefaultHypothesis(draft),
         audience: {
           countries: draft.selectedCountries,
           ageMin: draft.ageMin,
@@ -790,7 +786,7 @@ export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }:
                     onChange={(event) => handleRegionChange(event.target.value)}
                     className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-[16px] text-gray-900 outline-none transition focus:border-[#ff6a00]"
                   >
-                    {regionGroups.map((region) => (
+                    {surveyRegionGroups.map((region) => (
                       <option key={region} value={region}>
                         {region}
                       </option>
