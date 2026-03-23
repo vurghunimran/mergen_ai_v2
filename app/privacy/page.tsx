@@ -55,7 +55,7 @@ export default function PrivacyPage() {
         <section className="space-y-3">
           <h2 className="font-heading text-2xl font-bold">Third-party Services</h2>
           <p>
-            MERGEN AI uses service providers including Supabase (data infrastructure), OpenAI (AI processing), and DodoPayments
+            MERGEN AI uses service providers including Supabase (data infrastructure), Google Gemini (AI processing), and Polar
             (payments). These providers process data under contractual terms and appropriate safeguards. Their independent privacy
             notices describe how they handle data in their systems.
           </p>

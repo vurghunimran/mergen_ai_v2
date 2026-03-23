@@ -7,18 +7,28 @@ import {
   type SurveyAssistantResponse
 } from "@/lib/survey-assistant";
 
-type OpenAIResponsesPayload = {
-  output_text?: string;
+type GeminiResponsesPayload = {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        text?: string;
+      }>;
+    };
+    finishReason?: string;
+  }>;
+  promptFeedback?: {
+    blockReason?: string;
+  };
   error?: {
     message?: string;
   };
 };
 
-type OpenAISurveyResult = Omit<SurveyAssistantResponse, "questions"> & {
+type GeminiSurveyResult = Omit<SurveyAssistantResponse, "questions"> & {
   questions: Array<Pick<StoredSurveyQuestion, "text" | "type" | "options">>;
 };
 
-const openAiModel = "gpt-5-mini";
+const geminiModel = "gemini-2.5-flash";
 
 function buildSurveySchema(questionCount: number) {
   return {
@@ -110,7 +120,7 @@ function fallbackValue(value: string, fallback: string) {
   return trimmed || fallback;
 }
 
-function normalizeSurveyResult(payload: OpenAISurveyResult, requestBody: SurveyAssistantRequest): SurveyAssistantResponse {
+function normalizeSurveyResult(payload: GeminiSurveyResult, requestBody: SurveyAssistantRequest): SurveyAssistantResponse {
   return {
     assistantPrompt: fallbackValue(payload.assistantPrompt, requestBody.assistantPrompt),
     researchScope: fallbackValue(payload.researchScope, requestBody.researchScope),
@@ -124,12 +134,19 @@ function normalizeSurveyResult(payload: OpenAISurveyResult, requestBody: SurveyA
   };
 }
 
+function extractGeminiText(payload: GeminiResponsesPayload) {
+  return payload.candidates
+    ?.flatMap((candidate) => candidate.content?.parts ?? [])
+    .map((part) => part.text?.trim())
+    .find((text): text is string => Boolean(text));
+}
+
 export async function POST(request: Request) {
   try {
-    const openAiApiKey = process.env.OPENAI_API_KEY;
+    const geminiApiKey = process.env.GEMINI_API_KEY;
 
-    if (!openAiApiKey) {
-      return NextResponse.json({ error: "Missing OpenAI configuration. Add OPENAI_API_KEY." }, { status: 500 });
+    if (!geminiApiKey) {
+      return NextResponse.json({ error: "Missing Gemini configuration. Add GEMINI_API_KEY." }, { status: 500 });
     }
 
     const requestBody = (await request.json()) as Partial<SurveyAssistantRequest>;
@@ -162,54 +179,67 @@ export async function POST(request: Request) {
       );
     }
 
-    const openAiResponse = await fetch("https://api.openai.com/v1/responses", {
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`,
+      {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${openAiApiKey}`,
+        "x-goog-api-key": geminiApiKey,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: openAiModel,
-        reasoning: {
-          effort: "medium"
+        systemInstruction: {
+          parts: [
+            {
+              text: buildSystemPrompt()
+            }
+          ]
         },
-        input: [
-          {
-            role: "system",
-            content: buildSystemPrompt()
-          },
+        contents: [
           {
             role: "user",
-            content: buildUserPrompt(payload)
+            parts: [
+              {
+                text: buildUserPrompt(payload)
+              }
+            ]
           }
         ],
-        text: {
-          format: {
-            type: "json_schema",
-            name: "survey_generation",
-            schema: buildSurveySchema(questionCount),
-            strict: true
-          }
+        generationConfig: {
+          temperature: 0.7,
+          responseMimeType: "application/json",
+          responseJsonSchema: buildSurveySchema(questionCount)
         }
       }),
       cache: "no-store",
       signal: AbortSignal.timeout(30000)
-    });
+    }
+    );
 
-    const openAiPayload = (await openAiResponse.json()) as OpenAIResponsesPayload;
+    const geminiPayload = (await geminiResponse.json()) as GeminiResponsesPayload;
 
-    if (!openAiResponse.ok) {
+    if (!geminiResponse.ok) {
       return NextResponse.json(
-        { error: openAiPayload.error?.message ?? "OpenAI request failed." },
+        { error: geminiPayload.error?.message ?? "Gemini request failed." },
         { status: 500 }
       );
     }
 
-    if (!openAiPayload.output_text) {
-      return NextResponse.json({ error: "OpenAI did not return a valid survey payload." }, { status: 500 });
+    const responseText = extractGeminiText(geminiPayload);
+
+    if (!responseText) {
+      return NextResponse.json(
+        {
+          error:
+            geminiPayload.promptFeedback?.blockReason
+              ? `Gemini blocked the response: ${geminiPayload.promptFeedback.blockReason}.`
+              : "Gemini did not return a valid survey payload."
+        },
+        { status: 500 }
+      );
     }
 
-    const parsedPayload = JSON.parse(openAiPayload.output_text) as OpenAISurveyResult;
+    const parsedPayload = JSON.parse(responseText) as GeminiSurveyResult;
     const normalizedPayload = normalizeSurveyResult(parsedPayload, {
       ...payload,
       assistantPrompt: payload.assistantPrompt || `I want to research ${payload.surveyTitle || payload.researchArea}.`,
