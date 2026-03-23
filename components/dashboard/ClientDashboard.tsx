@@ -2,7 +2,7 @@
 
 import { type FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Activity,
   CheckCircle,
@@ -36,8 +36,12 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { buildPersistedProfilePayload, upsertProfileRecords } from "@/lib/supabase/profile-db";
 import type { UserProfile } from "@/lib/supabase/types";
 import {
+  CLIENT_PENDING_POLAR_CHECKOUT_STORAGE_KEY,
+  CREATE_SURVEY_DRAFT_STORAGE_KEY,
   CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY,
-  type ClientSurvey
+  type ClientSurvey,
+  type PendingPolarCheckout,
+  type SurveyCheckoutPayload
 } from "@/lib/dashboard-data";
 
 const navigationItems: Array<{
@@ -167,6 +171,7 @@ function buildChartArea(values: number[], width: number, height: number, padding
 
 export default function ClientDashboard({ initialProfile }: { initialProfile: UserProfile }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createSupabaseClient();
   const [profileSnapshot, setProfileSnapshot] = useState<UserProfile>(initialProfile);
   const [surveys, setSurveys] = useState<ClientSurvey[]>(INITIAL_SURVEYS);
@@ -180,6 +185,9 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [settingsError, setSettingsError] = useState("");
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [paymentNotice, setPaymentNotice] = useState("");
+  const [paymentError, setPaymentError] = useState("");
+  const [isConfirmingPolarCheckout, setIsConfirmingPolarCheckout] = useState(false);
   const [securityForm, setSecurityForm] = useState({
     newPassword: "",
     confirmPassword: ""
@@ -318,14 +326,10 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
     router.refresh();
   }
 
-  async function handleLaunchSurvey(payload: {
-    title: string;
-    targetResponses: number;
-    questionCount: number;
-    description: string;
-    audience: ClientSurvey["audience"];
-    questions: ClientSurvey["questions"];
-  }) {
+  async function publishSurvey(payload: SurveyCheckoutPayload) {
+    setPaymentNotice("");
+    setPaymentError("");
+
     const createdDate = new Intl.DateTimeFormat("en-US", {
       month: "short",
       day: "numeric",
@@ -394,6 +398,135 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
       };
     }
   }
+
+  async function handleStartCheckout(payload: SurveyCheckoutPayload) {
+    setPaymentNotice("");
+    setPaymentError("");
+
+    window.localStorage.setItem(
+      CLIENT_PENDING_POLAR_CHECKOUT_STORAGE_KEY,
+      JSON.stringify({
+        payload,
+        createdAt: new Date().toISOString()
+      } satisfies PendingPolarCheckout)
+    );
+
+    const response = await fetch("/api/polar/checkout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        surveyTitle: payload.title,
+        questionCount: payload.questionCount,
+        respondentCount: payload.targetResponses,
+        includeDetailedAI: payload.includeDetailedAI
+      })
+    });
+
+    const data = (await response.json()) as {
+      checkoutUrl?: string;
+      error?: string;
+    };
+
+    if (!response.ok || !data.checkoutUrl) {
+      window.localStorage.removeItem(CLIENT_PENDING_POLAR_CHECKOUT_STORAGE_KEY);
+      throw new Error(data.error ?? "Polar checkout could not be created.");
+    }
+
+    return {
+      checkoutUrl: data.checkoutUrl
+    };
+  }
+
+  useEffect(() => {
+    if (!hasHydratedData || isConfirmingPolarCheckout) {
+      return;
+    }
+
+    const paymentStatus = searchParams.get("payment");
+    const polarCheckoutId = searchParams.get("polar_checkout_id");
+
+    if (!polarCheckoutId) {
+      if (paymentStatus === "cancelled") {
+        setPaymentNotice("Polar checkout was cancelled. Your survey draft is still saved.");
+        window.history.replaceState(null, "", "/dashboard/client");
+      }
+      return;
+    }
+
+    let cancelled = false;
+
+    async function finalizePolarCheckout() {
+      setIsConfirmingPolarCheckout(true);
+      setPaymentError("");
+      setPaymentNotice("");
+
+      try {
+        const pendingCheckoutRaw = window.localStorage.getItem(CLIENT_PENDING_POLAR_CHECKOUT_STORAGE_KEY);
+
+        if (!pendingCheckoutRaw) {
+          throw new Error("Payment returned from Polar, but no pending survey draft was found on this device.");
+        }
+
+        const pendingCheckout = JSON.parse(pendingCheckoutRaw) as PendingPolarCheckout;
+
+        const verificationResponse = await fetch(`/api/polar/checkout/${polarCheckoutId}`);
+        const verificationData = (await verificationResponse.json()) as {
+          isPaid?: boolean;
+          status?: string;
+          error?: string;
+        };
+
+        if (!verificationResponse.ok) {
+          throw new Error(verificationData.error ?? "Could not verify Polar checkout.");
+        }
+
+        if (!verificationData.isPaid) {
+          throw new Error(
+            verificationData.status
+              ? `Polar checkout is ${verificationData.status}, not paid yet.`
+              : "Polar checkout is not paid yet."
+          );
+        }
+
+        const launchResult = await publishSurvey(pendingCheckout.payload);
+
+        if (cancelled) {
+          return;
+        }
+
+        window.localStorage.removeItem(CLIENT_PENDING_POLAR_CHECKOUT_STORAGE_KEY);
+        window.localStorage.removeItem(CREATE_SURVEY_DRAFT_STORAGE_KEY);
+        setActiveSection("active-surveys");
+        setPaymentNotice(
+          launchResult.notificationError
+            ? `Payment confirmed and survey published. ${launchResult.notificationError}`
+            : launchResult.sentEmails > 0
+              ? `Payment confirmed and survey published. ${launchResult.sentEmails} matching community members were emailed.`
+              : "Payment confirmed and survey published."
+        );
+        window.history.replaceState(null, "", "/dashboard/client");
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        setPaymentError(error instanceof Error ? error.message : "Polar payment verification failed.");
+        window.history.replaceState(null, "", "/dashboard/client");
+      } finally {
+        if (!cancelled) {
+          setIsConfirmingPolarCheckout(false);
+        }
+      }
+    }
+
+    void finalizePolarCheckout();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasHydratedData, isConfirmingPolarCheckout, searchParams]);
 
   function handleSettingsChange<Key extends keyof DashboardSettings>(field: Key, value: DashboardSettings[Key]) {
     setSettingsSaved(false);
@@ -606,6 +739,24 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
 
         <main className="flex-1 overflow-y-auto p-6">
           <div className="mx-auto max-w-7xl space-y-6">
+            {paymentNotice ? (
+              <div className="rounded-2xl border border-[#d7eadf] bg-[#f3fbf6] px-5 py-4 text-sm text-[#166534]">
+                {paymentNotice}
+              </div>
+            ) : null}
+
+            {paymentError ? (
+              <div className="rounded-2xl border border-[#ffd9bf] bg-[#fff4ea] px-5 py-4 text-sm text-[#c2410c]">
+                {paymentError}
+              </div>
+            ) : null}
+
+            {isConfirmingPolarCheckout ? (
+              <div className="rounded-2xl border border-[#ead9cc] bg-white px-5 py-4 text-sm text-slate-600">
+                Verifying Polar payment and publishing your survey...
+              </div>
+            ) : null}
+
             {activeSection === "dashboard" ? (
               <>
                 <div className="relative mb-8 h-64 overflow-hidden rounded-2xl shadow-lg">
@@ -848,7 +999,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
             ) : activeSection === "create-survey" ? (
               <CreateSurveyFlow
                 onBackToDashboard={() => setActiveSection("dashboard")}
-                onLaunchSurvey={handleLaunchSurvey}
+                onStartCheckout={handleStartCheckout}
               />
             ) : activeSection === "active-surveys" ? (
               <section className="max-w-5xl space-y-6">

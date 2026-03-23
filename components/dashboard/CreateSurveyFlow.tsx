@@ -18,7 +18,13 @@ import {
   Wand2,
   X
 } from "lucide-react";
-import { type StoredSurveyQuestion, type SurveyAudience, type SurveyQuestionType } from "@/lib/dashboard-data";
+import {
+  CREATE_SURVEY_DRAFT_STORAGE_KEY,
+  type StoredSurveyQuestion,
+  type SurveyAudience,
+  type SurveyCheckoutPayload,
+  type SurveyQuestionType
+} from "@/lib/dashboard-data";
 import {
   AI_DETAILED_SURVEY_FEE,
   academicQuestionCountOptions,
@@ -33,7 +39,6 @@ import {
   type SurveyAssistantResponse
 } from "@/lib/survey-assistant";
 
-const CREATE_SURVEY_DRAFT_STORAGE_KEY = "mergen-client-create-survey-draft";
 const STEP_TITLE_CLASS_NAME = "text-[34px] font-bold tracking-[-0.04em] text-[#7c3412]";
 
 type CreateSurveyStage = "define" | "generate" | "payment" | "launch";
@@ -69,24 +74,9 @@ type SavedCreateSurveyDraft = {
   savedAt: string;
 };
 
-type LaunchPayload = {
-  title: string;
-  targetResponses: number;
-  questionCount: number;
-  description: string;
-  audience: SurveyAudience;
-  questions: StoredSurveyQuestion[];
-};
-
-type LaunchResult = {
-  matchedRecipients: number;
-  sentEmails: number;
-  notificationError: string;
-};
-
 type Props = {
   onBackToDashboard: () => void;
-  onLaunchSurvey: (payload: LaunchPayload) => Promise<LaunchResult>;
+  onStartCheckout: (payload: SurveyCheckoutPayload) => Promise<{ checkoutUrl: string }>;
 };
 
 const researchAreas = [
@@ -323,13 +313,14 @@ function renderPreviewQuestionHtml(question: SurveyQuestion, index: number) {
   `;
 }
 
-export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: Props) {
+export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }: Props) {
   const [stage, setStage] = useState<CreateSurveyStage>("define");
   const [draft, setDraft] = useState<SurveyDraft>(buildInitialDraft);
   const [draftNotice, setDraftNotice] = useState("");
   const [generationError, setGenerationError] = useState("");
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const [isCompletingPayment, setIsCompletingPayment] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
   const [launchComplete, setLaunchComplete] = useState(false);
   const [launchTimestamp, setLaunchTimestamp] = useState("");
   const [launchMatchedRecipients, setLaunchMatchedRecipients] = useState(0);
@@ -872,10 +863,10 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
     }
 
     setIsCompletingPayment(true);
-    setLaunchNotificationError("");
+    setCheckoutError("");
 
     try {
-      const launchResult = await onLaunchSurvey({
+      const { checkoutUrl } = await onStartCheckout({
         title: draft.surveyTitle,
         targetResponses: draft.respondentCount,
         questionCount: draft.questions.length || draft.questionCount,
@@ -892,30 +883,17 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
           familyStatus: draft.familyStatus,
           researchArea: draft.researchArea
         },
-        questions: draft.questions
+        questions: draft.questions,
+        includeDetailedAI: draft.includeDetailedAI
       });
 
-      setLaunchMatchedRecipients(launchResult.matchedRecipients);
-      setLaunchSentEmails(launchResult.sentEmails);
-      setLaunchNotificationError(launchResult.notificationError);
+      window.location.assign(checkoutUrl);
+      return;
     } catch {
-      setLaunchMatchedRecipients(0);
-      setLaunchSentEmails(0);
-      setLaunchNotificationError("Survey published, but the community email notification request failed.");
+      setCheckoutError("Could not start Polar checkout. Check Polar env settings and try again.");
     } finally {
       setIsCompletingPayment(false);
     }
-
-    setLaunchComplete(true);
-    setLaunchTimestamp(
-      new Intl.DateTimeFormat("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric"
-      }).format(new Date())
-    );
-    window.localStorage.removeItem(CREATE_SURVEY_DRAFT_STORAGE_KEY);
-    setStage("launch");
   }
 
   function handleBackAfterLaunch() {
@@ -1604,8 +1582,10 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
             ) : null}
 
             <p className="mt-6 rounded-2xl bg-[#fcfcfd] px-4 py-3 text-sm text-[#8a94a6]">
-              DodoPayment gateway will be connected here later. This button currently simulates a successful payment.
+              You will be redirected to Polar Checkout to complete the payment securely.
             </p>
+
+            {checkoutError ? <p className="mt-4 text-sm text-[#c2410c]">{checkoutError}</p> : null}
 
             <button
               type="button"
@@ -1614,7 +1594,7 @@ export default function CreateSurveyFlow({ onBackToDashboard, onLaunchSurvey }: 
               className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff7a00_0%,#ea5f2d_100%)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(255,106,0,0.22)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
             >
               <CreditCard className="h-4 w-4" />
-              {isCompletingPayment ? "Publishing..." : "Complete Payment"}
+              {isCompletingPayment ? "Redirecting..." : "Pay with Polar"}
             </button>
           </div>
         </div>
