@@ -71,7 +71,7 @@ async function polarRequest<T>(path: string, init?: RequestInit) {
 export async function createPolarCheckout(input: CreatePolarCheckoutInput) {
   const productId = getPolarSurveyProductId();
 
-  return polarRequest<PolarCheckoutResponse>("/v1/checkouts", {
+  return polarRequest<PolarCheckoutResponse>("/v1/checkouts/", {
     method: "POST",
     body: JSON.stringify({
       products: [productId],
