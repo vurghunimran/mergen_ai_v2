@@ -22,7 +22,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between rounded-full border border-white/70 bg-white/80 px-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl">
             <Link href="/" aria-label="MERGEN home">
-              <SiteLogo markClassName="h-9 sm:h-10" textClassName="landing-text-gradient" />
+              <SiteLogo markClassName="h-9 sm:h-10" />
             </Link>
 
             <nav className="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
@@ -76,7 +76,9 @@ export default function HomePage() {
                 </span>
 
                 <h1 className="mx-auto mt-8 max-w-3xl text-[clamp(3.5rem,8vw,7rem)] font-extrabold leading-[0.92] tracking-[-0.05em] text-slate-900">
-                  Wisdom in <span className="landing-text-gradient">the Data.</span>
+                  <span className="landing-text-gradient-cool">Wisdom in</span>{" "}
+                  <span className="landing-text-gradient-cool">the</span>{" "}
+                  <span className="landing-text-gradient">Data.</span>
                 </h1>
 
                 <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-700 sm:text-xl">

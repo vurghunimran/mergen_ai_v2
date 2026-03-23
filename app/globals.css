@@ -52,7 +52,14 @@ body {
 }
 
 .landing-text-gradient {
-  background: linear-gradient(90deg, #3f6f9e 0%, #d85a2f 62%, #f39a62 100%);
+  background: linear-gradient(90deg, #b1645e 0%, #e0602f 54%, #f39a62 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.landing-text-gradient-cool {
+  background: linear-gradient(90deg, #4e78a8 0%, #6677a1 52%, #8e6b86 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
