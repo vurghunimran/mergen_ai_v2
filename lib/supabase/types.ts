@@ -2,6 +2,8 @@ export type UserRole = "client" | "community";
 
 export type ProfileAppearance = "light" | "dark";
 
+export type AvatarMode = "default" | "preset" | "custom";
+
 export type BaseProfileRow = {
   id: string;
   role: UserRole;
@@ -53,6 +55,9 @@ export type UserProfile = {
   carCount: string;
   appearance: ProfileAppearance;
   twoFactorEnabled: boolean;
+  avatarMode: AvatarMode;
+  avatarPreset: string;
+  avatarCustomDataUrl: string;
 };
 
 export function isUserRole(value: unknown): value is UserRole {

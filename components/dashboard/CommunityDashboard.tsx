@@ -25,8 +25,10 @@ import {
   Wallet
 } from "lucide-react";
 import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
+import ProfileAvatarPicker from "@/components/dashboard/ProfileAvatarPicker";
 import SiteLogo from "@/components/SiteLogo";
 import { buildCommunityAudienceProfile, matchesSurveyAudience } from "@/lib/audience-matching";
+import { AVATAR_METADATA_KEYS, getDefaultAvatarSrc, resolveAvatarSrc } from "@/lib/profile-avatars";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { buildPersistedProfilePayload, upsertProfileRecords } from "@/lib/supabase/profile-db";
 import type { UserProfile } from "@/lib/supabase/types";
@@ -52,6 +54,9 @@ type CommunitySettings = {
   email: string;
   appearance: "light" | "dark";
   twoFactorEnabled: boolean;
+  avatarMode: UserProfile["avatarMode"];
+  avatarPreset: string;
+  avatarCustomDataUrl: string;
 };
 
 type RewardItem = {
@@ -84,7 +89,10 @@ function buildInitialSettings(profile: UserProfile): CommunitySettings {
     lastName: profile.lastName || "Chen",
     email: profile.email,
     appearance: profile.appearance,
-    twoFactorEnabled: profile.twoFactorEnabled
+    twoFactorEnabled: profile.twoFactorEnabled,
+    avatarMode: profile.avatarMode,
+    avatarPreset: profile.avatarPreset,
+    avatarCustomDataUrl: profile.avatarCustomDataUrl
   };
 }
 
@@ -416,6 +424,12 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
 
   const displayName = `${savedSettings.firstName} ${savedSettings.lastName}`.trim() || "Community member";
   const displayFirstName = savedSettings.firstName.trim() || "Member";
+  const savedAvatarSrc = resolveAvatarSrc({
+    role: "community",
+    avatarMode: savedSettings.avatarMode,
+    avatarPreset: savedSettings.avatarPreset,
+    avatarCustomDataUrl: savedSettings.avatarCustomDataUrl
+  });
   const sectionTitleClassName = "text-[34px] font-bold tracking-[-0.04em] text-[#4f2a78]";
   const isSettingsDark = settingsForm.appearance === "dark";
   const settingsFormClassName = isSettingsDark
@@ -456,6 +470,15 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
     setSecurityForm((current) => ({
       ...current,
       [field]: value
+    }));
+  }
+
+  function handleAvatarChange(value: Pick<CommunitySettings, "avatarMode" | "avatarPreset" | "avatarCustomDataUrl">) {
+    setSettingsSaved(false);
+    setSettingsError("");
+    setSettingsForm((current) => ({
+      ...current,
+      ...value
     }));
   }
 
@@ -502,7 +525,10 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
           interests: profileSnapshot.interests,
           car_count: profileSnapshot.carCount,
           appearance: nextSettings.appearance,
-          two_factor_enabled: nextSettings.twoFactorEnabled
+          two_factor_enabled: nextSettings.twoFactorEnabled,
+          [AVATAR_METADATA_KEYS.mode]: nextSettings.avatarMode,
+          [AVATAR_METADATA_KEYS.preset]: nextSettings.avatarPreset,
+          [AVATAR_METADATA_KEYS.customDataUrl]: nextSettings.avatarCustomDataUrl
         }
       };
 
@@ -526,7 +552,10 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
         firstName: nextSettings.firstName,
         lastName: nextSettings.lastName,
         appearance: nextSettings.appearance,
-        twoFactorEnabled: nextSettings.twoFactorEnabled
+        twoFactorEnabled: nextSettings.twoFactorEnabled,
+        avatarMode: nextSettings.avatarMode,
+        avatarPreset: nextSettings.avatarPreset,
+        avatarCustomDataUrl: nextSettings.avatarCustomDataUrl
       };
 
       await upsertProfileRecords(supabase, nextProfileSnapshot.id, buildPersistedProfilePayload(nextProfileSnapshot));
@@ -820,7 +849,8 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
                 className="rounded-full transition-opacity hover:opacity-90"
               >
                 <ImageWithFallback
-                  src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080"
+                  src={savedAvatarSrc}
+                  fallbackSrc={getDefaultAvatarSrc("community")}
                   alt="Profile"
                   className="h-10 w-10 rounded-full border-2 border-white object-cover shadow-sm"
                 />
@@ -1274,45 +1304,60 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
                   <div className="space-y-8">
                     <div>
                       <h2 className={`text-[22px] font-semibold ${isSettingsDark ? "text-white" : "text-[#111827]"}`}>Profile</h2>
-                      <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
-                        <label className="block">
-                          <span className={settingsLabelClassName}>
-                            <User className="h-4 w-4 text-[#7c3aed]" />
-                            Name
-                          </span>
-                          <input
-                            type="text"
-                            value={settingsForm.firstName}
-                            onChange={(event) => handleSettingsChange("firstName", event.target.value)}
-                            className={settingsInputClassName}
-                          />
-                        </label>
+                      <div className="mt-5 space-y-5">
+                        <ProfileAvatarPicker
+                          role="community"
+                          value={{
+                            avatarMode: settingsForm.avatarMode,
+                            avatarPreset: settingsForm.avatarPreset,
+                            avatarCustomDataUrl: settingsForm.avatarCustomDataUrl
+                          }}
+                          onChange={handleAvatarChange}
+                          onError={setSettingsError}
+                          onClearError={() => setSettingsError("")}
+                          isDark={isSettingsDark}
+                        />
 
-                        <label className="block">
-                          <span className={settingsLabelClassName}>
-                            <User className="h-4 w-4 text-[#7c3aed]" />
-                            Surname
-                          </span>
-                          <input
-                            type="text"
-                            value={settingsForm.lastName}
-                            onChange={(event) => handleSettingsChange("lastName", event.target.value)}
-                            className={settingsInputClassName}
-                          />
-                        </label>
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                          <label className="block">
+                            <span className={settingsLabelClassName}>
+                              <User className="h-4 w-4 text-[#7c3aed]" />
+                              Name
+                            </span>
+                            <input
+                              type="text"
+                              value={settingsForm.firstName}
+                              onChange={(event) => handleSettingsChange("firstName", event.target.value)}
+                              className={settingsInputClassName}
+                            />
+                          </label>
 
-                        <label className="block md:col-span-2">
-                          <span className={settingsLabelClassName}>
-                            <Mail className="h-4 w-4 text-[#7c3aed]" />
-                            Email
-                          </span>
-                          <input
-                            type="email"
-                            value={settingsForm.email}
-                            onChange={(event) => handleSettingsChange("email", event.target.value)}
-                            className={settingsInputClassName}
-                          />
-                        </label>
+                          <label className="block">
+                            <span className={settingsLabelClassName}>
+                              <User className="h-4 w-4 text-[#7c3aed]" />
+                              Surname
+                            </span>
+                            <input
+                              type="text"
+                              value={settingsForm.lastName}
+                              onChange={(event) => handleSettingsChange("lastName", event.target.value)}
+                              className={settingsInputClassName}
+                            />
+                          </label>
+
+                          <label className="block md:col-span-2">
+                            <span className={settingsLabelClassName}>
+                              <Mail className="h-4 w-4 text-[#7c3aed]" />
+                              Email
+                            </span>
+                            <input
+                              type="email"
+                              value={settingsForm.email}
+                              onChange={(event) => handleSettingsChange("email", event.target.value)}
+                              className={settingsInputClassName}
+                            />
+                          </label>
+                        </div>
                       </div>
                     </div>
 

@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
+import { AVATAR_METADATA_KEYS, resolveAvatarSelection } from "@/lib/profile-avatars";
 import { createClient } from "@/lib/supabase/server";
 import {
   isUserRole,
@@ -33,6 +34,12 @@ function mapProfile(
   const roleValue = baseRow?.role ?? metadata.role;
   const role: UserRole = isUserRole(roleValue) ? roleValue : "community";
   const roleCountry = role === "client" ? clientRow?.country : communityRow?.country;
+  const avatarSelection = resolveAvatarSelection(
+    role,
+    metadata[AVATAR_METADATA_KEYS.mode],
+    metadata[AVATAR_METADATA_KEYS.preset],
+    metadata[AVATAR_METADATA_KEYS.customDataUrl]
+  );
 
   return {
     id: user.id,
@@ -54,7 +61,10 @@ function mapProfile(
     interests: communityRow?.interests ?? getStringArray(metadata.interests),
     carCount: communityRow?.car_count ?? getStringValue(metadata.car_count),
     appearance: baseRow?.appearance === "dark" ? "dark" : "light",
-    twoFactorEnabled: Boolean(baseRow?.two_factor_enabled ?? metadata.two_factor_enabled)
+    twoFactorEnabled: Boolean(baseRow?.two_factor_enabled ?? metadata.two_factor_enabled),
+    avatarMode: avatarSelection.avatarMode,
+    avatarPreset: avatarSelection.avatarPreset,
+    avatarCustomDataUrl: avatarSelection.avatarCustomDataUrl
   };
 }
 

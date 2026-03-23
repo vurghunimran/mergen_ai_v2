@@ -16,8 +16,8 @@ import {
   MoreVertical,
   Phone,
   Plus,
-  Search,
   Save,
+  Search,
   Settings,
   Shield,
   Sparkles,
@@ -31,7 +31,9 @@ import {
 type DashboardSection = "dashboard" | "active-surveys" | "analytics" | "settings" | "create-survey";
 import CreateSurveyFlow from "@/components/dashboard/CreateSurveyFlow";
 import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
+import ProfileAvatarPicker from "@/components/dashboard/ProfileAvatarPicker";
 import SiteLogo from "@/components/SiteLogo";
+import { AVATAR_METADATA_KEYS, getDefaultAvatarSrc, resolveAvatarSrc } from "@/lib/profile-avatars";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { buildPersistedProfilePayload, upsertProfileRecords } from "@/lib/supabase/profile-db";
 import type { UserProfile } from "@/lib/supabase/types";
@@ -63,6 +65,9 @@ type DashboardSettings = {
   position: string;
   appearance: "light" | "dark";
   twoFactorEnabled: boolean;
+  avatarMode: UserProfile["avatarMode"];
+  avatarPreset: string;
+  avatarCustomDataUrl: string;
 };
 
 const ACADEMIC_POSITIONS = [
@@ -128,7 +133,10 @@ function buildInitialSettings(profile: UserProfile): DashboardSettings {
     phone: profile.phoneNumber,
     position: profile.position || "Research Lead",
     appearance: profile.appearance,
-    twoFactorEnabled: profile.twoFactorEnabled
+    twoFactorEnabled: profile.twoFactorEnabled,
+    avatarMode: profile.avatarMode,
+    avatarPreset: profile.avatarPreset,
+    avatarCustomDataUrl: profile.avatarCustomDataUrl
   };
 }
 
@@ -284,6 +292,12 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
   const displayName = `${savedSettings.firstName} ${savedSettings.lastName}`.trim() || "Client account";
   const displayFirstName = savedSettings.firstName.trim() || "Client";
   const displayPosition = savedSettings.position.trim() || "Research Lead";
+  const savedAvatarSrc = resolveAvatarSrc({
+    role: "client",
+    avatarMode: savedSettings.avatarMode,
+    avatarPreset: savedSettings.avatarPreset,
+    avatarCustomDataUrl: savedSettings.avatarCustomDataUrl
+  });
   const isSettingsDark = settingsForm.appearance === "dark";
   const settingsFormClassName = isSettingsDark
     ? "rounded-[28px] border border-[#312922] bg-[linear-gradient(180deg,#231d19_0%,#1a1512_100%)] p-8 text-white shadow-[0_22px_55px_rgba(15,23,42,0.18)]"
@@ -546,6 +560,15 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
     }));
   }
 
+  function handleAvatarChange(value: Pick<DashboardSettings, "avatarMode" | "avatarPreset" | "avatarCustomDataUrl">) {
+    setSettingsSaved(false);
+    setSettingsError("");
+    setSettingsForm((currentSettings) => ({
+      ...currentSettings,
+      ...value
+    }));
+  }
+
   function handleSecurityChange(field: "newPassword" | "confirmPassword", value: string) {
     setSettingsSaved(false);
     setSettingsError("");
@@ -593,7 +616,10 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
           country: profileSnapshot.country,
           educational_institution: profileSnapshot.educationalInstitution,
           appearance: nextSettings.appearance,
-          two_factor_enabled: nextSettings.twoFactorEnabled
+          two_factor_enabled: nextSettings.twoFactorEnabled,
+          [AVATAR_METADATA_KEYS.mode]: nextSettings.avatarMode,
+          [AVATAR_METADATA_KEYS.preset]: nextSettings.avatarPreset,
+          [AVATAR_METADATA_KEYS.customDataUrl]: nextSettings.avatarCustomDataUrl
         }
       };
 
@@ -619,7 +645,10 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
         phoneNumber: nextSettings.phone,
         position: nextSettings.position,
         appearance: nextSettings.appearance,
-        twoFactorEnabled: nextSettings.twoFactorEnabled
+        twoFactorEnabled: nextSettings.twoFactorEnabled,
+        avatarMode: nextSettings.avatarMode,
+        avatarPreset: nextSettings.avatarPreset,
+        avatarCustomDataUrl: nextSettings.avatarCustomDataUrl
       };
 
       await upsertProfileRecords(supabase, nextProfileSnapshot.id, buildPersistedProfilePayload(nextProfileSnapshot));
@@ -715,7 +744,8 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
                 className="rounded-full transition-opacity hover:opacity-90"
               >
                 <ImageWithFallback
-                  src="https://images.unsplash.com/photo-1701463387028-3947648f1337?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBhdmF0YXIlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NTY1NDE4ODd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+                  src={savedAvatarSrc}
+                  fallbackSrc={getDefaultAvatarSrc("client")}
                   alt="Profile"
                   className="h-10 w-10 rounded-full border-2 border-white object-cover shadow-sm"
                 />
@@ -1324,76 +1354,91 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
                   <div className="space-y-8">
                     <div>
                       <h2 className={`text-[22px] font-semibold ${isSettingsDark ? "text-white" : "text-[#111827]"}`}>Profile</h2>
-                      <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
-                        <label className="block">
-                          <span className={settingsLabelClassName}>
-                            <User className="h-4 w-4 text-[#f35b04]" />
-                            Name
-                          </span>
-                          <input
-                            type="text"
-                            value={settingsForm.firstName}
-                            onChange={(event) => handleSettingsChange("firstName", event.target.value)}
-                            className={settingsInputClassName}
-                          />
-                        </label>
+                      <div className="mt-5 space-y-5">
+                        <ProfileAvatarPicker
+                          role="client"
+                          value={{
+                            avatarMode: settingsForm.avatarMode,
+                            avatarPreset: settingsForm.avatarPreset,
+                            avatarCustomDataUrl: settingsForm.avatarCustomDataUrl
+                          }}
+                          onChange={handleAvatarChange}
+                          onError={setSettingsError}
+                          onClearError={() => setSettingsError("")}
+                          isDark={isSettingsDark}
+                        />
 
-                        <label className="block">
-                          <span className={settingsLabelClassName}>
-                            <User className="h-4 w-4 text-[#f35b04]" />
-                            Surname
-                          </span>
-                          <input
-                            type="text"
-                            value={settingsForm.lastName}
-                            onChange={(event) => handleSettingsChange("lastName", event.target.value)}
-                            className={settingsInputClassName}
-                          />
-                        </label>
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                          <label className="block">
+                            <span className={settingsLabelClassName}>
+                              <User className="h-4 w-4 text-[#f35b04]" />
+                              Name
+                            </span>
+                            <input
+                              type="text"
+                              value={settingsForm.firstName}
+                              onChange={(event) => handleSettingsChange("firstName", event.target.value)}
+                              className={settingsInputClassName}
+                            />
+                          </label>
 
-                        <label className="block">
-                          <span className={settingsLabelClassName}>
-                            <Mail className="h-4 w-4 text-[#f35b04]" />
-                            Email
-                          </span>
-                          <input
-                            type="email"
-                            value={settingsForm.email}
-                            onChange={(event) => handleSettingsChange("email", event.target.value)}
-                            className={settingsInputClassName}
-                          />
-                        </label>
+                          <label className="block">
+                            <span className={settingsLabelClassName}>
+                              <User className="h-4 w-4 text-[#f35b04]" />
+                              Surname
+                            </span>
+                            <input
+                              type="text"
+                              value={settingsForm.lastName}
+                              onChange={(event) => handleSettingsChange("lastName", event.target.value)}
+                              className={settingsInputClassName}
+                            />
+                          </label>
 
-                        <label className="block">
-                          <span className={settingsLabelClassName}>
-                            <Phone className="h-4 w-4 text-[#f35b04]" />
-                            Phone
-                          </span>
-                          <input
-                            type="tel"
-                            value={settingsForm.phone}
-                            onChange={(event) => handleSettingsChange("phone", event.target.value)}
-                            className={settingsInputClassName}
-                          />
-                        </label>
+                          <label className="block">
+                            <span className={settingsLabelClassName}>
+                              <Mail className="h-4 w-4 text-[#f35b04]" />
+                              Email
+                            </span>
+                            <input
+                              type="email"
+                              value={settingsForm.email}
+                              onChange={(event) => handleSettingsChange("email", event.target.value)}
+                              className={settingsInputClassName}
+                            />
+                          </label>
 
-                        <label className="block md:col-span-2">
-                          <span className={settingsLabelClassName}>
-                            <ClipboardList className="h-4 w-4 text-[#f35b04]" />
-                            Position
-                          </span>
-                          <select
-                            value={settingsForm.position}
-                            onChange={(event) => handleSettingsChange("position", event.target.value)}
-                            className={settingsInputClassName}
-                          >
-                            {ACADEMIC_POSITIONS.map((position) => (
-                              <option key={position} value={position} className="text-gray-900">
-                                {position}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
+                          <label className="block">
+                            <span className={settingsLabelClassName}>
+                              <Phone className="h-4 w-4 text-[#f35b04]" />
+                              Phone
+                            </span>
+                            <input
+                              type="tel"
+                              value={settingsForm.phone}
+                              onChange={(event) => handleSettingsChange("phone", event.target.value)}
+                              className={settingsInputClassName}
+                            />
+                          </label>
+
+                          <label className="block md:col-span-2">
+                            <span className={settingsLabelClassName}>
+                              <ClipboardList className="h-4 w-4 text-[#f35b04]" />
+                              Position
+                            </span>
+                            <select
+                              value={settingsForm.position}
+                              onChange={(event) => handleSettingsChange("position", event.target.value)}
+                              className={settingsInputClassName}
+                            >
+                              {ACADEMIC_POSITIONS.map((position) => (
+                                <option key={position} value={position} className="text-gray-900">
+                                  {position}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        </div>
                       </div>
                     </div>
 
