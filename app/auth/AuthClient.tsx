@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { type CSSProperties, useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ArrowLeft, BadgeCheck, ChevronDown, Globe2, ShieldCheck, Sparkles, Target, Wallet } from "lucide-react";
 import {
@@ -111,7 +111,7 @@ const benefitIcons = {
 } as const;
 
 const inputClassName =
-  "w-full rounded-2xl border border-[#ead9cc] bg-[#fffdf9] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#d85a2f] focus:ring-2 focus:ring-[#d85a2f]/15";
+  "w-full rounded-2xl border border-[color:var(--auth-border)] bg-[color:var(--auth-input-bg)] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[color:var(--auth-accent)] focus:ring-2 focus:ring-[color:var(--auth-accent-soft)]";
 
 const labelClassName = "mb-2 block text-sm font-semibold text-slate-700";
 
@@ -192,6 +192,59 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
   const copy = roleCopy[role];
   const isClient = role === "client";
   const router = useRouter();
+  const authThemeStyle: CSSProperties & Record<string, string> = isClient
+    ? {
+        "--auth-accent": "#d85a2f",
+        "--auth-accent-soft": "rgba(216,90,47,0.15)",
+        "--auth-accent-soft-bg": "#fff4ec",
+        "--auth-accent-softer-bg": "#fff7f1",
+        "--auth-chip-bg": "#fff1e7",
+        "--auth-border": "#ead9cc",
+        "--auth-input-bg": "#fffdf9",
+        "--auth-summary": "#ff9a67",
+        "--auth-title": "#d85a2f",
+        "--auth-message-border": "#f0dfd3",
+        "--auth-message-bg": "#fff7f1",
+        "--auth-selected-bg": "#fff2ea",
+        "--auth-disabled-border": "#efe3da",
+        "--auth-disabled-bg": "#faf6f2"
+      }
+    : {
+        "--auth-accent": "#7c3aed",
+        "--auth-accent-soft": "rgba(124,58,237,0.16)",
+        "--auth-accent-soft-bg": "#f3ecff",
+        "--auth-accent-softer-bg": "#f8f4ff",
+        "--auth-chip-bg": "#f1ebff",
+        "--auth-border": "#dccfff",
+        "--auth-input-bg": "#fffdff",
+        "--auth-summary": "#8e7cf7",
+        "--auth-title": "#6d3fd1",
+        "--auth-message-border": "#eadfff",
+        "--auth-message-bg": "#f8f4ff",
+        "--auth-selected-bg": "#f3ecff",
+        "--auth-disabled-border": "#ede4fb",
+        "--auth-disabled-bg": "#faf8ff"
+      };
+  const errorTextClassName = "mt-2 text-sm text-[color:var(--auth-accent)]";
+  const roleToggleInactiveClassName = "bg-[color:var(--auth-accent-softer-bg)] text-slate-600 hover:text-[color:var(--auth-accent)]";
+  const backButtonClassName =
+    "inline-flex items-center gap-2 rounded-full border border-[color:var(--auth-border)] bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-[color:var(--auth-accent-soft-bg)] hover:text-[color:var(--auth-accent)]";
+  const tabRailClassName = "mt-6 grid grid-cols-2 rounded-full bg-[color:var(--auth-accent-soft-bg)] p-1";
+  const activeTabClassName = "bg-[color:var(--auth-accent)] text-white";
+  const inactiveTabClassName = "text-slate-600";
+  const submitButtonClassName =
+    "w-full rounded-2xl bg-[color:var(--auth-accent)] px-5 py-4 text-base font-bold text-white shadow-[0_20px_40px_rgba(15,23,42,0.12)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70";
+  const messageClassName =
+    "mt-5 rounded-2xl border border-[color:var(--auth-message-border)] bg-[color:var(--auth-message-bg)] px-4 py-3 text-sm text-slate-600";
+  const leftPanelBackground = isClient
+    ? "linear-gradient(155deg,#f5e9dc 0%,#ecdccd 52%,#dccdc2 100%)"
+    : "linear-gradient(155deg,#f3ecff 0%,#e4d9ff 48%,#d5c7fa 100%)";
+  const leftPanelOverlay = isClient
+    ? "radial-gradient(circle_at_top_left,rgba(216,90,47,0.18),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(123,147,178,0.18),transparent_34%)"
+    : "radial-gradient(circle_at_top_left,rgba(124,58,237,0.2),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(103,80,164,0.16),transparent_34%)";
+  const pageBackground = isClient
+    ? "radial-gradient(circle_at_top_left,rgba(216,90,47,0.12),transparent 22%),radial-gradient(circle_at_top_right,rgba(123,147,178,0.18),transparent 22%),linear-gradient(180deg,#fffdf9 0%,#f7f2eb 100%)"
+    : "radial-gradient(circle_at_top_left,rgba(124,58,237,0.14),transparent 22%),radial-gradient(circle_at_top_right,rgba(99,102,241,0.14),transparent 24%),linear-gradient(180deg,#fdfbff 0%,#f4f0fb 100%)";
 
   const [activeTab, setActiveTab] = useState<"signup" | "login">("signup");
   const [institutionOptions, setInstitutionOptions] = useState<string[]>(popularUniversities);
@@ -377,7 +430,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(216,90,47,0.12),transparent_22%),radial-gradient(circle_at_top_right,rgba(123,147,178,0.18),transparent_22%),linear-gradient(180deg,#fffdf9_0%,#f7f2eb_100%)] px-4 py-6 sm:px-6 lg:px-8">
+    <main className="min-h-screen overflow-hidden px-4 py-6 sm:px-6 lg:px-8" style={{ ...authThemeStyle, backgroundImage: pageBackground }}>
       <div className="mx-auto max-w-7xl">
         <header className="rounded-full border border-white/70 bg-white/85 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -389,7 +442,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
               <Link
                 href="/auth?type=client"
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  isClient ? "bg-[#d85a2f] text-white" : "bg-[#fff7f1] text-slate-600 hover:text-[#d85a2f]"
+                  isClient ? "bg-[color:var(--auth-accent)] text-white" : roleToggleInactiveClassName
                 }`}
               >
                 Client
@@ -397,14 +450,14 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
               <Link
                 href="/auth?type=community"
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  !isClient ? "bg-[#d85a2f] text-white" : "bg-[#fff7f1] text-slate-600 hover:text-[#d85a2f]"
+                  !isClient ? "bg-[color:var(--auth-accent)] text-white" : roleToggleInactiveClassName
                 }`}
               >
                 Community
               </Link>
               <Link
                 href="/"
-                className="inline-flex items-center gap-2 rounded-full border border-[#ead9cc] bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-[#d85a2f]/30 hover:text-[#d85a2f]"
+                className={backButtonClassName}
               >
                 <ArrowLeft className="h-4 w-4" />
                 Back
@@ -414,17 +467,23 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
         </header>
 
         <section className="mt-6 grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="relative overflow-hidden rounded-[36px] border border-white/40 bg-[linear-gradient(155deg,#f5e9dc_0%,#ecdccd_52%,#dccdc2_100%)] p-8 shadow-[0_32px_90px_rgba(15,23,42,0.12)] sm:p-10">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(216,90,47,0.18),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(123,147,178,0.18),transparent_34%)]" />
-            <div className="absolute right-[-6rem] top-[-4rem] h-64 w-64 rounded-full bg-[#d85a2f]/14 blur-3xl" />
-            <div className="absolute bottom-[-5rem] left-[-4rem] h-64 w-64 rounded-full bg-[#7b93b2]/16 blur-3xl" />
+          <div className="relative overflow-hidden rounded-[36px] border border-white/40 p-8 shadow-[0_32px_90px_rgba(15,23,42,0.12)] sm:p-10" style={{ backgroundImage: leftPanelBackground }}>
+            <div className="absolute inset-0" style={{ backgroundImage: leftPanelOverlay }} />
+            <div
+              className="absolute right-[-6rem] top-[-4rem] h-64 w-64 rounded-full blur-3xl"
+              style={{ backgroundColor: isClient ? "rgba(216,90,47,0.14)" : "rgba(124,58,237,0.16)" }}
+            />
+            <div
+              className="absolute bottom-[-5rem] left-[-4rem] h-64 w-64 rounded-full blur-3xl"
+              style={{ backgroundColor: isClient ? "rgba(123,147,178,0.16)" : "rgba(99,102,241,0.14)" }}
+            />
 
             <div className="relative">
-              <span className="inline-flex items-center rounded-full border border-white/55 bg-white/45 px-4 py-2 text-sm font-semibold text-[#d85a2f] backdrop-blur-sm">
+              <span className="inline-flex items-center rounded-full border border-white/55 bg-white/45 px-4 py-2 text-sm font-semibold text-[color:var(--auth-accent)] backdrop-blur-sm">
                 {copy.badge}
               </span>
 
-              <p className="mt-6 max-w-2xl text-2xl font-extrabold leading-tight tracking-[-0.03em] text-[#ff9a67] sm:text-3xl">
+              <p className="mt-6 max-w-2xl text-2xl font-extrabold leading-tight tracking-[-0.03em] text-[color:var(--auth-summary)] sm:text-3xl">
                 {copy.summary}
               </p>
 
@@ -438,11 +497,11 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                       className="rounded-[28px] border border-white/55 bg-white/45 px-5 py-5 backdrop-blur-sm"
                     >
                       <div className="flex items-start gap-4">
-                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#fff1e7] text-[#d85a2f] shadow-[0_12px_30px_rgba(216,90,47,0.18)]">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--auth-chip-bg)] text-[color:var(--auth-accent)] shadow-[0_12px_30px_rgba(15,23,42,0.1)]">
                           <Icon className="h-5 w-5" />
                         </span>
                         <div>
-                          <p className="text-base font-extrabold tracking-[-0.02em] text-[#d85a2f]">{benefit.title}</p>
+                          <p className="text-base font-extrabold tracking-[-0.02em] text-[color:var(--auth-title)]">{benefit.title}</p>
                           <p className="mt-2 text-sm leading-7 text-slate-700">{benefit.description}</p>
                         </div>
                       </div>
@@ -456,17 +515,17 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
           <div className="rounded-[36px] border border-white/70 bg-white/88 p-6 shadow-[0_32px_90px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[#d85a2f]">{copy.badge}</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--auth-accent)]">{copy.badge}</p>
                 <h2 className="mt-3 text-3xl font-extrabold tracking-[-0.04em] text-slate-900">{copy.heading}</h2>
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-2 rounded-full bg-[#fff4ec] p-1">
+            <div className={tabRailClassName}>
               <button
                 type="button"
                 onClick={() => setActiveTab("signup")}
                 className={`rounded-full px-4 py-3 text-sm font-semibold transition ${
-                  activeTab === "signup" ? "bg-[#d85a2f] text-white" : "text-slate-600"
+                  activeTab === "signup" ? activeTabClassName : inactiveTabClassName
                 }`}
               >
                 Sign up
@@ -475,7 +534,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                 type="button"
                 onClick={() => setActiveTab("login")}
                 className={`rounded-full px-4 py-3 text-sm font-semibold transition ${
-                  activeTab === "login" ? "bg-[#d85a2f] text-white" : "text-slate-600"
+                  activeTab === "login" ? activeTabClassName : inactiveTabClassName
                 }`}
               >
                 Log in
@@ -497,7 +556,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                           {...register("name", { required: "Name is required." })}
                           className={inputClassName}
                         />
-                        {errors.name ? <p className="mt-2 text-sm text-[#d85a2f]">{errors.name.message}</p> : null}
+                        {errors.name ? <p className={errorTextClassName}>{errors.name.message}</p> : null}
                       </div>
 
                       <div>
@@ -511,7 +570,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                           className={inputClassName}
                         />
                         {errors.surname ? (
-                          <p className="mt-2 text-sm text-[#d85a2f]">{errors.surname.message}</p>
+                          <p className={errorTextClassName}>{errors.surname.message}</p>
                         ) : null}
                       </div>
                     </div>
@@ -534,7 +593,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                         className={inputClassName}
                       />
                       {errors.universityEmail ? (
-                        <p className="mt-2 text-sm text-[#d85a2f]">{errors.universityEmail.message}</p>
+                        <p className={errorTextClassName}>{errors.universityEmail.message}</p>
                       ) : null}
                     </div>
 
@@ -558,7 +617,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                         <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                       </div>
                       {errors.country ? (
-                        <p className="mt-2 text-sm text-[#d85a2f]">{errors.country.message}</p>
+                        <p className={errorTextClassName}>{errors.country.message}</p>
                       ) : null}
                     </div>
 
@@ -591,7 +650,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                             : "Choose country to narrow the university list, or use Other."}
                       </p>
                       {errors.educationalInstitution ? (
-                        <p className="mt-2 text-sm text-[#d85a2f]">{errors.educationalInstitution.message}</p>
+                        <p className={errorTextClassName}>{errors.educationalInstitution.message}</p>
                       ) : null}
                     </div>
 
@@ -609,7 +668,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                           className={inputClassName}
                         />
                         {errors.customInstitution ? (
-                          <p className="mt-2 text-sm text-[#d85a2f]">{errors.customInstitution.message}</p>
+                          <p className={errorTextClassName}>{errors.customInstitution.message}</p>
                         ) : null}
                       </div>
                     ) : null}
@@ -634,7 +693,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                         <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                       </div>
                       {errors.position ? (
-                        <p className="mt-2 text-sm text-[#d85a2f]">{errors.position.message}</p>
+                        <p className={errorTextClassName}>{errors.position.message}</p>
                       ) : null}
                     </div>
 
@@ -670,7 +729,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                           className={inputClassName}
                         />
                         {errors.password ? (
-                          <p className="mt-2 text-sm text-[#d85a2f]">{errors.password.message}</p>
+                          <p className={errorTextClassName}>{errors.password.message}</p>
                         ) : null}
                       </div>
                     </div>
@@ -688,7 +747,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                           {...register("name", { required: "Name is required." })}
                           className={inputClassName}
                         />
-                        {errors.name ? <p className="mt-2 text-sm text-[#d85a2f]">{errors.name.message}</p> : null}
+                        {errors.name ? <p className={errorTextClassName}>{errors.name.message}</p> : null}
                       </div>
 
                       <div>
@@ -702,7 +761,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                           className={inputClassName}
                         />
                         {errors.surname ? (
-                          <p className="mt-2 text-sm text-[#d85a2f]">{errors.surname.message}</p>
+                          <p className={errorTextClassName}>{errors.surname.message}</p>
                         ) : null}
                       </div>
                     </div>
@@ -724,7 +783,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                         })}
                         className={inputClassName}
                       />
-                      {errors.email ? <p className="mt-2 text-sm text-[#d85a2f]">{errors.email.message}</p> : null}
+                      {errors.email ? <p className={errorTextClassName}>{errors.email.message}</p> : null}
                     </div>
 
                     <div className="grid gap-5 sm:grid-cols-2">
@@ -747,7 +806,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                           </select>
                           <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         </div>
-                        {errors.ageSpan ? <p className="mt-2 text-sm text-[#d85a2f]">{errors.ageSpan.message}</p> : null}
+                        {errors.ageSpan ? <p className={errorTextClassName}>{errors.ageSpan.message}</p> : null}
                       </div>
 
                       <div>
@@ -769,7 +828,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                           </select>
                           <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         </div>
-                        {errors.gender ? <p className="mt-2 text-sm text-[#d85a2f]">{errors.gender.message}</p> : null}
+                        {errors.gender ? <p className={errorTextClassName}>{errors.gender.message}</p> : null}
                       </div>
                     </div>
 
@@ -794,7 +853,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                           <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         </div>
                         {errors.salaryRange ? (
-                          <p className="mt-2 text-sm text-[#d85a2f]">{errors.salaryRange.message}</p>
+                          <p className={errorTextClassName}>{errors.salaryRange.message}</p>
                         ) : null}
                       </div>
 
@@ -818,7 +877,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                           <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         </div>
                         {errors.educationalLevel ? (
-                          <p className="mt-2 text-sm text-[#d85a2f]">{errors.educationalLevel.message}</p>
+                          <p className={errorTextClassName}>{errors.educationalLevel.message}</p>
                         ) : null}
                       </div>
                     </div>
@@ -844,7 +903,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                           <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         </div>
                         {errors.country ? (
-                          <p className="mt-2 text-sm text-[#d85a2f]">{errors.country.message}</p>
+                          <p className={errorTextClassName}>{errors.country.message}</p>
                         ) : null}
                       </div>
 
@@ -868,7 +927,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                           <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         </div>
                         {errors.placeOfResidence ? (
-                          <p className="mt-2 text-sm text-[#d85a2f]">{errors.placeOfResidence.message}</p>
+                          <p className={errorTextClassName}>{errors.placeOfResidence.message}</p>
                         ) : null}
                       </div>
                     </div>
@@ -894,7 +953,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                           <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         </div>
                         {errors.familyStatus ? (
-                          <p className="mt-2 text-sm text-[#d85a2f]">{errors.familyStatus.message}</p>
+                          <p className={errorTextClassName}>{errors.familyStatus.message}</p>
                         ) : null}
                       </div>
 
@@ -918,7 +977,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                           <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         </div>
                         {errors.carCount ? (
-                          <p className="mt-2 text-sm text-[#d85a2f]">{errors.carCount.message}</p>
+                          <p className={errorTextClassName}>{errors.carCount.message}</p>
                         ) : null}
                       </div>
                     </div>
@@ -933,11 +992,11 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                             value.length > 0 ? true : "Select at least 1 interest. You can choose up to 3."
                         }}
                         render={({ field }) => (
-                          <div className="rounded-[28px] border border-[#ead9cc] bg-[#fffdf9] p-4">
+                          <div className="rounded-[28px] border border-[color:var(--auth-border)] bg-[color:var(--auth-input-bg)] p-4">
                             <button
                               type="button"
                               onClick={() => setInterestsOpen((current) => !current)}
-                              className="flex w-full items-center justify-between rounded-2xl bg-[#fff7f1] px-4 py-3 text-left text-sm font-semibold text-slate-700"
+                              className="flex w-full items-center justify-between rounded-2xl bg-[color:var(--auth-accent-softer-bg)] px-4 py-3 text-left text-sm font-semibold text-slate-700"
                             >
                               <span>
                                 {field.value.length > 0
@@ -972,10 +1031,10 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                                       disabled={disabled}
                                       className={`rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
                                         selected
-                                          ? "border-[#d85a2f] bg-[#fff2ea] text-[#d85a2f]"
+                                          ? "border-[color:var(--auth-accent)] bg-[color:var(--auth-selected-bg)] text-[color:var(--auth-accent)]"
                                           : disabled
-                                            ? "border-[#efe3da] bg-[#faf6f2] text-slate-300"
-                                            : "border-[#efe3da] bg-white text-slate-600 hover:border-[#d85a2f]/35 hover:text-[#d85a2f]"
+                                            ? "border-[color:var(--auth-disabled-border)] bg-[color:var(--auth-disabled-bg)] text-slate-300"
+                                            : "border-[color:var(--auth-disabled-border)] bg-white text-slate-600 hover:border-[color:var(--auth-accent)] hover:text-[color:var(--auth-accent)]"
                                       }`}
                                     >
                                       {interest}
@@ -990,7 +1049,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                                 {field.value.map((interest) => (
                                   <span
                                     key={interest}
-                                    className="inline-flex items-center rounded-full bg-[#fff2ea] px-3 py-1 text-xs font-semibold text-[#d85a2f]"
+                                    className="inline-flex items-center rounded-full bg-[color:var(--auth-selected-bg)] px-3 py-1 text-xs font-semibold text-[color:var(--auth-accent)]"
                                   >
                                     {interest}
                                   </span>
@@ -1003,7 +1062,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                         )}
                       />
                       {errors.interests ? (
-                        <p className="mt-2 text-sm text-[#d85a2f]">{errors.interests.message}</p>
+                        <p className={errorTextClassName}>{errors.interests.message}</p>
                       ) : null}
                     </div>
 
@@ -1039,7 +1098,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                           className={inputClassName}
                         />
                         {errors.password ? (
-                          <p className="mt-2 text-sm text-[#d85a2f]">{errors.password.message}</p>
+                          <p className={errorTextClassName}>{errors.password.message}</p>
                         ) : null}
                       </div>
                     </div>
@@ -1049,7 +1108,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                 <button
                   type="submit"
                   disabled={authPending !== null}
-                  className="w-full rounded-2xl bg-[#d85a2f] px-5 py-4 text-base font-bold text-white shadow-[0_20px_40px_rgba(216,90,47,0.2)] transition hover:bg-[#bf4c25]"
+                  className={submitButtonClassName}
                 >
                   {authPending === "signup" ? "Creating account..." : copy.submitLabel}
                 </button>
@@ -1074,7 +1133,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                     className={inputClassName}
                   />
                   {loginErrors.email ? (
-                    <p className="mt-2 text-sm text-[#d85a2f]">{loginErrors.email.message}</p>
+                    <p className={errorTextClassName}>{loginErrors.email.message}</p>
                   ) : null}
                 </div>
 
@@ -1090,14 +1149,14 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                     className={inputClassName}
                   />
                   {loginErrors.password ? (
-                    <p className="mt-2 text-sm text-[#d85a2f]">{loginErrors.password.message}</p>
+                    <p className={errorTextClassName}>{loginErrors.password.message}</p>
                   ) : null}
                 </div>
 
                 <button
                   type="submit"
                   disabled={authPending !== null}
-                  className="w-full rounded-2xl bg-[#d85a2f] px-5 py-4 text-base font-bold text-white shadow-[0_20px_40px_rgba(216,90,47,0.2)] transition hover:bg-[#bf4c25]"
+                  className={submitButtonClassName}
                 >
                   {authPending === "login" ? "Logging in..." : "Log in"}
                 </button>
@@ -1105,7 +1164,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
             )}
 
             {submitMessage ? (
-              <div className="mt-5 rounded-2xl border border-[#f0dfd3] bg-[#fff7f1] px-4 py-3 text-sm text-slate-600">
+              <div className={messageClassName}>
                 {submitMessage}
               </div>
             ) : null}
