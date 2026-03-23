@@ -108,11 +108,20 @@ export default function HomePage() {
         </div>
       </section>
 
-      <PromoVideo />
-      <HowItWorks />
-      <CommunityMap />
-      <AISection />
-      <Footer />
+      <div className="relative overflow-hidden bg-[linear-gradient(180deg,#e89a46_0%,#f0b661_14%,#f5cd87_34%,#f9dfb0_56%,#fdf0d7_82%,#fff6e8_100%)]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_18%,rgba(255,241,210,0.44),transparent_18%),radial-gradient(circle_at_84%_26%,rgba(235,133,65,0.18),transparent_20%),radial-gradient(circle_at_52%_66%,rgba(255,208,126,0.20),transparent_26%)]" />
+        <div className="absolute left-[-8%] top-20 h-[30rem] w-[30rem] rounded-full bg-[#efaa57]/18 blur-[170px]" />
+        <div className="absolute right-[-10%] top-[28rem] h-[34rem] w-[34rem] rounded-full bg-[#f3bf70]/18 blur-[190px]" />
+        <div className="absolute left-1/2 top-[54rem] h-[32rem] w-[32rem] -translate-x-1/2 rounded-full bg-white/10 blur-[180px]" />
+
+        <div className="relative z-10">
+          <PromoVideo />
+          <HowItWorks />
+          <CommunityMap />
+          <AISection />
+          <Footer />
+        </div>
+      </div>
     </main>
   );
 }
