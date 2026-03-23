@@ -18,6 +18,11 @@ type PolarCheckoutResponse = {
   currency: string;
   external_customer_id: string | null;
   metadata: Record<string, string>;
+  product?: {
+    id: string;
+    is_recurring: boolean;
+    recurring_interval: "day" | "week" | "month" | "year" | null;
+  } | null;
 };
 
 function getPolarServerMode(): PolarServerMode {
@@ -84,6 +89,7 @@ export async function createPolarCheckout(input: CreatePolarCheckoutInput) {
           }
         ]
       },
+      allow_trial: false,
       customer_email: input.customerEmail,
       customer_name: input.customerName,
       external_customer_id: input.externalCustomerId,
@@ -91,6 +97,14 @@ export async function createPolarCheckout(input: CreatePolarCheckoutInput) {
       return_url: `${input.origin}/dashboard/client?payment=cancelled`,
       metadata: input.metadata
     })
+  }).then((checkout) => {
+    if (checkout.product?.is_recurring) {
+      throw new Error(
+        "POLAR_SURVEY_PRODUCT_ID is using a recurring Polar product. Create a one-time product for survey payments and update the env value."
+      );
+    }
+
+    return checkout;
   });
 }
 

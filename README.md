@@ -41,6 +41,8 @@ cp .env.local.example .env.local
 - `POLAR_SURVEY_PRODUCT_ID`
 - `POLAR_SERVER`
 
+`POLAR_SURVEY_PRODUCT_ID` must point to a Polar one-time product. Do not use a recurring subscription product for survey payments.
+
 4. In Supabase SQL Editor, run one SQL file:
 
 ```sql
@@ -92,7 +94,7 @@ Add these in the Vercel project settings:
 - `POLAR_SURVEY_PRODUCT_ID`
 - `POLAR_SERVER`
 
-If you do not configure the Supabase variables, sign-up, login, dashboard protection, and profile storage will fail. If you do not configure `SUPABASE_SERVICE_ROLE_KEY`, survey publish will still work locally in the client dashboard, but the server cannot read matching community profiles to send launch emails. If you do not configure the OpenAI key, the survey builder can still fall back to template questions locally, but the server-side AI assistant will not generate tailored survey content. If you do not configure the Resend variables, the contact form API and community notification API will deploy, but sending email will return a server error. If you do not configure the Polar variables, the payment button cannot create a checkout session.
+If you do not configure the Supabase variables, sign-up, login, dashboard protection, and profile storage will fail. If you do not configure `SUPABASE_SERVICE_ROLE_KEY`, survey publish will still work locally in the client dashboard, but the server cannot read matching community profiles to send launch emails. If you do not configure the OpenAI key, the survey builder can still fall back to template questions locally, but the server-side AI assistant will not generate tailored survey content. If you do not configure the Resend variables, the contact form API and community notification API will deploy, but sending email will return a server error. If you do not configure the Polar variables, the payment button cannot create a checkout session. `POLAR_SURVEY_PRODUCT_ID` must be a one-time product, not a recurring monthly subscription product.
 
 ### Supabase auth settings
 
