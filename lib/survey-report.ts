@@ -16,6 +16,20 @@ export type SurveyQuestionChart = {
   dataPoints: ReportChartPoint[];
 };
 
+export type ReportTimelinePoint = {
+  label: string;
+  responses: number;
+  averageTrust: number;
+};
+
+export type SurveySignalHighlight = {
+  questionId: string;
+  questionText: string;
+  answerLabel: string;
+  count: number;
+  share: number;
+};
+
 function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(maximum, Math.max(minimum, value));
 }
@@ -52,6 +66,14 @@ export function getAverageCompletionMinutes(survey: ClientSurvey) {
 
   const totalSeconds = (survey.rawResponses ?? []).reduce((sum, response) => sum + response.completionTimeSeconds, 0);
   return totalSeconds / responseCount / 60;
+}
+
+export function getSurveyCompletionRate(survey: ClientSurvey) {
+  if (survey.targetResponses <= 0) {
+    return 0;
+  }
+
+  return clamp(Math.round((getSurveyResponseCount(survey) / survey.targetResponses) * 100), 0, 100);
 }
 
 export function buildTrustDistribution(survey: ClientSurvey): ReportChartPoint[] {
@@ -115,6 +137,52 @@ export function buildQuestionCharts(survey: ClientSurvey): SurveyQuestionChart[]
     })
     .filter((question) => question.dataPoints.some((dataPoint) => dataPoint.value > 0))
     .slice(0, 4);
+}
+
+export function buildResponseTimeline(survey: ClientSurvey): ReportTimelinePoint[] {
+  const dailyBuckets = new Map<string, { responses: number; trustTotal: number }>();
+
+  for (const response of survey.rawResponses ?? []) {
+    const label = new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric"
+    }).format(new Date(response.submittedAt));
+    const currentBucket = dailyBuckets.get(label) ?? { responses: 0, trustTotal: 0 };
+    currentBucket.responses += 1;
+    currentBucket.trustTotal += response.trustScore;
+    dailyBuckets.set(label, currentBucket);
+  }
+
+  return Array.from(dailyBuckets.entries())
+    .map(([label, value]) => ({
+      label,
+      responses: value.responses,
+      averageTrust: Math.round(value.trustTotal / Math.max(1, value.responses))
+    }))
+    .slice(-7);
+}
+
+export function buildSignalHighlights(survey: ClientSurvey): SurveySignalHighlight[] {
+  return buildQuestionCharts(survey)
+    .map((chart) => {
+      const dominantPoint = chart.dataPoints.reduce(
+        (best, current) => (current.value > best.value ? current : best),
+        chart.dataPoints[0]
+      );
+
+      return {
+        questionId: chart.questionId,
+        questionText: chart.questionText,
+        answerLabel: dominantPoint.label,
+        count: dominantPoint.value,
+        share:
+          getSurveyResponseCount(survey) > 0
+            ? clamp(Math.round((dominantPoint.value / getSurveyResponseCount(survey)) * 100), 0, 100)
+            : 0
+      };
+    })
+    .filter((item) => item.count > 0)
+    .slice(0, 3);
 }
 
 export function buildOpenResponseSamples(survey: ClientSurvey) {

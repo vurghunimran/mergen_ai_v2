@@ -53,9 +53,12 @@ import type { SurveyReportResponse } from "@/lib/dashboard-data";
 import {
   buildQuestionCharts,
   buildRawDataCsv,
+  buildResponseTimeline,
+  buildSignalHighlights,
   buildTrustDistribution,
   getAverageCompletionMinutes,
   getAverageTrustScore,
+  getSurveyCompletionRate,
   getSurveyResponseCount
 } from "@/lib/survey-report";
 
@@ -386,10 +389,18 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
   const selectedReportSurvey = surveys.find((survey) => survey.id === selectedReportSurveyId) ?? null;
   const selectedReport = selectedReportSurveyId ? reportCache[selectedReportSurveyId] ?? null : null;
   const selectedReportCharts = selectedReportSurvey ? buildQuestionCharts(selectedReportSurvey) : [];
+  const selectedReportTimeline = selectedReportSurvey ? buildResponseTimeline(selectedReportSurvey) : [];
+  const selectedReportSignals = selectedReportSurvey ? buildSignalHighlights(selectedReportSurvey) : [];
   const selectedTrustDistribution = selectedReportSurvey ? buildTrustDistribution(selectedReportSurvey) : [];
   const selectedReportAverageTrust = selectedReportSurvey ? getAverageTrustScore(selectedReportSurvey) : 0;
   const selectedReportAverageMinutes = selectedReportSurvey ? getAverageCompletionMinutes(selectedReportSurvey) : 0;
   const selectedReportResponseCount = selectedReportSurvey ? getSurveyResponseCount(selectedReportSurvey) : 0;
+  const selectedReportCompletionRate = selectedReportSurvey ? getSurveyCompletionRate(selectedReportSurvey) : 0;
+  const selectedTimelineSeries = selectedReportTimeline.map((point) => point.responses);
+  const selectedTimelinePoints =
+    selectedTimelineSeries.length > 0 ? buildChartPoints(selectedTimelineSeries, 560, 240, 26) : "";
+  const selectedTimelineArea =
+    selectedTimelineSeries.length > 0 ? buildChartArea(selectedTimelineSeries, 560, 240, 26) : "";
   const engagementSeries =
     surveys.length > 0
       ? [
@@ -1523,6 +1534,142 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
                       </div>
                     </div>
 
+                    <div className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
+                      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-1">
+                        <div className="rounded-[24px] border border-gray-200 bg-white p-5">
+                          <div className="flex items-center gap-3">
+                            <div className="rounded-2xl bg-[#fff4ea] p-3 text-[#ea5f2d]">
+                              <TrendingUp className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-[#8a94a6]">Target completion</p>
+                              <p className="text-[18px] font-semibold text-[#1f2937]">
+                                {selectedReportResponseCount} of {selectedReportSurvey.targetResponses}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="mt-6 flex justify-center">
+                            <div
+                              className="flex h-32 w-32 items-center justify-center rounded-full"
+                              style={{
+                                background: `conic-gradient(#f35b04 0deg ${selectedReportCompletionRate * 3.6}deg, #fff1e5 ${selectedReportCompletionRate * 3.6}deg 360deg)`
+                              }}
+                            >
+                              <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full bg-white">
+                                <span className="text-[28px] font-bold text-[#111827]">{selectedReportCompletionRate}%</span>
+                                <span className="text-xs font-medium uppercase tracking-[0.12em] text-[#98a2b3]">Reached</span>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="mt-4 text-center text-sm leading-6 text-[#667085]">
+                            Visual progress against the planned response target for this paid AI survey.
+                          </p>
+                        </div>
+
+                        <div className="rounded-[24px] border border-gray-200 bg-white p-5">
+                          <div className="flex items-center gap-3">
+                            <div className="rounded-2xl bg-[#eef4ff] p-3 text-[#3563e9]">
+                              <Shield className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-[#8a94a6]">Dataset quality</p>
+                              <p className="text-[18px] font-semibold text-[#1f2937]">{selectedReportAverageTrust}/100 trust</p>
+                            </div>
+                          </div>
+                          <div className="mt-6 flex justify-center">
+                            <div
+                              className="flex h-32 w-32 items-center justify-center rounded-full"
+                              style={{
+                                background: `conic-gradient(#3563e9 0deg ${selectedReportAverageTrust * 3.6}deg, #e5ecff ${selectedReportAverageTrust * 3.6}deg 360deg)`
+                              }}
+                            >
+                              <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full bg-white">
+                                <span className="text-[28px] font-bold text-[#111827]">{selectedReportAverageTrust}%</span>
+                                <span className="text-xs font-medium uppercase tracking-[0.12em] text-[#98a2b3]">Quality</span>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="mt-4 text-center text-sm leading-6 text-[#667085]">
+                            Trust score reflects answer consistency, relevance, and completion behavior.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="rounded-[24px] border border-gray-200 bg-white p-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <h3 className="text-[20px] font-bold tracking-[-0.03em] text-[#1f2937]">Response timeline</h3>
+                            <p className="mt-1 text-sm text-[#8a94a6]">Daily response volume and quality trend from collected raw data.</p>
+                          </div>
+                          <div className="rounded-full bg-[#f8fafc] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[#64748b]">
+                            Last {Math.max(selectedReportTimeline.length, 1)} days
+                          </div>
+                        </div>
+
+                        {selectedReportTimeline.length > 0 ? (
+                          <div className="mt-6">
+                            <svg viewBox="0 0 560 240" className="h-[240px] w-full" aria-label="AI report response timeline">
+                              {[0, 1, 2, 3].map((lineIndex) => {
+                                const y = 40 + lineIndex * 44;
+                                return (
+                                  <line
+                                    key={lineIndex}
+                                    x1="26"
+                                    y1={y}
+                                    x2="534"
+                                    y2={y}
+                                    stroke="#edf2f7"
+                                    strokeWidth="1"
+                                  />
+                                );
+                              })}
+                              <defs>
+                                <linearGradient id="mergenReportTimelineFill" x1="0" y1="0" x2="1" y2="1">
+                                  <stop offset="0%" stopColor="rgba(243,91,4,0.08)" />
+                                  <stop offset="100%" stopColor="rgba(53,99,233,0.16)" />
+                                </linearGradient>
+                              </defs>
+                              <polygon points={selectedTimelineArea} fill="url(#mergenReportTimelineFill)" />
+                              <polyline
+                                points={selectedTimelinePoints}
+                                fill="none"
+                                stroke="#f35b04"
+                                strokeWidth="4"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              {selectedReportTimeline.map((point, index) => {
+                                const stepX =
+                                  selectedReportTimeline.length > 1 ? (560 - 52) / (selectedReportTimeline.length - 1) : 0;
+                                const maxValue = Math.max(...selectedTimelineSeries, 1);
+                                const x = 26 + stepX * index;
+                                const y = 240 - 26 - (point.responses / maxValue) * (240 - 52);
+
+                                return (
+                                  <g key={`${point.label}-${index}`}>
+                                    <circle cx={x} cy={y} r="5" fill="#3563e9" />
+                                    <text x={x} y={y - 12} textAnchor="middle" fontSize="11" fill="#64748b">
+                                      {point.averageTrust}%
+                                    </text>
+                                  </g>
+                                );
+                              })}
+                            </svg>
+
+                            <div className="mt-2 grid text-center text-xs font-semibold uppercase tracking-[0.08em] text-[#98a2b3]" style={{ gridTemplateColumns: `repeat(${selectedReportTimeline.length}, minmax(0, 1fr))` }}>
+                              {selectedReportTimeline.map((point) => (
+                                <span key={point.label}>{point.label}</span>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-6 flex min-h-[220px] items-center justify-center rounded-2xl bg-[#fafafa] text-center text-sm text-[#8a94a6]">
+                            Timeline visuals will appear after more validated responses are collected.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                       <div className="rounded-[24px] border border-gray-200 bg-white p-5">
                         <h3 className="text-[20px] font-bold tracking-[-0.03em] text-[#1f2937]">Trust distribution</h3>
@@ -1554,6 +1701,31 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
                         </div>
                       </div>
                     </div>
+
+                    {selectedReportSignals.length > 0 ? (
+                      <div className="grid gap-5 xl:grid-cols-3">
+                        {selectedReportSignals.map((signal) => (
+                          <div key={signal.questionId} className="rounded-[24px] border border-gray-200 bg-white p-5">
+                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#c56b36]">Signal spotlight</p>
+                            <h3 className="mt-2 text-[18px] font-semibold leading-7 text-[#1f2937]">{signal.questionText}</h3>
+                            <div className="mt-5 rounded-2xl bg-[#fff7ef] p-4">
+                              <p className="text-sm font-medium text-[#8a94a6]">Dominant answer</p>
+                              <p className="mt-2 text-base font-semibold text-[#1f2937]">{signal.answerLabel}</p>
+                              <div className="mt-4 h-3 rounded-full bg-white">
+                                <div
+                                  className="h-3 rounded-full bg-[linear-gradient(90deg,#f35b04_0%,#ea643a_100%)]"
+                                  style={{ width: `${signal.share}%` }}
+                                />
+                              </div>
+                              <div className="mt-3 flex items-center justify-between text-sm text-[#667085]">
+                                <span>{signal.count} responses</span>
+                                <span>{signal.share}% share</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
 
                     {selectedReportCharts.length > 0 ? (
                       <div className="grid gap-5 lg:grid-cols-2">
