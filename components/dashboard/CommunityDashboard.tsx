@@ -36,8 +36,18 @@ import {
   CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY,
   COMMUNITY_DASHBOARD_PROGRESS_STORAGE_KEY,
   type ClientSurvey,
-  type StoredSurveyQuestion
+  type SurveyAnswerValue,
+  type StoredSurveyQuestion,
+  type SurveyAnswerMap,
+  type SurveyTrustEvaluationRequest,
+  type SurveyTrustEvaluationResponse
 } from "@/lib/dashboard-data";
+import {
+  MAX_TRUST_CREDITS,
+  MIN_TRUST_CREDITS,
+  buildFallbackTrustEvaluation,
+  buildSurveySubmissionAnswers
+} from "@/lib/trust-score";
 
 const navigationItems = [
   { icon: Home, label: "Dashboard", section: "dashboard" },
@@ -74,14 +84,14 @@ type CommunityCompletion = {
   earnedCredits: number;
   score: number;
   completedAt: string;
+  summary: string;
+  durationSeconds: number;
+  source: SurveyTrustEvaluationResponse["source"];
 };
 
 type CommunityProgress = {
   completions: CommunityCompletion[];
 };
-
-type SurveyAnswerValue = string | string[];
-type SurveyAnswerMap = Record<string, SurveyAnswerValue>;
 
 function buildInitialSettings(profile: UserProfile): CommunitySettings {
   return {
@@ -180,11 +190,7 @@ const REWARDS: RewardItem[] = [
 
 function estimateSurveyCredits(survey: ClientSurvey) {
   void survey;
-  return "30-70";
-}
-
-function calculateEarnedCredits(score: number) {
-  return Math.max(30, Math.min(70, 30 + Math.round((score / 100) * 40)));
+  return `${MIN_TRUST_CREDITS}-${MAX_TRUST_CREDITS}`;
 }
 
 function matchesSurveyToMember(survey: ClientSurvey, memberProfile: ReturnType<typeof buildMemberProfile>) {
@@ -257,6 +263,16 @@ function formatCompletedDate(value: string) {
   }).format(new Date(value));
 }
 
+function formatDuration(seconds: number) {
+  if (seconds < 60) {
+    return `${seconds}s`;
+  }
+
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+}
+
 export default function CommunityDashboard({ initialProfile }: { initialProfile: UserProfile }) {
   const router = useRouter();
   const supabase = createSupabaseClient();
@@ -283,6 +299,8 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
   const [selectedSurveyId, setSelectedSurveyId] = useState<number | null>(null);
   const [surveyAnswers, setSurveyAnswers] = useState<SurveyAnswerMap>({});
   const [surveyError, setSurveyError] = useState("");
+  const [surveyStartedAt, setSurveyStartedAt] = useState<number | null>(null);
+  const [isSubmittingSurvey, setIsSubmittingSurvey] = useState(false);
   const memberProfile = useMemo(() => buildMemberProfile(profileSnapshot), [profileSnapshot]);
 
   useEffect(() => {
@@ -302,7 +320,20 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
         const parsedProgress = JSON.parse(storedProgress) as CommunityProgress;
 
         if (parsedProgress && Array.isArray(parsedProgress.completions)) {
-          setCompletedSurveys(parsedProgress.completions);
+          setCompletedSurveys(
+            parsedProgress.completions.map((completion) => ({
+              ...completion,
+              summary:
+                typeof completion.summary === "string" && completion.summary.trim().length > 0
+                  ? completion.summary
+                  : "Survey completed before AI trust notes were enabled.",
+              durationSeconds:
+                typeof completion.durationSeconds === "number" && completion.durationSeconds > 0
+                  ? completion.durationSeconds
+                  : 0,
+              source: completion.source === "gemini" ? "gemini" : "fallback"
+            }))
+          );
         }
       }
     } catch {
@@ -595,6 +626,7 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
     setSelectedSurveyId(survey.id);
     setSurveyAnswers(buildInitialAnswers(questions));
     setSurveyError("");
+    setSurveyStartedAt(Date.now());
     setActiveSection("take-survey");
   }
 
@@ -634,8 +666,12 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
     });
   }
 
-  function handleSubmitSurvey() {
+  async function handleSubmitSurvey() {
     if (!selectedSurvey) {
+      return;
+    }
+
+    if (isSubmittingSurvey) {
       return;
     }
 
@@ -647,39 +683,91 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
       return;
     }
 
-    const score = Math.min(100, 78 + Math.round(questions.length * 2.5));
-    const earnedCredits = calculateEarnedCredits(score);
-    const completion: CommunityCompletion = {
-      surveyId: selectedSurvey.id,
-      surveyName: selectedSurvey.name,
-      earnedCredits,
-      score,
-      completedAt: new Date().toISOString()
-    };
+    setIsSubmittingSurvey(true);
 
-    const nextCompletions = [completion, ...completedSurveys];
-    window.localStorage.setItem(
-      COMMUNITY_DASHBOARD_PROGRESS_STORAGE_KEY,
-      JSON.stringify({ completions: nextCompletions } satisfies CommunityProgress)
-    );
-    setCompletedSurveys(nextCompletions);
+    try {
+      const completionTimeSeconds = Math.max(
+        1,
+        surveyStartedAt ? Math.round((Date.now() - surveyStartedAt) / 1000) : questions.length * 15
+      );
+      const evaluationRequest: SurveyTrustEvaluationRequest = {
+        surveyTitle: selectedSurvey.name,
+        surveyDescription: selectedSurvey.description,
+        questions,
+        answers: buildSurveySubmissionAnswers(questions, surveyAnswers),
+        completionTimeSeconds
+      };
 
-    const nextClientSurveys = clientSurveys.map((survey) =>
-      survey.id === selectedSurvey.id
-        ? {
-            ...survey,
-            responses: Math.min(survey.targetResponses, survey.responses + 1)
-          }
-        : survey
-    );
-    window.localStorage.setItem(CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY, JSON.stringify(nextClientSurveys));
-    setClientSurveys(nextClientSurveys);
+      let evaluation: SurveyTrustEvaluationResponse;
 
-    setSurveyNotice(`${selectedSurvey.name} submitted successfully. ${earnedCredits} credits added to your balance from your ${score}% trust score.`);
-    setSelectedSurveyId(null);
-    setSurveyAnswers({});
-    setSurveyError("");
-    setActiveSection("earnings");
+      try {
+        const response = await fetch("/api/survey-trust-score", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(evaluationRequest)
+        });
+
+        const responseBody = (await response.json()) as Partial<SurveyTrustEvaluationResponse> & { error?: string };
+
+        if (!response.ok || typeof responseBody.trustScore !== "number" || typeof responseBody.credits !== "number") {
+          throw new Error(responseBody.error ?? "AI trust scoring failed.");
+        }
+
+        evaluation = {
+          trustScore: responseBody.trustScore,
+          credits: responseBody.credits,
+          summary: responseBody.summary ?? "AI reviewed the response quality and timing.",
+          strengths: Array.isArray(responseBody.strengths) ? responseBody.strengths : [],
+          risks: Array.isArray(responseBody.risks) ? responseBody.risks : [],
+          completionTimeSeconds: responseBody.completionTimeSeconds ?? completionTimeSeconds,
+          source: responseBody.source === "gemini" ? "gemini" : "fallback"
+        };
+      } catch {
+        evaluation = buildFallbackTrustEvaluation(evaluationRequest);
+      }
+
+      const completion: CommunityCompletion = {
+        surveyId: selectedSurvey.id,
+        surveyName: selectedSurvey.name,
+        earnedCredits: evaluation.credits,
+        score: evaluation.trustScore,
+        completedAt: new Date().toISOString(),
+        summary: evaluation.summary,
+        durationSeconds: evaluation.completionTimeSeconds,
+        source: evaluation.source
+      };
+
+      const nextCompletions = [completion, ...completedSurveys];
+      window.localStorage.setItem(
+        COMMUNITY_DASHBOARD_PROGRESS_STORAGE_KEY,
+        JSON.stringify({ completions: nextCompletions } satisfies CommunityProgress)
+      );
+      setCompletedSurveys(nextCompletions);
+
+      const nextClientSurveys = clientSurveys.map((survey) =>
+        survey.id === selectedSurvey.id
+          ? {
+              ...survey,
+              responses: Math.min(survey.targetResponses, survey.responses + 1)
+            }
+          : survey
+      );
+      window.localStorage.setItem(CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY, JSON.stringify(nextClientSurveys));
+      setClientSurveys(nextClientSurveys);
+
+      setSurveyNotice(
+        `${selectedSurvey.name} submitted successfully. ${evaluation.credits} credits added from your ${evaluation.trustScore}% trust score. ${evaluation.summary}`
+      );
+      setSelectedSurveyId(null);
+      setSurveyAnswers({});
+      setSurveyError("");
+      setSurveyStartedAt(null);
+      setActiveSection("earnings");
+    } finally {
+      setIsSubmittingSurvey(false);
+    }
   }
 
   function renderSurveyInput(question: StoredSurveyQuestion) {
@@ -1062,6 +1150,7 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
                         setActiveSection("dashboard");
                         setSelectedSurveyId(null);
                         setSurveyError("");
+                        setSurveyStartedAt(null);
                       }}
                       className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#4b5563] transition hover:border-[#d9c7ff] hover:text-[#6d3fd1]"
                     >
@@ -1102,10 +1191,11 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
                       <div>{surveyError ? <p className="text-sm font-medium text-red-500">{surveyError}</p> : null}</div>
                       <button
                         type="button"
-                        onClick={handleSubmitSurvey}
-                        className="rounded-full bg-[linear-gradient(135deg,#6d3fd1_0%,#8b5cf6_100%)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(124,58,237,0.22)] transition hover:opacity-90"
+                        onClick={() => void handleSubmitSurvey()}
+                        disabled={isSubmittingSurvey}
+                        className="rounded-full bg-[linear-gradient(135deg,#6d3fd1_0%,#8b5cf6_100%)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(124,58,237,0.22)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Submit Survey
+                        {isSubmittingSurvey ? "AI Reviewing..." : "Submit Survey"}
                       </button>
                     </div>
                   </div>
@@ -1192,9 +1282,11 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
                             <tr key={`${completion.surveyId}-${completion.completedAt}`}>
                               <td className="border-b border-gray-100 py-6 pr-6 align-top">
                                 <p className="text-[16px] font-semibold text-[#374151]">{completion.surveyName}</p>
+                                <p className="mt-1 max-w-md text-sm leading-6 text-[#8a94a6]">{completion.summary}</p>
                               </td>
                               <td className="border-b border-gray-100 py-6 pr-6 align-top text-[15px] text-[#667085]">
-                                {formatCompletedDate(completion.completedAt)}
+                                <p>{formatCompletedDate(completion.completedAt)}</p>
+                                <p className="mt-1 text-sm text-[#98a2b3]">{formatDuration(completion.durationSeconds)}</p>
                               </td>
                               <td className="border-b border-gray-100 py-6 pr-6 align-top text-[15px] font-semibold text-[#6d3fd1]">
                                 {completion.earnedCredits}
@@ -1234,7 +1326,7 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
                   <div className="rounded-[24px] border border-[#e9ddff] bg-white p-5 shadow-sm">
                     <p className="text-sm font-medium text-[#8a94a6]">Current trust score</p>
                     <p className="mt-2 text-[34px] font-bold tracking-[-0.03em] text-[#4f2a78]">{trustScore}%</p>
-                    <p className="mt-2 text-sm text-[#667085]">Higher trust scores move your survey rewards closer to the top of the 30-70 credit range.</p>
+                    <p className="mt-2 text-sm text-[#667085]">Higher trust scores move your survey rewards closer to the top of the 20-70 credit range.</p>
                   </div>
                 </div>
 

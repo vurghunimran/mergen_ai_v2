@@ -218,6 +218,17 @@ function generateQuestions(draft: SurveyDraft) {
   });
 }
 
+function syncQuestionsToCount(questions: SurveyQuestion[], draft: SurveyDraft) {
+  const trimmedQuestions = questions.slice(0, draft.questionCount);
+
+  if (trimmedQuestions.length === draft.questionCount) {
+    return trimmedQuestions;
+  }
+
+  const fallbackQuestions = generateQuestions(draft);
+  return [...trimmedQuestions, ...fallbackQuestions.slice(trimmedQuestions.length, draft.questionCount)];
+}
+
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -509,7 +520,7 @@ export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }:
         assistantPrompt: aiResult.assistantPrompt,
         researchScope: aiResult.researchScope,
         hypothesis: aiResult.hypothesis,
-        questions: aiResult.questions
+        questions: syncQuestionsToCount(aiResult.questions, enrichedDraft)
       });
       setDraftNotice("AI questions generated.");
       setStage("generate");
@@ -543,7 +554,7 @@ export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }:
         assistantPrompt: aiResult.assistantPrompt,
         researchScope: aiResult.researchScope,
         hypothesis: aiResult.hypothesis,
-        questions: aiResult.questions
+        questions: syncQuestionsToCount(aiResult.questions, enrichedDraft)
       });
       setDraftNotice("AI questions generated.");
     } catch (error) {
@@ -635,7 +646,8 @@ export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }:
                 type: "Open question",
                 options: questionOptionsForType("Open question")
               }
-            ]
+            ],
+      questionCount: currentDraft.questions.length >= 25 ? currentDraft.questionCount : currentDraft.questions.length + 1
     }));
   }
 
@@ -645,7 +657,8 @@ export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }:
       questions:
         currentDraft.questions.length <= 5
           ? currentDraft.questions
-          : currentDraft.questions.filter((question) => question.id !== questionId)
+          : currentDraft.questions.filter((question) => question.id !== questionId),
+      questionCount: currentDraft.questions.length <= 5 ? currentDraft.questionCount : currentDraft.questions.length - 1
     }));
   }
 

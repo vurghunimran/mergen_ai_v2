@@ -21,6 +21,34 @@ export type StoredSurveyQuestion = {
   options: string[];
 };
 
+export type SurveyAnswerValue = string | string[];
+export type SurveyAnswerMap = Record<string, SurveyAnswerValue>;
+
+export type SurveySubmissionAnswer = {
+  questionId: string;
+  questionText: string;
+  questionType: SurveyQuestionType;
+  answer: SurveyAnswerValue;
+};
+
+export type SurveyTrustEvaluationRequest = {
+  surveyTitle: string;
+  surveyDescription: string;
+  questions: StoredSurveyQuestion[];
+  answers: SurveySubmissionAnswer[];
+  completionTimeSeconds: number;
+};
+
+export type SurveyTrustEvaluationResponse = {
+  trustScore: number;
+  credits: number;
+  summary: string;
+  strengths: string[];
+  risks: string[];
+  completionTimeSeconds: number;
+  source: "gemini" | "fallback";
+};
+
 export type SurveyAudience = {
   countries: string[];
   ageMin: number;
