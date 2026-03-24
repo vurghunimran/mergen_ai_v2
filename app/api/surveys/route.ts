@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { SurveyCheckoutPayload } from "@/lib/dashboard-data";
 import { buildSurveyInsertPayload, listClientSurveysForUser, mapSurveyRowToClientSurvey, type SurveyRow } from "@/lib/survey-db";
 import { buildForbiddenSurveyResponse, requireAuthorizedProfile } from "@/lib/survey-authorization";
+import { getSurveyStorageErrorMessage } from "@/lib/survey-storage-errors";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -56,7 +57,7 @@ export async function GET() {
     return NextResponse.json({ surveys });
   } catch (error) {
     console.error("Failed to load client surveys.", error);
-    return NextResponse.json({ error: "Could not load surveys." }, { status: 500 });
+    return NextResponse.json({ error: getSurveyStorageErrorMessage(error) ?? "Could not load surveys." }, { status: 500 });
   }
 }
 
@@ -90,11 +91,12 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Failed to create survey.", error);
+    const storageErrorMessage = getSurveyStorageErrorMessage(error);
 
     if (error instanceof Error && error.message.toLowerCase().includes("permission")) {
       return buildForbiddenSurveyResponse();
     }
 
-    return NextResponse.json({ error: "Could not create survey." }, { status: 500 });
+    return NextResponse.json({ error: storageErrorMessage ?? "Could not create survey." }, { status: 500 });
   }
 }

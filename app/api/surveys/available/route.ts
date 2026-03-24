@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { listPublishedSurveys } from "@/lib/survey-db";
 import { requireAuthorizedProfile } from "@/lib/survey-authorization";
+import { getSurveyStorageErrorMessage } from "@/lib/survey-storage-errors";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,6 @@ export async function GET() {
     return NextResponse.json({ surveys });
   } catch (error) {
     console.error("Failed to load published surveys.", error);
-    return NextResponse.json({ error: "Could not load surveys." }, { status: 500 });
+    return NextResponse.json({ error: getSurveyStorageErrorMessage(error) ?? "Could not load surveys." }, { status: 500 });
   }
 }
