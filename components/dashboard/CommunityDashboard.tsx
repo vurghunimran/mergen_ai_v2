@@ -140,6 +140,14 @@ function getSettingsErrorMessage(error: unknown) {
 
 const REWARDS: RewardItem[] = [
   {
+    id: "withdraw-cash",
+    company: "Withdraw cash",
+    mark: "$",
+    subtitle: "Bank transfer payout",
+    credits: 900,
+    brandClassName: "bg-[#14532d] text-white"
+  },
+  {
     id: "amazon",
     company: "Amazon",
     mark: "a",
@@ -709,7 +717,10 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
       return;
     }
 
-    const message = `${reward.company} reward has been sent to ${savedSettings.email}.`;
+    const message =
+      reward.id === "withdraw-cash"
+        ? `Cash withdrawal request has been sent to ${savedSettings.email}.`
+        : `${reward.company} reward has been sent to ${savedSettings.email}.`;
     setActivatedRewardId(reward.id);
     setRewardNotice(message);
   }
