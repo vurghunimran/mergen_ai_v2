@@ -2,7 +2,7 @@
 
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
   ArrowLeft,
@@ -27,17 +27,16 @@ import {
 import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
 import ProfileAvatarPicker from "@/components/dashboard/ProfileAvatarPicker";
 import SiteLogo from "@/components/SiteLogo";
+import PasswordInput from "@/components/ui/password-input";
 import { buildCommunityAudienceProfile, matchesSurveyAudience } from "@/lib/audience-matching";
 import { AVATAR_METADATA_KEYS, getDefaultAvatarSrc, resolveAvatarSrc } from "@/lib/profile-avatars";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { buildPersistedProfilePayload, upsertProfileRecords } from "@/lib/supabase/profile-db";
 import type { UserProfile } from "@/lib/supabase/types";
 import {
-  CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY,
-  COMMUNITY_DASHBOARD_SETTINGS_STORAGE_KEY,
-  COMMUNITY_DASHBOARD_PROGRESS_STORAGE_KEY,
+  getCommunityDashboardProgressStorageKey,
+  getCommunityDashboardSettingsStorageKey,
   type ClientSurvey,
-  type SurveyResponseRecord,
   type SurveyAnswerValue,
   type StoredSurveyQuestion,
   type SurveyAnswerMap,
@@ -306,7 +305,10 @@ function readLocalAvatarSettings(storageKey: string) {
 
 export default function CommunityDashboard({ initialProfile }: { initialProfile: UserProfile }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createSupabaseClient();
+  const communitySettingsStorageKey = getCommunityDashboardSettingsStorageKey(initialProfile.id);
+  const communityProgressStorageKey = getCommunityDashboardProgressStorageKey(initialProfile.id);
   const [profileSnapshot, setProfileSnapshot] = useState<UserProfile>(initialProfile);
   const [clientSurveys, setClientSurveys] = useState<ClientSurvey[]>([]);
   const [savedSettings, setSavedSettings] = useState<CommunitySettings>(() => buildInitialSettings(initialProfile));
@@ -326,6 +328,7 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
   const [rewardNotice, setRewardNotice] = useState<string | null>(null);
   const [rewardError, setRewardError] = useState<string | null>(null);
   const [surveyNotice, setSurveyNotice] = useState<string | null>(null);
+  const [surveyLoadError, setSurveyLoadError] = useState<string | null>(null);
   const [completedSurveys, setCompletedSurveys] = useState<CommunityCompletion[]>([]);
   const [selectedSurveyId, setSelectedSurveyId] = useState<number | null>(null);
   const [surveyAnswers, setSurveyAnswers] = useState<SurveyAnswerMap>({});
@@ -335,48 +338,65 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
   const memberProfile = useMemo(() => buildMemberProfile(profileSnapshot), [profileSnapshot]);
 
   useEffect(() => {
-    try {
-      const storedSurveys = window.localStorage.getItem(CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY);
-      const storedProgress = window.localStorage.getItem(COMMUNITY_DASHBOARD_PROGRESS_STORAGE_KEY);
+    let cancelled = false;
 
-      if (storedSurveys) {
-        const parsedSurveys = JSON.parse(storedSurveys) as ClientSurvey[];
+    async function hydrateDashboard() {
+      try {
+        const storedProgress = window.localStorage.getItem(communityProgressStorageKey);
 
-        if (Array.isArray(parsedSurveys)) {
-          setClientSurveys(parsedSurveys);
+        if (storedProgress) {
+          const parsedProgress = JSON.parse(storedProgress) as CommunityProgress;
+
+          if (parsedProgress && Array.isArray(parsedProgress.completions)) {
+            setCompletedSurveys(
+              parsedProgress.completions.map((completion) => ({
+                ...completion,
+                summary:
+                  typeof completion.summary === "string" && completion.summary.trim().length > 0
+                    ? completion.summary
+                    : "Survey completed before AI trust notes were enabled.",
+                durationSeconds:
+                  typeof completion.durationSeconds === "number" && completion.durationSeconds > 0
+                    ? completion.durationSeconds
+                    : 0,
+                source: completion.source === "gemini" ? "gemini" : "fallback"
+              }))
+            );
+          }
+        }
+
+        const response = await fetch("/api/surveys/available", { cache: "no-store" });
+        const data = (await response.json().catch(() => ({}))) as { surveys?: ClientSurvey[]; error?: string };
+
+        if (!response.ok) {
+          throw new Error(data.error ?? "Could not load surveys.");
+        }
+
+        if (!cancelled) {
+          setSurveyLoadError(null);
+          setClientSurveys(Array.isArray(data.surveys) ? data.surveys : []);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setClientSurveys([]);
+          setSurveyLoadError(error instanceof Error ? error.message : "Could not load surveys.");
+        }
+      } finally {
+        if (!cancelled) {
+          setHasHydratedData(true);
         }
       }
-
-      if (storedProgress) {
-        const parsedProgress = JSON.parse(storedProgress) as CommunityProgress;
-
-        if (parsedProgress && Array.isArray(parsedProgress.completions)) {
-          setCompletedSurveys(
-            parsedProgress.completions.map((completion) => ({
-              ...completion,
-              summary:
-                typeof completion.summary === "string" && completion.summary.trim().length > 0
-                  ? completion.summary
-                  : "Survey completed before AI trust notes were enabled.",
-              durationSeconds:
-                typeof completion.durationSeconds === "number" && completion.durationSeconds > 0
-                  ? completion.durationSeconds
-                  : 0,
-              source: completion.source === "gemini" ? "gemini" : "fallback"
-            }))
-          );
-        }
-      }
-    } catch {
-      setClientSurveys([]);
-      setCompletedSurveys([]);
-    } finally {
-      setHasHydratedData(true);
     }
-  }, []);
+
+    void hydrateDashboard();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [communityProgressStorageKey]);
 
   useEffect(() => {
-    const localAvatarSettings = readLocalAvatarSettings(COMMUNITY_DASHBOARD_SETTINGS_STORAGE_KEY);
+    const localAvatarSettings = readLocalAvatarSettings(communitySettingsStorageKey);
 
     if (!localAvatarSettings?.avatarMode) {
       return;
@@ -400,7 +420,13 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
       avatarPreset: localAvatarSettings.avatarPreset ?? currentProfile.avatarPreset,
       avatarCustomDataUrl: localAvatarSettings.avatarCustomDataUrl ?? currentProfile.avatarCustomDataUrl
     }));
-  }, []);
+  }, [communitySettingsStorageKey]);
+
+  useEffect(() => {
+    if (searchParams.get("error") === "access-denied") {
+      setSurveyLoadError("403 Unauthorized. You can only access dashboards that belong to your account.");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
@@ -650,7 +676,7 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
       await upsertProfileRecords(supabase, nextProfileSnapshot.id, buildPersistedProfilePayload(nextProfileSnapshot));
 
       window.localStorage.setItem(
-        COMMUNITY_DASHBOARD_SETTINGS_STORAGE_KEY,
+        communitySettingsStorageKey,
         JSON.stringify({
           avatarMode: nextSettings.avatarMode,
           avatarPreset: nextSettings.avatarPreset,
@@ -795,45 +821,57 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
         evaluation = buildFallbackTrustEvaluation(evaluationRequest);
       }
 
+      const submitResponse = await fetch(`/api/surveys/${selectedSurvey.id}/responses`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          completionTimeSeconds: evaluation.completionTimeSeconds,
+          trustScore: evaluation.trustScore,
+          earnedCredits: evaluation.credits,
+          summary: evaluation.summary,
+          answers: evaluationRequest.answers
+        })
+      });
+
+      const submitData = (await submitResponse.json().catch(() => ({}))) as {
+        submittedAt?: string;
+        error?: string;
+      };
+
+      if (!submitResponse.ok) {
+        throw new Error(submitData.error ?? "Survey submission failed.");
+      }
+
       const completion: CommunityCompletion = {
         surveyId: selectedSurvey.id,
         surveyName: selectedSurvey.name,
         earnedCredits: evaluation.credits,
         score: evaluation.trustScore,
-        completedAt: new Date().toISOString(),
+        completedAt: submitData.submittedAt ?? new Date().toISOString(),
         summary: evaluation.summary,
         durationSeconds: evaluation.completionTimeSeconds,
         source: evaluation.source
       };
-      const rawResponse: SurveyResponseRecord = {
-        id: `response-${selectedSurvey.id}-${Date.now()}`,
-        respondentId: profileSnapshot.id,
-        submittedAt: completion.completedAt,
-        completionTimeSeconds: evaluation.completionTimeSeconds,
-        trustScore: evaluation.trustScore,
-        earnedCredits: evaluation.credits,
-        summary: evaluation.summary,
-        answers: evaluationRequest.answers
-      };
 
       const nextCompletions = [completion, ...completedSurveys];
       window.localStorage.setItem(
-        COMMUNITY_DASHBOARD_PROGRESS_STORAGE_KEY,
+        communityProgressStorageKey,
         JSON.stringify({ completions: nextCompletions } satisfies CommunityProgress)
       );
       setCompletedSurveys(nextCompletions);
 
-      const nextClientSurveys = clientSurveys.map((survey) =>
-        survey.id === selectedSurvey.id
-          ? {
-              ...survey,
-              responses: Math.min(survey.targetResponses, survey.responses + 1),
-              rawResponses: [rawResponse, ...(survey.rawResponses ?? [])]
-            }
-          : survey
+      setClientSurveys((currentSurveys) =>
+        currentSurveys.map((survey) =>
+          survey.id === selectedSurvey.id
+            ? {
+                ...survey,
+                responses: Math.min(survey.targetResponses, survey.responses + 1)
+              }
+            : survey
+        )
       );
-      window.localStorage.setItem(CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY, JSON.stringify(nextClientSurveys));
-      setClientSurveys(nextClientSurveys);
 
       setSurveyNotice(
         `${selectedSurvey.name} submitted successfully. ${evaluation.credits} credits added from your ${evaluation.trustScore}% trust score. ${evaluation.summary}`
@@ -843,6 +881,8 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
       setSurveyError("");
       setSurveyStartedAt(null);
       setActiveSection("earnings");
+    } catch (error) {
+      setSurveyError(error instanceof Error ? error.message : "Survey submission failed.");
     } finally {
       setIsSubmittingSurvey(false);
     }
@@ -1040,6 +1080,12 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
 
         <main className="flex-1 overflow-y-auto p-6">
           <div className="mx-auto max-w-7xl space-y-6">
+            {surveyLoadError ? (
+              <div className="rounded-2xl border border-[#eadfff] bg-[#f8f4ff] px-5 py-4 text-sm text-[#6d28d9]">
+                {surveyLoadError}
+              </div>
+            ) : null}
+
             {activeSection === "dashboard" ? (
               <>
                 <div className="relative mb-8 h-64 overflow-hidden rounded-2xl shadow-lg">
@@ -1605,11 +1651,11 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
                               <Lock className="h-4 w-4 text-[#7c3aed]" />
                               New Password
                             </span>
-                            <input
-                              type="password"
+                            <PasswordInput
                               value={securityForm.newPassword}
                               onChange={(event) => handleSecurityChange("newPassword", event.target.value)}
                               className={settingsInputClassName}
+                              buttonClassName={isSettingsDark ? "text-[#9d8bb2] hover:text-white" : "text-slate-400 hover:text-slate-600"}
                             />
                           </label>
 
@@ -1618,11 +1664,11 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
                               <Lock className="h-4 w-4 text-[#7c3aed]" />
                               Confirm Password
                             </span>
-                            <input
-                              type="password"
+                            <PasswordInput
                               value={securityForm.confirmPassword}
                               onChange={(event) => handleSecurityChange("confirmPassword", event.target.value)}
                               className={settingsInputClassName}
+                              buttonClassName={isSettingsDark ? "text-[#9d8bb2] hover:text-white" : "text-slate-400 hover:text-slate-600"}
                             />
                           </label>
 

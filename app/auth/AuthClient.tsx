@@ -19,6 +19,7 @@ import {
   salaryRangeOptions
 } from "@/lib/auth-options";
 import SiteLogo from "@/components/SiteLogo";
+import PasswordInput from "@/components/ui/password-input";
 import { upsertProfileRecords, type PersistedProfilePayload } from "@/lib/supabase/profile-db";
 import { createClient } from "@/lib/supabase/client";
 
@@ -115,8 +116,9 @@ const inputClassName =
 
 const labelClassName = "mb-2 block text-sm font-semibold text-slate-700";
 
-function getDashboardPath(role: AuthRole) {
-  return role === "client" ? "/dashboard/client" : "/dashboard/community";
+function getDashboardPath(role: AuthRole, userId?: string) {
+  const basePath = role === "client" ? "/dashboard/client" : "/dashboard/community";
+  return userId ? `${basePath}/${userId}` : basePath;
 }
 
 function getAuthErrorMessage(error: unknown) {
@@ -372,7 +374,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
           console.warn("Supabase profile upsert during sign-up failed.", profileError);
         }
 
-        router.push(getDashboardPath(role));
+        router.push(getDashboardPath(role, data.user.id));
         router.refresh();
         return;
       }
@@ -417,7 +419,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
         }
       }
 
-      router.push(getDashboardPath(resolvedRole));
+      router.push(getDashboardPath(resolvedRole, data.user.id));
       router.refresh();
     } catch (error) {
       setLoginError("password", {
@@ -715,9 +717,8 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                         <label className={labelClassName} htmlFor="client-password">
                           Password
                         </label>
-                        <input
+                        <PasswordInput
                           id="client-password"
-                          type="password"
                           autoComplete="new-password"
                           {...register("password", {
                             required: "Password is required.",
@@ -1084,9 +1085,8 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                         <label className={labelClassName} htmlFor="community-password">
                           Password
                         </label>
-                        <input
+                        <PasswordInput
                           id="community-password"
-                          type="password"
                           autoComplete="new-password"
                           {...register("password", {
                             required: "Password is required.",
@@ -1141,9 +1141,8 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                   <label className={labelClassName} htmlFor="login-password">
                     Password
                   </label>
-                  <input
+                  <PasswordInput
                     id="login-password"
-                    type="password"
                     autoComplete="current-password"
                     {...registerLogin("password", { required: "Password is required." })}
                     className={inputClassName}

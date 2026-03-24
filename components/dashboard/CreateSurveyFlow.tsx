@@ -19,7 +19,7 @@ import {
   X
 } from "lucide-react";
 import {
-  CREATE_SURVEY_DRAFT_STORAGE_KEY,
+  getCreateSurveyDraftStorageKey,
   SURVEY_PREVIEW_STORAGE_KEY,
   type StoredSurveyQuestion,
   type SurveyPreviewPayload,
@@ -78,6 +78,7 @@ type SavedCreateSurveyDraft = {
 };
 
 type Props = {
+  userId: string;
   onBackToDashboard: () => void;
   onStartCheckout: (payload: SurveyCheckoutPayload) => Promise<{ checkoutUrl: string }>;
 };
@@ -231,7 +232,8 @@ function formatDraftSavedAt() {
   }).format(new Date());
 }
 
-export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }: Props) {
+export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartCheckout }: Props) {
+  const draftStorageKey = getCreateSurveyDraftStorageKey(userId);
   const [stage, setStage] = useState<CreateSurveyStage>("define");
   const [draft, setDraft] = useState<SurveyDraft>(buildInitialDraft);
   const [draftNotice, setDraftNotice] = useState("");
@@ -247,7 +249,7 @@ export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }:
 
   useEffect(() => {
     try {
-      const storedDraft = window.localStorage.getItem(CREATE_SURVEY_DRAFT_STORAGE_KEY);
+      const storedDraft = window.localStorage.getItem(draftStorageKey);
       if (!storedDraft) return;
 
       const parsedDraft = JSON.parse(storedDraft) as SavedCreateSurveyDraft;
@@ -263,7 +265,7 @@ export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }:
     } catch {
       // Ignore malformed local draft.
     }
-  }, []);
+  }, [draftStorageKey]);
 
   useEffect(() => {
     if (!draftNotice) return;
@@ -579,7 +581,7 @@ export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }:
       savedAt: formatDraftSavedAt()
     };
 
-    window.localStorage.setItem(CREATE_SURVEY_DRAFT_STORAGE_KEY, JSON.stringify(payload));
+    window.localStorage.setItem(draftStorageKey, JSON.stringify(payload));
     setDraftNotice("Changes saved!");
   }
 
@@ -592,7 +594,7 @@ export default function CreateSurveyFlow({ onBackToDashboard, onStartCheckout }:
     };
 
     window.localStorage.setItem(
-      CREATE_SURVEY_DRAFT_STORAGE_KEY,
+      draftStorageKey,
       JSON.stringify({
         stage,
         draft,

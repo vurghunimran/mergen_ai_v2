@@ -68,8 +68,9 @@ function mapProfile(
   };
 }
 
-export function getDashboardPathForRole(role: UserRole) {
-  return role === "client" ? "/dashboard/client" : "/dashboard/community";
+export function getDashboardPathForRole(role: UserRole, userId?: string) {
+  const basePath = role === "client" ? "/dashboard/client" : "/dashboard/community";
+  return userId ? `${basePath}/${userId}` : basePath;
 }
 
 export async function getCurrentUserProfile(): Promise<AuthenticatedProfile | null> {
@@ -121,7 +122,7 @@ export async function requireAuthenticatedProfile(requiredRole?: UserRole) {
   }
 
   if (requiredRole && authenticatedProfile.profile.role !== requiredRole) {
-    redirect(getDashboardPathForRole(authenticatedProfile.profile.role));
+    redirect(getDashboardPathForRole(authenticatedProfile.profile.role, authenticatedProfile.profile.id));
   }
 
   return authenticatedProfile;

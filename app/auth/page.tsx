@@ -12,7 +12,7 @@ export default async function AuthPage({
   const authenticatedProfile = await getCurrentUserProfile();
 
   if (authenticatedProfile) {
-    redirect(getDashboardPathForRole(authenticatedProfile.profile.role));
+    redirect(getDashboardPathForRole(authenticatedProfile.profile.role, authenticatedProfile.profile.id));
   }
 
   return <AuthClient initialType={searchParams?.type} />;

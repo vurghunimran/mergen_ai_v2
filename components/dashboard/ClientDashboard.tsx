@@ -36,15 +36,15 @@ import CreateSurveyFlow from "@/components/dashboard/CreateSurveyFlow";
 import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
 import ProfileAvatarPicker from "@/components/dashboard/ProfileAvatarPicker";
 import SiteLogo from "@/components/SiteLogo";
+import PasswordInput from "@/components/ui/password-input";
 import { AVATAR_METADATA_KEYS, getDefaultAvatarSrc, resolveAvatarSrc } from "@/lib/profile-avatars";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { buildPersistedProfilePayload, upsertProfileRecords } from "@/lib/supabase/profile-db";
 import type { UserProfile } from "@/lib/supabase/types";
 import {
-  CLIENT_DASHBOARD_SETTINGS_STORAGE_KEY,
-  CLIENT_PENDING_POLAR_CHECKOUT_STORAGE_KEY,
-  CREATE_SURVEY_DRAFT_STORAGE_KEY,
-  CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY,
+  getClientDashboardSettingsStorageKey,
+  getClientPendingPolarCheckoutStorageKey,
+  getCreateSurveyDraftStorageKey,
   type ClientSurvey,
   type PendingPolarCheckout,
   type SurveyCheckoutPayload
@@ -97,54 +97,6 @@ const ACADEMIC_POSITIONS = [
   "Research Lead",
   "Department Head"
 ] as const;
-
-const INITIAL_SURVEYS = [
-  {
-    id: 1,
-    name: "Women in Education Research in Asia",
-    status: "active",
-    responses: 20,
-    targetResponses: 500,
-    daysRemaining: 12,
-    createdDate: "Mar 15, 2026",
-    description: "Published survey project focused on women in education communities across Asia.",
-    questionCount: 10,
-    researchDescription: "A study about how women in education communities across Asia evaluate online learning opportunities.",
-    researchScope: "Women aged 25-55 in India and Singapore interested in online learning.",
-    hypothesis: "Women in education communities will prioritize flexibility and certification quality.",
-    includeDetailedAI: false,
-    rawResponses: [],
-    audience: {
-      countries: ["India", "Singapore"],
-      ageMin: 25,
-      ageMax: 55,
-      gender: "Female",
-      education: "Any education level",
-      interests: ["Online learning"],
-      researchArea: "Education Science"
-    },
-    questions: [
-      {
-        id: "seed-q-1",
-        text: "Which factor matters most when choosing an online education platform?",
-        type: "Single select",
-        options: ["Course quality", "Price", "Certification", "Flexibility"]
-      },
-      {
-        id: "seed-q-2",
-        text: "How satisfied are you with the current online learning options available to you?",
-        type: "Likert scale",
-        options: ["Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"]
-      },
-      {
-        id: "seed-q-3",
-        text: "What would most improve your online education experience?",
-        type: "Open question",
-        options: ["Free-text response"]
-      }
-    ]
-  }
-] satisfies ClientSurvey[];
 
 function buildInitialSettings(profile: UserProfile): DashboardSettings {
   return {
@@ -241,8 +193,12 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createSupabaseClient();
+  const dashboardPath = `/dashboard/client/${initialProfile.id}`;
+  const clientSettingsStorageKey = getClientDashboardSettingsStorageKey(initialProfile.id);
+  const createSurveyDraftStorageKey = getCreateSurveyDraftStorageKey(initialProfile.id);
+  const pendingPolarCheckoutStorageKey = getClientPendingPolarCheckoutStorageKey(initialProfile.id);
   const [profileSnapshot, setProfileSnapshot] = useState<UserProfile>(initialProfile);
-  const [surveys, setSurveys] = useState<ClientSurvey[]>(INITIAL_SURVEYS);
+  const [surveys, setSurveys] = useState<ClientSurvey[]>([]);
   const [savedSettings, setSavedSettings] = useState<DashboardSettings>(() => buildInitialSettings(initialProfile));
   const [settingsForm, setSettingsForm] = useState<DashboardSettings>(() => buildInitialSettings(initialProfile));
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
@@ -255,6 +211,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [paymentNotice, setPaymentNotice] = useState("");
   const [paymentError, setPaymentError] = useState("");
+  const [surveyLoadError, setSurveyLoadError] = useState("");
   const [isConfirmingPolarCheckout, setIsConfirmingPolarCheckout] = useState(false);
   const [selectedReportSurveyId, setSelectedReportSurveyId] = useState<number | null>(null);
   const [reportCache, setReportCache] = useState<Record<number, SurveyReportResponse>>({});
@@ -267,57 +224,55 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
   const isCreateSurveySection = activeSection === "create-survey";
 
   useEffect(() => {
-    try {
-      const storedSurveys = window.localStorage.getItem(CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY);
+    let cancelled = false;
 
-      if (storedSurveys === null) {
-        setSurveys(INITIAL_SURVEYS);
-      } else {
-        const parsedSurveys = JSON.parse(storedSurveys) as ClientSurvey[];
+    async function loadSurveys() {
+      try {
+        setSurveyLoadError("");
+        const response = await fetch("/api/surveys", { cache: "no-store" });
+        const data = (await response.json().catch(() => ({}))) as { surveys?: ClientSurvey[]; error?: string };
 
-        if (Array.isArray(parsedSurveys)) {
-          setSurveys(
-            parsedSurveys.map((survey) => ({
-              ...survey,
-              description:
-                survey.description ??
-                INITIAL_SURVEYS.find((initialSurvey) => initialSurvey.id === survey.id)?.description ??
-                "Published survey project.",
-              questions:
-                survey.questions ??
-                INITIAL_SURVEYS.find((initialSurvey) => initialSurvey.id === survey.id)?.questions,
-              researchDescription: survey.researchDescription ?? survey.description,
-              researchScope: survey.researchScope ?? "",
-              hypothesis: survey.hypothesis ?? "",
-              includeDetailedAI: Boolean(survey.includeDetailedAI),
-              rawResponses: Array.isArray(survey.rawResponses) ? survey.rawResponses : []
-            }))
-          );
+        if (!response.ok) {
+          throw new Error(data.error ?? "Could not load surveys.");
+        }
+
+        if (!cancelled) {
+          setSurveys(Array.isArray(data.surveys) ? data.surveys : []);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setSurveys([]);
+          setSurveyLoadError(error instanceof Error ? error.message : "Could not load surveys.");
+        }
+      } finally {
+        if (!cancelled) {
+          setHasHydratedData(true);
         }
       }
-    } catch {
-      // Ignore malformed local demo data.
-      setSurveys(INITIAL_SURVEYS);
-    } finally {
-      setHasHydratedData(true);
     }
+
+    void loadSurveys();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    if (!hasHydratedData) return;
-    window.localStorage.setItem(CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY, JSON.stringify(surveys));
-  }, [hasHydratedData, surveys]);
-
-  useEffect(() => {
     const section = searchParams.get("section");
+    const error = searchParams.get("error");
 
     if (section === "create-survey") {
       setActiveSection("create-survey");
     }
+
+    if (error === "access-denied") {
+      setPaymentError("403 Unauthorized. You can only access surveys and dashboards that belong to your account.");
+    }
   }, [searchParams]);
 
   useEffect(() => {
-    const localAvatarSettings = readLocalAvatarSettings(CLIENT_DASHBOARD_SETTINGS_STORAGE_KEY);
+    const localAvatarSettings = readLocalAvatarSettings(clientSettingsStorageKey);
 
     if (!localAvatarSettings?.avatarMode) {
       return;
@@ -341,7 +296,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
       avatarPreset: localAvatarSettings.avatarPreset ?? currentProfile.avatarPreset,
       avatarCustomDataUrl: localAvatarSettings.avatarCustomDataUrl ?? currentProfile.avatarCustomDataUrl
     }));
-  }, []);
+  }, [clientSettingsStorageKey]);
 
   useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
@@ -451,12 +406,26 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
         ]
       : [];
 
-  function handleDeleteSurvey(surveyId: number) {
-    setSurveys((currentSurveys) => {
-      const nextSurveys = currentSurveys.filter((survey) => survey.id !== surveyId);
-      window.localStorage.setItem(CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY, JSON.stringify(nextSurveys));
-      return nextSurveys;
-    });
+  async function handleDeleteSurvey(surveyId: number) {
+    setPaymentError("");
+    setOpenMenuId(null);
+
+    try {
+      const response = await fetch(`/api/surveys/${surveyId}`, {
+        method: "DELETE"
+      });
+      const data = (await response.json().catch(() => ({}))) as { error?: string };
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Could not delete survey.");
+      }
+
+      setSurveys((currentSurveys) => currentSurveys.filter((survey) => survey.id !== surveyId));
+      setSelectedReportSurveyId((currentId) => (currentId === surveyId ? null : currentId));
+    } catch (error) {
+      setPaymentError(error instanceof Error ? error.message : "Could not delete survey.");
+    }
+
     setOpenMenuId(null);
   }
 
@@ -470,37 +439,24 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
   async function publishSurvey(payload: SurveyCheckoutPayload) {
     setPaymentNotice("");
     setPaymentError("");
+    const createResponse = await fetch("/api/surveys", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
 
-    const createdDate = new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric"
-    }).format(new Date());
-
-    const nextSurvey: ClientSurvey = {
-      id: Date.now(),
-      name: payload.title,
-      status: "published",
-      responses: 0,
-      targetResponses: payload.targetResponses,
-      daysRemaining: 14,
-      createdDate,
-      description: payload.description,
-      questionCount: payload.questionCount,
-      audience: payload.audience,
-      questions: payload.questions,
-      researchDescription: payload.researchDescription,
-      researchScope: payload.researchScope,
-      hypothesis: payload.hypothesis,
-      includeDetailedAI: payload.includeDetailedAI,
-      rawResponses: []
+    const createData = (await createResponse.json().catch(() => ({}))) as {
+      survey?: ClientSurvey;
+      error?: string;
     };
 
-    setSurveys((currentSurveys) => {
-      const nextSurveys = [nextSurvey, ...currentSurveys];
-      window.localStorage.setItem(CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY, JSON.stringify(nextSurveys));
-      return nextSurveys;
-    });
+    if (!createResponse.ok || !createData.survey) {
+      throw new Error(createData.error ?? "Survey could not be created.");
+    }
+
+    setSurveys((currentSurveys) => [createData.survey as ClientSurvey, ...currentSurveys]);
 
     try {
       const response = await fetch("/api/surveys/notify-community", {
@@ -571,7 +527,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ survey })
+        body: JSON.stringify({ surveyId: survey.id })
       });
 
       const report = (await response.json()) as Partial<SurveyReportResponse> & { error?: string };
@@ -615,7 +571,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
     setPaymentError("");
 
     window.localStorage.setItem(
-      CLIENT_PENDING_POLAR_CHECKOUT_STORAGE_KEY,
+      pendingPolarCheckoutStorageKey,
       JSON.stringify({
         payload,
         createdAt: new Date().toISOString()
@@ -641,7 +597,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
     };
 
     if (!response.ok || !data.checkoutUrl) {
-      window.localStorage.removeItem(CLIENT_PENDING_POLAR_CHECKOUT_STORAGE_KEY);
+      window.localStorage.removeItem(pendingPolarCheckoutStorageKey);
       throw new Error(data.error ?? "Polar checkout could not be created.");
     }
 
@@ -661,7 +617,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
     if (!polarCheckoutId) {
       if (paymentStatus === "cancelled") {
         setPaymentNotice("Polar checkout was cancelled. Your survey draft is still saved.");
-        window.history.replaceState(null, "", "/dashboard/client");
+        window.history.replaceState(null, "", dashboardPath);
       }
       return;
     }
@@ -674,7 +630,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
       setPaymentNotice("");
 
       try {
-        const pendingCheckoutRaw = window.localStorage.getItem(CLIENT_PENDING_POLAR_CHECKOUT_STORAGE_KEY);
+        const pendingCheckoutRaw = window.localStorage.getItem(pendingPolarCheckoutStorageKey);
 
         if (!pendingCheckoutRaw) {
           throw new Error("Payment returned from Polar, but no pending survey draft was found on this device.");
@@ -707,8 +663,8 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
           return;
         }
 
-        window.localStorage.removeItem(CLIENT_PENDING_POLAR_CHECKOUT_STORAGE_KEY);
-        window.localStorage.removeItem(CREATE_SURVEY_DRAFT_STORAGE_KEY);
+        window.localStorage.removeItem(pendingPolarCheckoutStorageKey);
+        window.localStorage.removeItem(createSurveyDraftStorageKey);
         setActiveSection("active-surveys");
         setPaymentNotice(
           launchResult.notificationError
@@ -717,14 +673,14 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
               ? `Payment confirmed and survey published. ${launchResult.sentEmails} matching community members were emailed.`
               : "Payment confirmed and survey published."
         );
-        window.history.replaceState(null, "", "/dashboard/client");
+        window.history.replaceState(null, "", dashboardPath);
       } catch (error) {
         if (cancelled) {
           return;
         }
 
         setPaymentError(error instanceof Error ? error.message : "Polar payment verification failed.");
-        window.history.replaceState(null, "", "/dashboard/client");
+        window.history.replaceState(null, "", dashboardPath);
       } finally {
         if (!cancelled) {
           setIsConfirmingPolarCheckout(false);
@@ -737,7 +693,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
     return () => {
       cancelled = true;
     };
-  }, [hasHydratedData, isConfirmingPolarCheckout, searchParams]);
+  }, [createSurveyDraftStorageKey, dashboardPath, hasHydratedData, isConfirmingPolarCheckout, pendingPolarCheckoutStorageKey, searchParams]);
 
   function handleSettingsChange<Key extends keyof DashboardSettings>(field: Key, value: DashboardSettings[Key]) {
     setSettingsSaved(false);
@@ -851,7 +807,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
       await upsertProfileRecords(supabase, nextProfileSnapshot.id, buildPersistedProfilePayload(nextProfileSnapshot));
 
       window.localStorage.setItem(
-        CLIENT_DASHBOARD_SETTINGS_STORAGE_KEY,
+        clientSettingsStorageKey,
         JSON.stringify({
           avatarMode: nextSettings.avatarMode,
           avatarPreset: nextSettings.avatarPreset,
@@ -984,6 +940,12 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
             {paymentError ? (
               <div className="rounded-2xl border border-[#ffd9bf] bg-[#fff4ea] px-5 py-4 text-sm text-[#c2410c]">
                 {paymentError}
+              </div>
+            ) : null}
+
+            {surveyLoadError ? (
+              <div className="rounded-2xl border border-[#ffd9bf] bg-[#fffaf5] px-5 py-4 text-sm text-[#c2410c]">
+                {surveyLoadError}
               </div>
             ) : null}
 
@@ -1160,6 +1122,15 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
                                     />
                                   </div>
                                 </div>
+
+                                <div className="mt-4">
+                                  <Link
+                                    href={`${dashboardPath}/surveys/${survey.id}`}
+                                    className="inline-flex items-center rounded-full border border-[#ffd1ad] bg-[#fff7f1] px-4 py-2 text-sm font-semibold text-[#c2410c] transition hover:border-[#ffb57a] hover:bg-[#fff1e7]"
+                                  >
+                                    Open survey
+                                  </Link>
+                                </div>
                               </div>
 
                               <div className="relative" data-survey-actions>
@@ -1179,7 +1150,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
                                   <div className="absolute right-0 top-11 z-20 min-w-[180px] rounded-xl border border-gray-200 bg-white p-2 shadow-[0_18px_40px_rgba(15,23,42,0.12)]">
                                     <button
                                       type="button"
-                                      onClick={() => handleDeleteSurvey(survey.id)}
+                                      onClick={() => void handleDeleteSurvey(survey.id)}
                                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
                                     >
                                       <Trash2 className="h-4 w-4" />
@@ -1234,6 +1205,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
               </>
             ) : activeSection === "create-survey" ? (
               <CreateSurveyFlow
+                userId={initialProfile.id}
                 onBackToDashboard={() => setActiveSection("dashboard")}
                 onStartCheckout={handleStartCheckout}
               />
@@ -1297,6 +1269,12 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
                               <h2 className="text-[24px] font-bold tracking-[-0.03em] text-[#7c3412]">{survey.name}</h2>
                               <p className="mt-2.5 max-w-sm text-[15px] leading-6 text-[#667085]">{survey.description}</p>
                               <p className="mt-4 text-[15px] font-medium text-[#667085]">Respondents: {survey.responses}</p>
+                              <Link
+                                href={`${dashboardPath}/surveys/${survey.id}`}
+                                className="mt-5 inline-flex items-center rounded-full border border-[#ffd1ad] bg-[#fff7f1] px-4 py-2 text-sm font-semibold text-[#c2410c] transition hover:border-[#ffb57a] hover:bg-[#fff1e7]"
+                              >
+                                Open survey
+                              </Link>
                             </div>
 
                             <div className="relative shrink-0" data-survey-actions>
@@ -1316,7 +1294,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
                                 <div className="absolute right-0 top-11 z-20 min-w-[180px] rounded-xl border border-gray-200 bg-white p-2 shadow-[0_18px_40px_rgba(15,23,42,0.12)]">
                                   <button
                                     type="button"
-                                    onClick={() => handleDeleteSurvey(survey.id)}
+                                    onClick={() => void handleDeleteSurvey(survey.id)}
                                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
                                   >
                                     <Trash2 className="h-4 w-4" />
@@ -2057,11 +2035,11 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
                               <Lock className="h-4 w-4 text-[#f35b04]" />
                               New Password
                             </span>
-                            <input
-                              type="password"
+                            <PasswordInput
                               value={securityForm.newPassword}
                               onChange={(event) => handleSecurityChange("newPassword", event.target.value)}
                               className={settingsInputClassName}
+                              buttonClassName={isSettingsDark ? "text-[#8f837a] hover:text-white" : "text-slate-400 hover:text-slate-600"}
                             />
                           </label>
 
@@ -2070,11 +2048,11 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
                               <Lock className="h-4 w-4 text-[#f35b04]" />
                               Confirm Password
                             </span>
-                            <input
-                              type="password"
+                            <PasswordInput
                               value={securityForm.confirmPassword}
                               onChange={(event) => handleSecurityChange("confirmPassword", event.target.value)}
                               className={settingsInputClassName}
+                              buttonClassName={isSettingsDark ? "text-[#8f837a] hover:text-white" : "text-slate-400 hover:text-slate-600"}
                             />
                           </label>
 

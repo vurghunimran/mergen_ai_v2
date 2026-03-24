@@ -1,10 +1,33 @@
-export const CLIENT_DASHBOARD_SURVEYS_STORAGE_KEY = "mergen-client-dashboard-surveys";
-export const CLIENT_DASHBOARD_SETTINGS_STORAGE_KEY = "mergen-client-dashboard-settings";
-export const COMMUNITY_DASHBOARD_SETTINGS_STORAGE_KEY = "mergen-community-dashboard-settings";
-export const COMMUNITY_DASHBOARD_PROGRESS_STORAGE_KEY = "mergen-community-dashboard-progress";
-export const CREATE_SURVEY_DRAFT_STORAGE_KEY = "mergen-client-create-survey-draft";
-export const CLIENT_PENDING_POLAR_CHECKOUT_STORAGE_KEY = "mergen-client-pending-polar-checkout";
+const CLIENT_DASHBOARD_SETTINGS_STORAGE_KEY = "mergen-client-dashboard-settings";
+const COMMUNITY_DASHBOARD_SETTINGS_STORAGE_KEY = "mergen-community-dashboard-settings";
+const COMMUNITY_DASHBOARD_PROGRESS_STORAGE_KEY = "mergen-community-dashboard-progress";
+const CREATE_SURVEY_DRAFT_STORAGE_KEY = "mergen-client-create-survey-draft";
+const CLIENT_PENDING_POLAR_CHECKOUT_STORAGE_KEY = "mergen-client-pending-polar-checkout";
 export const SURVEY_PREVIEW_STORAGE_KEY = "mergen-survey-preview";
+
+function buildUserScopedStorageKey(baseKey: string, userId: string) {
+  return `${baseKey}:${userId}`;
+}
+
+export function getClientDashboardSettingsStorageKey(userId: string) {
+  return buildUserScopedStorageKey(CLIENT_DASHBOARD_SETTINGS_STORAGE_KEY, userId);
+}
+
+export function getCommunityDashboardSettingsStorageKey(userId: string) {
+  return buildUserScopedStorageKey(COMMUNITY_DASHBOARD_SETTINGS_STORAGE_KEY, userId);
+}
+
+export function getCommunityDashboardProgressStorageKey(userId: string) {
+  return buildUserScopedStorageKey(COMMUNITY_DASHBOARD_PROGRESS_STORAGE_KEY, userId);
+}
+
+export function getCreateSurveyDraftStorageKey(userId: string) {
+  return buildUserScopedStorageKey(CREATE_SURVEY_DRAFT_STORAGE_KEY, userId);
+}
+
+export function getClientPendingPolarCheckoutStorageKey(userId: string) {
+  return buildUserScopedStorageKey(CLIENT_PENDING_POLAR_CHECKOUT_STORAGE_KEY, userId);
+}
 
 export type SurveyQuestionType =
   | "Multiple choice"
@@ -76,6 +99,7 @@ export type SurveyResponseRecord = {
 
 export type ClientSurvey = {
   id: number;
+  userId: string;
   name: string;
   status: string;
   responses: number;
@@ -119,7 +143,7 @@ export type SurveyPreviewPayload = {
 };
 
 export type SurveyReportRequest = {
-  survey: ClientSurvey;
+  surveyId: number;
 };
 
 export type SurveyReportResponse = {

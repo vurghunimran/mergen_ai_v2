@@ -1,10 +1,35 @@
+import { redirect } from "next/navigation";
 import { requireAuthenticatedProfile } from "@/lib/supabase/profile-server";
-import CommunityDashboard from "@/components/dashboard/CommunityDashboard";
 
 export const dynamic = "force-dynamic";
 
-export default async function CommunityDashboardPage() {
-  const { profile } = await requireAuthenticatedProfile("community");
+function buildSearchString(searchParams?: Record<string, string | string[] | undefined>) {
+  if (!searchParams) {
+    return "";
+  }
 
-  return <CommunityDashboard initialProfile={profile} />;
+  const params = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (Array.isArray(value)) {
+      value.forEach((entry) => params.append(key, entry));
+      continue;
+    }
+
+    if (typeof value === "string") {
+      params.set(key, value);
+    }
+  }
+
+  const normalized = params.toString();
+  return normalized ? `?${normalized}` : "";
+}
+
+export default async function CommunityDashboardRedirectPage({
+  searchParams
+}: {
+  searchParams?: Record<string, string | string[] | undefined>;
+}) {
+  const { profile } = await requireAuthenticatedProfile("community");
+  redirect(`/dashboard/community/${profile.id}${buildSearchString(searchParams)}`);
 }

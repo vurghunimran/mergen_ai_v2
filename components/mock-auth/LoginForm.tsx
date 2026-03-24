@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
+import PasswordInput from "@/components/ui/password-input";
 
 type DemoUser = {
   id: string;
@@ -126,9 +127,8 @@ export default function LoginForm({ demoUsers, redirectedFromDashboard = false }
             <label className="mb-2 block text-sm font-semibold text-slate-700" htmlFor="password">
               Password
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#d85a2f] focus:bg-white"

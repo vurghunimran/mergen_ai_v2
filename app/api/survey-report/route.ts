@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import type { SurveyReportRequest, SurveyReportResponse } from "@/lib/dashboard-data";
+import { getClientSurveyForUser } from "@/lib/survey-db";
+import { buildForbiddenSurveyResponse, requireAuthorizedProfile } from "@/lib/survey-authorization";
 import { buildFallbackSurveyReport, buildSurveyReportContext } from "@/lib/survey-report";
+import { createClient } from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
 
 type GeminiReportPayload = {
   candidates?: Array<{
@@ -68,11 +73,29 @@ function extractGeminiText(payload: GeminiReportPayload) {
 export async function POST(request: Request) {
   const requestBody = (await request.json().catch(() => null)) as SurveyReportRequest | null;
 
-  if (!requestBody?.survey) {
-    return NextResponse.json({ error: "Missing survey payload." }, { status: 400 });
+  if (!requestBody?.surveyId || !Number.isInteger(requestBody.surveyId) || requestBody.surveyId <= 0) {
+    return NextResponse.json({ error: "Missing survey id." }, { status: 400 });
   }
 
-  const survey = requestBody.survey;
+  const authorized = await requireAuthorizedProfile("client");
+
+  if (authorized.response) {
+    return authorized.response;
+  }
+
+  let survey;
+
+  try {
+    const supabase = createClient();
+    survey = await getClientSurveyForUser(supabase, requestBody.surveyId, authorized.profile.id);
+  } catch (error) {
+    console.error("Failed to load survey report source data.", error);
+    return NextResponse.json({ error: "Could not load survey report data." }, { status: 500 });
+  }
+
+  if (!survey) {
+    return buildForbiddenSurveyResponse();
+  }
 
   if (!survey.includeDetailedAI) {
     return NextResponse.json({ error: "AI report is only available for surveys that purchased the AI report add-on." }, { status: 403 });
