@@ -192,7 +192,6 @@ export async function POST(request: Request) {
             description: body.description,
             questionCount: body.questionCount,
             targetResponses: body.targetResponses,
-            audience: body.audience,
             dashboardUrl
           });
 

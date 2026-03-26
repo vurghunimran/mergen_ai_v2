@@ -1,5 +1,3 @@
-import { buildAudienceCriteriaEntries } from "@/lib/audience-matching";
-import type { SurveyAudience } from "@/lib/dashboard-data";
 import { escapeHtml } from "@/lib/email/config";
 
 type ContactSubmissionEmailInput = {
@@ -16,7 +14,6 @@ type SurveyLaunchEmailInput = {
   description: string;
   questionCount: number;
   targetResponses: number;
-  audience: SurveyAudience;
   dashboardUrl: string;
 };
 
@@ -32,19 +29,6 @@ function formatSubmittedAt(value: string) {
     timeStyle: "short",
     timeZone: "UTC"
   }).format(timestamp);
-}
-
-function buildAudienceHtml(audience: SurveyAudience) {
-  return buildAudienceCriteriaEntries(audience)
-    .map(
-      (entry) =>
-        `<li style="margin: 0 0 8px;"><strong>${escapeHtml(entry.label)}:</strong> ${escapeHtml(entry.value)}</li>`
-    )
-    .join("");
-}
-
-function buildAudienceText(audience: SurveyAudience) {
-  return buildAudienceCriteriaEntries(audience).map((entry) => `${entry.label}: ${entry.value}`).join("\n");
 }
 
 export function buildContactSubmissionEmail(input: ContactSubmissionEmailInput) {
@@ -81,9 +65,6 @@ export function buildContactSubmissionEmail(input: ContactSubmissionEmailInput) 
 }
 
 export function buildSurveyLaunchEmail(input: SurveyLaunchEmailInput) {
-  const audienceHtml = buildAudienceHtml(input.audience);
-  const audienceText = buildAudienceText(input.audience);
-
   return {
     subject: `New survey available: ${input.title}`,
     text: [
@@ -96,9 +77,6 @@ export function buildSurveyLaunchEmail(input: SurveyLaunchEmailInput) {
       `Questions: ${input.questionCount}`,
       `Target responses: ${input.targetResponses}`,
       "",
-      "Audience criteria",
-      audienceText,
-      "",
       `Open your dashboard: ${input.dashboardUrl}`
     ].join("\n"),
     html: `
@@ -109,10 +87,6 @@ export function buildSurveyLaunchEmail(input: SurveyLaunchEmailInput) {
           <h1 style="font-size: 22px; margin: 0 0 12px;">${escapeHtml(input.title)}</h1>
           <p style="margin: 0 0 16px;">${escapeHtml(input.description)}</p>
           <p style="margin: 0 0 16px;"><strong>Questions:</strong> ${input.questionCount} | <strong>Target responses:</strong> ${input.targetResponses}</p>
-          <p style="margin: 0 0 8px; font-weight: 700;">Audience criteria</p>
-          <ul style="padding-left: 18px; margin: 0;">
-            ${audienceHtml}
-          </ul>
         </div>
         <p style="margin: 20px 0 0;">
           <a href="${escapeHtml(input.dashboardUrl)}" style="display: inline-block; border-radius: 999px; background: #ea580c; color: #ffffff; font-weight: 700; padding: 12px 20px; text-decoration: none;">
