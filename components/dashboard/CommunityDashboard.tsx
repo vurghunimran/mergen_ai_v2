@@ -34,6 +34,8 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { buildPersistedProfilePayload, upsertProfileRecords } from "@/lib/supabase/profile-db";
 import type { UserProfile } from "@/lib/supabase/types";
 import {
+  type CommunityCompletion,
+  type CommunityProgress,
   getCommunityDashboardProgressStorageKey,
   getCommunityDashboardSettingsStorageKey,
   type ClientSurvey,
@@ -77,21 +79,6 @@ type RewardItem = {
   subtitle: string;
   credits: number;
   brandClassName: string;
-};
-
-type CommunityCompletion = {
-  surveyId: number;
-  surveyName: string;
-  earnedCredits: number;
-  score: number;
-  completedAt: string;
-  summary: string;
-  durationSeconds: number;
-  source: SurveyTrustEvaluationResponse["source"];
-};
-
-type CommunityProgress = {
-  completions: CommunityCompletion[];
 };
 
 function buildInitialSettings(profile: UserProfile): CommunitySettings {
@@ -282,6 +269,21 @@ function formatDuration(seconds: number) {
   return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
 }
 
+function normalizeCommunityCompletion(completion: CommunityCompletion): CommunityCompletion {
+  return {
+    ...completion,
+    summary:
+      typeof completion.summary === "string" && completion.summary.trim().length > 0
+        ? completion.summary
+        : "Survey completed before AI trust notes were enabled.",
+    durationSeconds:
+      typeof completion.durationSeconds === "number" && completion.durationSeconds > 0
+        ? completion.durationSeconds
+        : 0,
+    source: completion.source === "gemini" ? "gemini" : "fallback"
+  };
+}
+
 function readLocalAvatarSettings(storageKey: string) {
   if (typeof window === "undefined") {
     return null;
@@ -356,25 +358,16 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
           const parsedProgress = JSON.parse(storedProgress) as CommunityProgress;
 
           if (parsedProgress && Array.isArray(parsedProgress.completions)) {
-            setCompletedSurveys(
-              parsedProgress.completions.map((completion) => ({
-                ...completion,
-                summary:
-                  typeof completion.summary === "string" && completion.summary.trim().length > 0
-                    ? completion.summary
-                    : "Survey completed before AI trust notes were enabled.",
-                durationSeconds:
-                  typeof completion.durationSeconds === "number" && completion.durationSeconds > 0
-                    ? completion.durationSeconds
-                    : 0,
-                source: completion.source === "gemini" ? "gemini" : "fallback"
-              }))
-            );
+            setCompletedSurveys(parsedProgress.completions.map(normalizeCommunityCompletion));
           }
         }
 
         const response = await fetch("/api/surveys/available", { cache: "no-store" });
-        const data = (await response.json().catch(() => ({}))) as { surveys?: ClientSurvey[]; error?: string };
+        const data = (await response.json().catch(() => ({}))) as {
+          surveys?: ClientSurvey[];
+          completions?: CommunityCompletion[];
+          error?: string;
+        };
 
         if (!response.ok) {
           throw new Error(data.error ?? "Could not load surveys.");
@@ -383,6 +376,15 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
         if (!cancelled) {
           setSurveyLoadError(null);
           setClientSurveys(Array.isArray(data.surveys) ? data.surveys : []);
+
+          if (Array.isArray(data.completions)) {
+            const normalizedCompletions = data.completions.map(normalizeCommunityCompletion);
+            setCompletedSurveys(normalizedCompletions);
+            window.localStorage.setItem(
+              communityProgressStorageKey,
+              JSON.stringify({ completions: normalizedCompletions } satisfies CommunityProgress)
+            );
+          }
         }
       } catch (error) {
         if (!cancelled) {
@@ -770,6 +772,31 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
     });
   }
 
+  async function refreshSurveyStateFromServer() {
+    const response = await fetch("/api/surveys/available", { cache: "no-store" });
+    const data = (await response.json().catch(() => ({}))) as {
+      surveys?: ClientSurvey[];
+      completions?: CommunityCompletion[];
+      error?: string;
+    };
+
+    if (!response.ok) {
+      throw new Error(data.error ?? "Could not refresh community dashboard.");
+    }
+
+    const nextSurveys = Array.isArray(data.surveys) ? data.surveys : [];
+    const nextCompletions = Array.isArray(data.completions)
+      ? data.completions.map(normalizeCommunityCompletion)
+      : [];
+
+    setClientSurveys(nextSurveys);
+    setCompletedSurveys(nextCompletions);
+    window.localStorage.setItem(
+      communityProgressStorageKey,
+      JSON.stringify({ completions: nextCompletions } satisfies CommunityProgress)
+    );
+  }
+
   async function handleSubmitSurvey() {
     if (!selectedSurvey) {
       return;
@@ -866,7 +893,10 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
         source: evaluation.source
       };
 
-      const nextCompletions = [completion, ...completedSurveys];
+      const nextCompletions = [
+        normalizeCommunityCompletion(completion),
+        ...completedSurveys.filter((entry) => entry.surveyId !== completion.surveyId)
+      ];
       window.localStorage.setItem(
         communityProgressStorageKey,
         JSON.stringify({ completions: nextCompletions } satisfies CommunityProgress)
@@ -893,7 +923,23 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
       setSurveyStartedAt(null);
       setActiveSection("earnings");
     } catch (error) {
-      setSurveyError(error instanceof Error ? error.message : "Survey submission failed.");
+      if (error instanceof Error && error.message.toLowerCase().includes("already submitted")) {
+        try {
+          await refreshSurveyStateFromServer();
+          setSelectedSurveyId(null);
+          setSurveyAnswers({});
+          setSurveyStartedAt(null);
+          setActiveSection("earnings");
+          setSurveyNotice("This survey was already submitted earlier. Your saved credits and completion history have been restored.");
+          setSurveyError("");
+        } catch (refreshError) {
+          setSurveyError(
+            refreshError instanceof Error ? refreshError.message : "Survey submission failed."
+          );
+        }
+      } else {
+        setSurveyError(error instanceof Error ? error.message : "Survey submission failed.");
+      }
     } finally {
       setIsSubmittingSurvey(false);
     }

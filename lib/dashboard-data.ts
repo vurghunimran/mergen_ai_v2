@@ -97,6 +97,21 @@ export type SurveyResponseRecord = {
   answers: SurveySubmissionAnswer[];
 };
 
+export type CommunityCompletion = {
+  surveyId: number;
+  surveyName: string;
+  earnedCredits: number;
+  score: number;
+  completedAt: string;
+  summary: string;
+  durationSeconds: number;
+  source: SurveyTrustEvaluationResponse["source"];
+};
+
+export type CommunityProgress = {
+  completions: CommunityCompletion[];
+};
+
 export type ClientSurvey = {
   id: number;
   userId: string;

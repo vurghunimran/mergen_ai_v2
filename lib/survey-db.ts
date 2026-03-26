@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   ClientSurvey,
+  CommunityCompletion,
   StoredSurveyQuestion,
   SurveyAudience,
   SurveyCheckoutPayload,
@@ -40,6 +41,23 @@ export type SurveyResponseRow = {
   earned_credits: number;
   summary: string;
   answers: Json | null;
+};
+
+type CommunityCompletionRow = {
+  survey_id: number;
+  submitted_at: string;
+  completion_time_seconds: number;
+  trust_score: number;
+  earned_credits: number;
+  summary: string;
+  surveys:
+    | {
+        name: string | null;
+      }
+    | {
+        name: string | null;
+      }[]
+    | null;
 };
 
 const VALID_QUESTION_TYPES = new Set([
@@ -167,6 +185,27 @@ function mapSurveyResponseRow(row: SurveyResponseRow): SurveyResponseRecord {
     earnedCredits: row.earned_credits,
     summary: row.summary,
     answers: parseSurveySubmissionAnswers(row.answers)
+  };
+}
+
+function getSurveyNameFromCompletionRow(row: CommunityCompletionRow) {
+  if (Array.isArray(row.surveys)) {
+    return row.surveys[0]?.name ?? "";
+  }
+
+  return row.surveys?.name ?? "";
+}
+
+function mapCommunityCompletionRow(row: CommunityCompletionRow): CommunityCompletion {
+  return {
+    surveyId: row.survey_id,
+    surveyName: getSurveyNameFromCompletionRow(row) || `Survey #${row.survey_id}`,
+    earnedCredits: row.earned_credits,
+    score: row.trust_score,
+    completedAt: row.submitted_at,
+    summary: row.summary,
+    durationSeconds: row.completion_time_seconds,
+    source: "fallback"
   };
 }
 
@@ -303,4 +342,35 @@ export async function listPublishedSurveys(supabase: SupabaseClient) {
   }
 
   return ((data ?? []) as SurveyRow[]).map((survey) => mapSurveyRowToClientSurvey(survey));
+}
+
+export async function listPublishedSurveysForRespondent(supabase: SupabaseClient, respondentId: string) {
+  const [surveyRows, responseRows] = await Promise.all([
+    listPublishedSurveys(supabase),
+    supabase.from("survey_responses").select("survey_id").eq("respondent_id", respondentId)
+  ]);
+
+  const { data, error } = responseRows;
+
+  if (error) {
+    throw error;
+  }
+
+  const submittedSurveyIds = new Set((data ?? []).map((row) => row.survey_id as number));
+
+  return surveyRows.filter((survey) => !submittedSurveyIds.has(survey.id));
+}
+
+export async function listCommunityCompletions(supabase: SupabaseClient, respondentId: string) {
+  const { data, error } = await supabase
+    .from("survey_responses")
+    .select("survey_id,submitted_at,completion_time_seconds,trust_score,earned_credits,summary,surveys(name)")
+    .eq("respondent_id", respondentId)
+    .order("submitted_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return ((data ?? []) as CommunityCompletionRow[]).map(mapCommunityCompletionRow);
 }
