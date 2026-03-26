@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
 import {
-  buildAudienceCriteriaEntries,
   buildCommunityAudienceProfile,
   prioritizeAudienceCandidates
 } from "@/lib/audience-matching";
 import type { SurveyAudience } from "@/lib/dashboard-data";
+import { buildSurveyLaunchEmail } from "@/lib/email/templates";
+import {
+  createResendClient,
+  getAppBaseUrl,
+  getResendFromEmail,
+  isValidEmail
+} from "@/lib/email/config";
 import { getCurrentUserProfile } from "@/lib/supabase/profile-server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -35,15 +40,6 @@ type CommunityProfileRow = {
   family_status: string | null;
 };
 
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
 function chunkArray<T>(items: T[], size: number) {
   const chunks: T[][] = [];
 
@@ -55,30 +51,20 @@ function chunkArray<T>(items: T[], size: number) {
 }
 
 function isValidPayload(body: NotifyCommunityRequest): body is Required<NotifyCommunityRequest> {
+  const targetResponses = body.targetResponses;
+  const questionCount = body.questionCount;
+
   return Boolean(
     body.title?.trim() &&
       body.description?.trim() &&
-      typeof body.targetResponses === "number" &&
-      typeof body.questionCount === "number" &&
+      typeof targetResponses === "number" &&
+      Number.isFinite(targetResponses) &&
+      targetResponses > 0 &&
+      typeof questionCount === "number" &&
+      Number.isFinite(questionCount) &&
+      questionCount > 0 &&
       body.audience
   );
-}
-
-function buildAudienceHtml(audience: SurveyAudience) {
-  return buildAudienceCriteriaEntries(audience)
-    .map(
-      (entry) =>
-        `<li style="margin: 0 0 8px;"><strong>${escapeHtml(entry.label)}:</strong> ${escapeHtml(entry.value)}</li>`
-    )
-    .join("");
-}
-
-function buildAudienceText(audience: SurveyAudience) {
-  return buildAudienceCriteriaEntries(audience).map((entry) => `${entry.label}: ${entry.value}`).join("\n");
-}
-
-function buildDashboardUrl(request: Request) {
-  return `${new URL(request.url).origin}/dashboard/community`;
 }
 
 export async function POST(request: Request) {
@@ -99,21 +85,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Invalid survey notification payload" }, { status: 400 });
     }
 
-    const resendApiKey = process.env.RESEND_API_KEY;
-
-    if (!resendApiKey) {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
       return NextResponse.json(
         {
           success: false,
-          error: "Missing RESEND_API_KEY or SUPABASE_SERVICE_ROLE_KEY configuration"
+          error: "Missing SUPABASE_SERVICE_ROLE_KEY configuration"
         },
         { status: 500 }
       );
     }
 
     const admin = createAdminClient();
-    const resend = new Resend(resendApiKey);
-    const fromEmail = process.env.RESEND_FROM_EMAIL || "MERGEN AI <onboarding@resend.dev>";
+    const resend = createResendClient();
+    const fromEmail = getResendFromEmail("MERGEN AI <onboarding@resend.dev>");
 
     const [{ data: baseRows, error: baseError }, { data: communityRows, error: communityError }] = await Promise.all([
       admin.from("profiles").select("id,email,first_name").eq("role", "community"),
@@ -137,8 +121,9 @@ export async function POST(request: Request) {
     const candidateRecipients = ((baseRows as CommunityBaseRow[] | null) ?? [])
       .map((baseRow) => {
         const communityRow = communityById.get(baseRow.id);
+        const normalizedEmail = baseRow.email?.trim().toLowerCase() ?? "";
 
-        if (!communityRow || !baseRow.email) {
+        if (!communityRow || !normalizedEmail || !isValidEmail(normalizedEmail)) {
           return null;
         }
 
@@ -154,7 +139,7 @@ export async function POST(request: Request) {
         });
 
         return {
-          email: baseRow.email,
+          email: normalizedEmail,
           firstName: baseRow.first_name?.trim() || "there",
           memberProfile
         };
@@ -169,15 +154,23 @@ export async function POST(request: Request) {
         } => recipient !== null
       );
 
-    const matchingRecipients = prioritizeAudienceCandidates(
+    const matchingRecipientsByEmail = new Map<string, { email: string; firstName: string }>();
+
+    for (const { email, firstName } of prioritizeAudienceCandidates(
       body.audience,
       candidateRecipients,
       (candidate) => candidate.memberProfile,
       body.targetResponses
-    ).map(({ email, firstName }) => ({
-      email,
-      firstName
-    }));
+    )) {
+      if (!matchingRecipientsByEmail.has(email)) {
+        matchingRecipientsByEmail.set(email, {
+          email,
+          firstName
+        });
+      }
+    }
+
+    const matchingRecipients = [...matchingRecipientsByEmail.values()];
 
     if (matchingRecipients.length === 0) {
       return NextResponse.json({
@@ -187,54 +180,31 @@ export async function POST(request: Request) {
       });
     }
 
-    const dashboardUrl = buildDashboardUrl(request);
-    const audienceHtml = buildAudienceHtml(body.audience);
-    const audienceText = buildAudienceText(body.audience);
+    const dashboardUrl = `${getAppBaseUrl(request)}/dashboard/community`;
     let sentEmails = 0;
 
     for (const recipientChunk of chunkArray(matchingRecipients, 50)) {
       const batchResponse = await resend.batch.send(
-        recipientChunk.map((recipient) => ({
-          from: fromEmail,
-          to: recipient.email,
-          subject: `New survey available: ${body.title}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
-              <p>Hello ${escapeHtml(recipient.firstName)},</p>
-              <p>
-                A new survey matching your MERGEN AI profile is now available.
-              </p>
-              <div style="margin: 20px 0; border: 1px solid #e5e7eb; border-radius: 16px; padding: 20px; background: #f9fafb;">
-                <h1 style="font-size: 22px; margin: 0 0 12px;">${escapeHtml(body.title)}</h1>
-                <p style="margin: 0 0 16px;">${escapeHtml(body.description)}</p>
-                <p style="margin: 0 0 16px;"><strong>Questions:</strong> ${body.questionCount} | <strong>Target responses:</strong> ${body.targetResponses}</p>
-                <p style="margin: 0 0 8px; font-weight: 700;">Audience criteria</p>
-                <ul style="padding-left: 18px; margin: 0;">
-                  ${audienceHtml}
-                </ul>
-              </div>
-              <p>
-                Open your dashboard to review available surveys:
-                <a href="${dashboardUrl}" style="color: #ea580c; font-weight: 700;">${dashboardUrl}</a>
-              </p>
-            </div>
-          `,
-          text: [
-            `Hello ${recipient.firstName},`,
-            "",
-            "A new survey matching your MERGEN AI profile is now available.",
-            "",
-            body.title,
-            body.description,
-            `Questions: ${body.questionCount}`,
-            `Target responses: ${body.targetResponses}`,
-            "",
-            "Audience criteria",
-            audienceText,
-            "",
-            `Open your dashboard: ${dashboardUrl}`
-          ].join("\n")
-        }))
+        recipientChunk.map((recipient) => {
+          const emailContent = buildSurveyLaunchEmail({
+            firstName: recipient.firstName,
+            title: body.title,
+            description: body.description,
+            questionCount: body.questionCount,
+            targetResponses: body.targetResponses,
+            audience: body.audience,
+            dashboardUrl
+          });
+
+          return {
+            from: fromEmail,
+            to: recipient.email,
+            subject: emailContent.subject,
+            html: emailContent.html,
+            text: emailContent.text,
+            tags: [{ name: "flow", value: "survey-launch" }]
+          };
+        })
       );
 
       if (batchResponse.error) {

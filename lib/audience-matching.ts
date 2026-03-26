@@ -215,7 +215,7 @@ function matchesFamilyStatus(audienceValue: string, memberValue: string) {
   }
 
   if (normalizedAudience === "parent_guardian") {
-    return true;
+    return normalizeFamilyStatus(memberValue) === "parent_guardian";
   }
 
   return normalizedAudience === normalizeFamilyStatus(memberValue);

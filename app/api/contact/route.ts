@@ -1,18 +1,15 @@
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
+import { buildContactSubmissionEmail } from "@/lib/email/templates";
+import {
+  createResendClient,
+  getContactInboxEmail,
+  getResendFromEmail,
+  isValidEmail
+} from "@/lib/email/config";
 
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-function isValidEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
+const MAX_FULL_NAME_LENGTH = 120;
+const MAX_PURPOSE_LENGTH = 120;
+const MAX_MESSAGE_LENGTH = 5000;
 
 export async function POST(request: Request) {
   try {
@@ -28,48 +25,55 @@ export async function POST(request: Request) {
     const purpose = body.purpose?.trim() ?? "";
     const message = body.message?.trim() ?? "";
 
-    if (!fullName || !email || !purpose || !message || !isValidEmail(email)) {
+    if (
+      !fullName ||
+      fullName.length > MAX_FULL_NAME_LENGTH ||
+      !email ||
+      !isValidEmail(email) ||
+      !purpose ||
+      purpose.length > MAX_PURPOSE_LENGTH ||
+      !message ||
+      message.length > MAX_MESSAGE_LENGTH
+    ) {
       return NextResponse.json({ success: false, error: "Invalid contact form data" }, { status: 400 });
     }
 
-    const toEmail = process.env.TO_EMAIL;
-    const resendApiKey = process.env.RESEND_API_KEY;
+    const toEmail = getContactInboxEmail();
 
-    if (!toEmail || !resendApiKey) {
-      return NextResponse.json({ success: false, error: "Missing email configuration" }, { status: 500 });
+    if (!toEmail || !isValidEmail(toEmail)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Missing CONTACT_TO_EMAIL or TO_EMAIL configuration"
+        },
+        { status: 500 }
+      );
     }
 
-    const fromEmail = process.env.RESEND_FROM_EMAIL || "MERGEN AI Contact <onboarding@resend.dev>";
-    const resend = new Resend(resendApiKey);
+    const resend = createResendClient();
+    const fromEmail = getResendFromEmail("MERGEN AI Contact <onboarding@resend.dev>");
+    const emailContent = buildContactSubmissionEmail({
+      fullName,
+      email,
+      purpose,
+      message,
+      submittedAt: new Date().toISOString()
+    });
 
     const emailResponse = await resend.emails.send({
       from: fromEmail,
       to: [toEmail],
       replyTo: email,
-      subject: `New Contact Request: ${purpose}`,
-      text: [
-        "New contact submission from MERGEN AI",
-        `Name: ${fullName}`,
-        `Email: ${email}`,
-        `Purpose: ${purpose}`,
-        "",
-        "Message:",
-        message
-      ].join("\n"),
-      html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111827;">
-          <h1 style="font-size: 20px; margin-bottom: 16px;">New contact submission</h1>
-          <p><strong>Name:</strong> ${escapeHtml(fullName)}</p>
-          <p><strong>Email:</strong> ${escapeHtml(email)}</p>
-          <p><strong>Purpose:</strong> ${escapeHtml(purpose)}</p>
-          <div style="margin-top: 20px;">
-            <p style="font-weight: 700; margin-bottom: 8px;">Message</p>
-            <div style="white-space: pre-wrap; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; background: #f9fafb;">
-              ${escapeHtml(message)}
-            </div>
-          </div>
-        </div>
-      `
+      subject: emailContent.subject,
+      text: emailContent.text,
+      html: emailContent.html,
+      tags: [
+        { name: "flow", value: "contact" },
+        {
+          name: "purpose",
+          value: purpose.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "general"
+        }
+      ]
     });
 
     if (emailResponse.error) {
