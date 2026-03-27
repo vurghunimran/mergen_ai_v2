@@ -15,7 +15,7 @@ const socialLinks = [
   },
   {
     name: "Twitter/X",
-    href: "https://twitter.com",
+    href: "https://x.com/MergenAI1",
     icon: Twitter
   }
 ];
