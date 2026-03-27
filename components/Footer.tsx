@@ -73,13 +73,19 @@ export default function Footer() {
               <p className="text-sm font-bold text-slate-900">Policies</p>
               <div className="mt-4 flex flex-col gap-3">
                 <Link
+                  href="/terms"
+                  className="inline-flex rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-[#d85a2f]/25 hover:text-[#d85a2f]"
+                >
+                  Terms &amp; Conditions
+                </Link>
+                <Link
                   href="/privacy"
                   className="inline-flex rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-[#d85a2f]/25 hover:text-[#d85a2f]"
                 >
                   Privacy Policy
                 </Link>
                 <p className="max-w-xs text-xs leading-6 text-slate-500">
-                  Read how MERGEN AI handles security, privacy, GDPR-related obligations, and data protection.
+                  Review the rules for using MERGEN and how we handle privacy, security, and data protection.
                 </p>
               </div>
             </div>

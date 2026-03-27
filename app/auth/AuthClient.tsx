@@ -19,6 +19,7 @@ import {
   salaryRangeOptions
 } from "@/lib/auth-options";
 import SiteLogo from "@/components/SiteLogo";
+import { PRIVACY_POLICY_VERSION, TERMS_VERSION } from "@/lib/legal";
 import PasswordInput from "@/components/ui/password-input";
 import { upsertProfileRecords, type PersistedProfilePayload } from "@/lib/supabase/profile-db";
 import { createClient } from "@/lib/supabase/client";
@@ -44,6 +45,7 @@ type SignUpFormValues = {
   familyStatus: string;
   interests: string[];
   carCount: string;
+  acceptLegal: boolean;
 };
 
 type LoginFormValues = {
@@ -189,6 +191,18 @@ function buildProfilePayload(role: AuthRole, values: SignUpFormValues, normalize
   };
 }
 
+function buildSignUpMetadata(profilePayload: PersistedProfilePayload) {
+  const acceptedAt = new Date().toISOString();
+
+  return {
+    ...profilePayload,
+    terms_accepted_at: acceptedAt,
+    terms_version: TERMS_VERSION,
+    privacy_policy_accepted_at: acceptedAt,
+    privacy_policy_version: PRIVACY_POLICY_VERSION
+  };
+}
+
 export default function AuthClient({ initialType }: { initialType?: string }) {
   const role: AuthRole = initialType === "community" ? "community" : "client";
   const copy = roleCopy[role];
@@ -257,7 +271,8 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
 
   const signUp = useForm<SignUpFormValues>({
     defaultValues: {
-      interests: []
+      interests: [],
+      acceptLegal: false
     }
   });
   const login = useForm<LoginFormValues>();
@@ -351,6 +366,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
     try {
       const supabase = createClient();
       const profilePayload = buildProfilePayload(role, values, normalizedInstitution);
+      const signUpMetadata = buildSignUpMetadata(profilePayload);
       const { data, error } = await supabase.auth.signUp({
         email: profilePayload.email,
         password: values.password,
@@ -359,7 +375,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
             typeof window !== "undefined"
               ? `${window.location.origin}/auth/confirm?next=${encodeURIComponent(getDashboardPath(role))}`
               : undefined,
-          data: profilePayload
+          data: signUpMetadata
         }
       });
 
@@ -1104,6 +1120,33 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                     </div>
                   </>
                 )}
+
+                <div className="rounded-[24px] border border-[color:var(--auth-border)] bg-[color:var(--auth-accent-softer-bg)] px-4 py-4">
+                  <label className="flex items-start gap-3 text-sm leading-6 text-slate-600" htmlFor="accept-legal">
+                    <input
+                      id="accept-legal"
+                      type="checkbox"
+                      {...register("acceptLegal", {
+                        required: "You must accept the Terms and Conditions to create an account."
+                      })}
+                      className="mt-1 h-4 w-4 rounded border-[color:var(--auth-border)] text-[color:var(--auth-accent)] focus:ring-[color:var(--auth-accent-soft)]"
+                    />
+                    <span>
+                      I confirm that I am at least 18 years old, I agree to the{" "}
+                      <Link href="/terms" target="_blank" className="font-semibold text-[color:var(--auth-accent)] underline underline-offset-2">
+                        Terms &amp; Conditions
+                      </Link>
+                      , and I acknowledge the{" "}
+                      <Link href="/privacy" target="_blank" className="font-semibold text-[color:var(--auth-accent)] underline underline-offset-2">
+                        Privacy Policy
+                      </Link>
+                      .
+                    </span>
+                  </label>
+                  {errors.acceptLegal ? (
+                    <p className={errorTextClassName}>{errors.acceptLegal.message}</p>
+                  ) : null}
+                </div>
 
                 <button
                   type="submit"
