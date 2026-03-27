@@ -5,12 +5,12 @@ import SiteLogo from "@/components/SiteLogo";
 const socialLinks = [
   {
     name: "LinkedIn",
-    href: "https://linkedin.com",
+    href: "https://www.linkedin.com/company/mergen-ai-edu/",
     icon: Linkedin
   },
   {
     name: "Instagram",
-    href: "https://instagram.com",
+    href: "https://www.instagram.com/mergenai1/",
     icon: Instagram
   },
   {
