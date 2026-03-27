@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import HowItWorks from "@/components/HowItWorks";
 import PromoVideo from "@/components/PromoVideo";
 import SiteLogo from "@/components/SiteLogo";
+import { getCommunityMapData } from "@/lib/community-map-data";
 
 const navItems = [
   { href: "#promo-video", label: "Vision" },
@@ -15,7 +16,9 @@ const navItems = [
   { href: "/contact", label: "Contact" }
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const communityMapData = await getCommunityMapData();
+
   return (
     <main className="landing-shell min-h-screen">
       <header className="fixed inset-x-0 top-0 z-50">
@@ -117,7 +120,7 @@ export default function HomePage() {
         <div className="relative z-10">
           <PromoVideo />
           <HowItWorks />
-          <CommunityMap />
+          <CommunityMap {...communityMapData} />
           <AISection />
           <Footer />
         </div>

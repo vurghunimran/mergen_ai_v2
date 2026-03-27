@@ -2,138 +2,78 @@
 
 import { useMemo, useState } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
+import type { CommunityMapData } from "@/lib/community-map-data";
 
 const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
-const MAX_MEMBERS = 1000;
 
-const memberDistribution: Record<string, number> = {
-  "Argentina": 120,
-  "Armenia": 65,
-  "Australia": 190,
-  "Austria": 75,
-  "Azerbaijan": 230,
-  "Bangladesh": 125,
-  "Belgium": 90,
-  "Brazil": 200,
-  "Canada": 180,
-  "Chile": 95,
-  "China": 240,
-  "Colombia": 140,
-  "Denmark": 70,
-  "Egypt": 145,
-  "France": 210,
-  "Georgia": 75,
-  "Germany": 190,
-  "India": 460,
-  "Indonesia": 210,
-  "Ireland": 60,
-  "Israel": 100,
-  "Italy": 165,
-  "Japan": 170,
-  "Kazakhstan": 90,
-  "Kenya": 120,
-  "Malaysia": 115,
-  "Mexico": 150,
-  "Morocco": 110,
-  "Netherlands": 130,
-  "New Zealand": 60,
-  "Nigeria": 155,
-  "Norway": 65,
-  "Pakistan": 160,
-  "Peru": 90,
-  "Philippines": 135,
-  "Poland": 115,
-  "Portugal": 85,
-  "Qatar": 70,
-  "Romania": 75,
-  "Saudi Arabia": 135,
-  "Singapore": 95,
-  "South Africa": 180,
-  "South Korea": 165,
-  "Spain": 175,
-  "Sweden": 105,
-  "Switzerland": 80,
-  "Thailand": 140,
-  "Turkey": 410,
-  "Ukraine": 85,
-  "United Arab Emirates": 160,
-  "United Kingdom": 220,
-  "United States of America": 530,
-  "Vietnam": 150
+const countryCodeAliases: Record<string, string> = {
+  "bosniaandherz": "BA",
+  "centralafricanrep": "CF",
+  "demrepcongo": "CD",
+  "dominicanrep": "DO",
+  "eqguinea": "GQ",
+  "eswatini": "SZ",
+  "macedonia": "MK",
+  "solomonis": "SB",
+  "southsudan": "SS",
+  "ssudan": "SS",
+  "unitedstatesofamerica": "US"
 };
 
-const countryFlags: Record<string, string> = {
-  "Argentina": "AR",
-  "Armenia": "AM",
-  "Australia": "AU",
-  "Austria": "AT",
-  "Azerbaijan": "AZ",
-  "Bangladesh": "BD",
-  "Belgium": "BE",
-  "Brazil": "BR",
-  "Canada": "CA",
-  "Chile": "CL",
-  "China": "CN",
-  "Colombia": "CO",
-  "Denmark": "DK",
-  "Egypt": "EG",
-  "France": "FR",
-  "Georgia": "GE",
-  "Germany": "DE",
-  "India": "IN",
-  "Indonesia": "ID",
-  "Ireland": "IE",
-  "Israel": "IL",
-  "Italy": "IT",
-  "Japan": "JP",
-  "Kazakhstan": "KZ",
-  "Kenya": "KE",
-  "Malaysia": "MY",
-  "Mexico": "MX",
-  "Morocco": "MA",
-  "Netherlands": "NL",
-  "New Zealand": "NZ",
-  "Nigeria": "NG",
-  "Norway": "NO",
-  "Pakistan": "PK",
-  "Peru": "PE",
-  "Philippines": "PH",
-  "Poland": "PL",
-  "Portugal": "PT",
-  "Qatar": "QA",
-  "Romania": "RO",
-  "Saudi Arabia": "SA",
-  "Singapore": "SG",
-  "South Africa": "ZA",
-  "South Korea": "KR",
-  "Spain": "ES",
-  "Sweden": "SE",
-  "Switzerland": "CH",
-  "Thailand": "TH",
-  "Turkey": "TR",
-  "Ukraine": "UA",
-  "United Arab Emirates": "AE",
-  "United Kingdom": "GB",
-  "United States of America": "US",
-  "Vietnam": "VN"
-};
+function normalizeCountryKey(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z]/g, "");
+}
 
-function colorForMembers(value: number) {
+function buildCountryCodeMap() {
+  const countryCodeMap = new Map<string, string>();
+
+  if (typeof Intl === "undefined" || typeof Intl.DisplayNames !== "function") {
+    return countryCodeMap;
+  }
+
+  const displayNames = new Intl.DisplayNames(["en"], { type: "region" });
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+  for (const firstLetter of alphabet) {
+    for (const secondLetter of alphabet) {
+      const code = `${firstLetter}${secondLetter}`;
+      const displayName = displayNames.of(code);
+
+      if (!displayName || displayName === code || displayName === "Unknown Region") {
+        continue;
+      }
+
+      countryCodeMap.set(normalizeCountryKey(displayName), code);
+    }
+  }
+
+  for (const [countryKey, code] of Object.entries(countryCodeAliases)) {
+    countryCodeMap.set(countryKey, code);
+  }
+
+  return countryCodeMap;
+}
+
+function colorForMembers(value: number, maxMembers: number) {
   if (value <= 0) return "#e8dcc9";
 
   const start = [232, 220, 201];
   const end = [157, 61, 24];
-  const intensity = Math.min(value / MAX_MEMBERS, 1);
+  const intensity = Math.min(value / Math.max(maxMembers, 1), 1);
 
   const channel = (index: number) => Math.round(start[index] + (end[index] - start[index]) * intensity);
 
   return `rgb(${channel(0)}, ${channel(1)}, ${channel(2)})`;
 }
 
-function countryFlagEmoji(countryName: string | null) {
+function countryFlagEmoji(countryName: string | null, countryCodeMap: Map<string, string>) {
   if (!countryName) return null;
 
-  const code = countryFlags[countryName];
+  const code = countryCodeMap.get(normalizeCountryKey(countryName));
   if (!code) return null;
 
   return code
@@ -143,18 +83,26 @@ function countryFlagEmoji(countryName: string | null) {
     .join("");
 }
 
-export default function CommunityMap() {
+type CommunityMapProps = CommunityMapData;
+
+export default function CommunityMap({
+  memberDistribution,
+  totalCountries,
+  totalMembers,
+  maxMembers
+}: CommunityMapProps) {
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
 
   const activeCountry = selectedCountry ?? hoveredCountry;
+  const countryCodeMap = useMemo(() => buildCountryCodeMap(), []);
 
   const activeCount = useMemo(() => {
     if (!activeCountry) return null;
     return memberDistribution[activeCountry] ?? 0;
-  }, [activeCountry]);
+  }, [activeCountry, memberDistribution]);
 
-  const activeFlag = useMemo(() => countryFlagEmoji(activeCountry), [activeCountry]);
+  const activeFlag = useMemo(() => countryFlagEmoji(activeCountry, countryCodeMap), [activeCountry, countryCodeMap]);
 
   return (
     <section id="community-map" className="px-4 py-20 sm:px-6 lg:px-8">
@@ -170,11 +118,11 @@ export default function CommunityMap() {
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
           <div className="rounded-2xl bg-white px-6 py-4 text-center shadow-sm">
-            <p className="text-2xl font-extrabold text-[#d85a2f]">7000+</p>
+            <p className="text-2xl font-extrabold text-[#d85a2f]">{totalMembers.toLocaleString()}</p>
             <p className="mt-1 text-sm font-medium text-slate-500">Members</p>
           </div>
           <div className="rounded-2xl bg-white px-6 py-4 text-center shadow-sm">
-            <p className="text-2xl font-extrabold text-[#d85a2f]">45+</p>
+            <p className="text-2xl font-extrabold text-[#d85a2f]">{totalCountries.toLocaleString()}</p>
             <p className="mt-1 text-sm font-medium text-slate-500">Countries</p>
           </div>
         </div>
@@ -189,7 +137,7 @@ export default function CommunityMap() {
             <div>
               <p className="text-base font-bold text-slate-900">{activeCountry ?? ""}</p>
               <p className="mt-1 text-sm font-medium text-slate-500">
-                {activeCount !== null ? `${activeCount.toLocaleString()} respondents` : ""}
+                {activeCount !== null ? `${activeCount.toLocaleString()} members` : ""}
               </p>
             </div>
           </div>
@@ -219,21 +167,21 @@ export default function CommunityMap() {
                       onClick={() => setSelectedCountry((current) => (current === countryName ? null : countryName))}
                       style={{
                         default: {
-                          fill: colorForMembers(members),
+                          fill: colorForMembers(members, maxMembers),
                           outline: "none",
                           stroke: active ? "#9d3d18" : "#fff8ef",
                           strokeWidth: active ? 1.4 : 0.7,
                           cursor: "pointer"
                         },
                         hover: {
-                          fill: colorForMembers(Math.min(members + 120, MAX_MEMBERS)),
+                          fill: colorForMembers(Math.min(members + Math.ceil(maxMembers * 0.12), maxMembers), maxMembers),
                           outline: "none",
                           stroke: "#9d3d18",
                           strokeWidth: 1.1,
                           cursor: "pointer"
                         },
                         pressed: {
-                          fill: colorForMembers(Math.min(members + 120, MAX_MEMBERS)),
+                          fill: colorForMembers(Math.min(members + Math.ceil(maxMembers * 0.12), maxMembers), maxMembers),
                           outline: "none",
                           stroke: "#9d3d18",
                           strokeWidth: 1.4,
@@ -252,7 +200,7 @@ export default function CommunityMap() {
           <div className="h-3 rounded-full bg-[linear-gradient(90deg,#e8dcc9_0%,#f2bc8a_35%,#d85a2f_70%,#9d3d18_100%)]" />
           <div className="mt-2 flex items-center justify-between text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
             <span>0</span>
-            <span>1000</span>
+            <span>{maxMembers.toLocaleString()}</span>
           </div>
         </div>
       </div>
