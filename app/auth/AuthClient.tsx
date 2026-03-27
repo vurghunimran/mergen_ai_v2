@@ -2,9 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type CSSProperties, useEffect, useState } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { ArrowLeft, BadgeCheck, ChevronDown, Globe2, ShieldCheck, Sparkles, Target, Wallet } from "lucide-react";
+import {
+  ArrowLeft,
+  BadgeCheck,
+  ChevronDown,
+  Globe2,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  Wallet,
+} from "lucide-react";
 import {
   ageSpanOptions,
   carCountOptions,
@@ -16,12 +25,15 @@ import {
   interestOptions,
   popularUniversities,
   residenceOptions,
-  salaryRangeOptions
+  salaryRangeOptions,
 } from "@/lib/auth-options";
 import SiteLogo from "@/components/SiteLogo";
 import { PRIVACY_POLICY_VERSION, TERMS_VERSION } from "@/lib/legal";
 import PasswordInput from "@/components/ui/password-input";
-import { upsertProfileRecords, type PersistedProfilePayload } from "@/lib/supabase/profile-db";
+import {
+  upsertProfileRecords,
+  type PersistedProfilePayload,
+} from "@/lib/supabase/profile-db";
 import { createClient } from "@/lib/supabase/client";
 
 type AuthRole = "client" | "community";
@@ -61,22 +73,24 @@ const roleCopy = {
       {
         icon: "target",
         title: "Access targeted global audience",
-        description: "Reach exactly the people you need (by country, age, education, etc.)"
+        description:
+          "Reach exactly the people you need (by country, age, education, etc.)",
       },
       {
         icon: "ai",
         title: "AI-powered research tools",
-        description: "Generate surveys, analyze results, and create reports instantly"
+        description:
+          "Generate surveys, analyze results, and create reports instantly",
       },
       {
         icon: "quality",
         title: "High-quality, reliable data",
-        description: "AI trust scoring filters low-quality responses"
-      }
+        description: "AI trust scoring filters low-quality responses",
+      },
     ],
     heading: "Create client account",
     emailLabel: "University email",
-    submitLabel: "Create client account"
+    submitLabel: "Create client account",
   },
   community: {
     badge: "Community member sign up",
@@ -85,23 +99,25 @@ const roleCopy = {
       {
         icon: "rewards",
         title: "Earn real rewards",
-        description: "Convert your time into cash, gift cards, or discounts"
+        description: "Convert your time into cash, gift cards, or discounts",
       },
       {
         icon: "global",
         title: "Be part of global research",
-        description: "Contribute to studies from universities and researchers worldwide"
+        description:
+          "Contribute to studies from universities and researchers worldwide",
       },
       {
         icon: "fair",
         title: "Fair & smart system",
-        description: "AI ensures fair rewards based on your response quality (not just speed)."
-      }
+        description:
+          "AI ensures fair rewards based on your response quality (not just speed).",
+      },
     ],
     heading: "Create community account",
     emailLabel: "Email",
-    submitLabel: "Join community"
-  }
+    submitLabel: "Join community",
+  },
 } as const;
 
 const benefitIcons = {
@@ -110,16 +126,46 @@ const benefitIcons = {
   quality: ShieldCheck,
   rewards: Wallet,
   global: Globe2,
-  fair: BadgeCheck
+  fair: BadgeCheck,
 } as const;
 
 const inputClassName =
-  "w-full rounded-2xl border border-[color:var(--auth-border)] bg-[color:var(--auth-input-bg)] px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[color:var(--auth-accent)] focus:ring-2 focus:ring-[color:var(--auth-accent-soft)]";
+  "w-full rounded-2xl border border-[color:var(--auth-border)] bg-[color:var(--auth-input-bg)] px-4 py-3.5 text-sm text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(15,23,42,0.03)] outline-none transition placeholder:text-slate-400 focus:border-[color:var(--auth-accent)] focus:ring-2 focus:ring-[color:var(--auth-accent-soft)]";
 
 const labelClassName = "mb-2 block text-sm font-semibold text-slate-700";
 
+function AuthFormSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-[30px] border border-[color:var(--auth-border)] bg-white px-5 py-5 shadow-[0_18px_40px_rgba(15,23,42,0.04)] sm:px-6">
+      <div className="flex items-start gap-3">
+        <span className="mt-1 h-2.5 w-2.5 rounded-full bg-[color:var(--auth-accent)]" />
+        <div>
+          <h3 className="text-base font-extrabold tracking-[-0.02em] text-slate-900">
+            {title}
+          </h3>
+          {description ? (
+            <p className="mt-1 text-sm leading-6 text-slate-500">
+              {description}
+            </p>
+          ) : null}
+        </div>
+      </div>
+      <div className="mt-5 space-y-5">{children}</div>
+    </section>
+  );
+}
+
 function getDashboardPath(role: AuthRole, userId?: string) {
-  const basePath = role === "client" ? "/dashboard/client" : "/dashboard/community";
+  const basePath =
+    role === "client" ? "/dashboard/client" : "/dashboard/community";
   return userId ? `${basePath}/${userId}` : basePath;
 }
 
@@ -139,7 +185,10 @@ function getAuthErrorMessage(error: unknown) {
       return "This email is already registered. Try logging in instead.";
     }
 
-    if (normalizedMessage.includes("missing") && normalizedMessage.includes("supabase")) {
+    if (
+      normalizedMessage.includes("missing") &&
+      normalizedMessage.includes("supabase")
+    ) {
       return error.message;
     }
 
@@ -157,16 +206,22 @@ function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
-function buildProfilePayload(role: AuthRole, values: SignUpFormValues, normalizedInstitution: string): PersistedProfilePayload {
+function buildProfilePayload(
+  role: AuthRole,
+  values: SignUpFormValues,
+  normalizedInstitution: string,
+): PersistedProfilePayload {
   const commonPayload = {
     role,
-    email: normalizeEmail(role === "client" ? values.universityEmail : values.email),
+    email: normalizeEmail(
+      role === "client" ? values.universityEmail : values.email,
+    ),
     first_name: values.name.trim(),
     last_name: values.surname.trim(),
     phone_number: values.phoneNumber.trim(),
     country: values.country,
     appearance: "light" as const,
-    two_factor_enabled: false
+    two_factor_enabled: false,
   };
 
   if (role === "client") {
@@ -174,7 +229,7 @@ function buildProfilePayload(role: AuthRole, values: SignUpFormValues, normalize
       ...commonPayload,
       educational_institution: normalizedInstitution,
       position: values.position,
-      interests: [] as string[]
+      interests: [] as string[],
     };
   }
 
@@ -187,7 +242,7 @@ function buildProfilePayload(role: AuthRole, values: SignUpFormValues, normalize
     place_of_residence: values.placeOfResidence,
     family_status: values.familyStatus,
     interests: values.interests,
-    car_count: values.carCount
+    car_count: values.carCount,
   };
 }
 
@@ -199,7 +254,7 @@ function buildSignUpMetadata(profilePayload: PersistedProfilePayload) {
     terms_accepted_at: acceptedAt,
     terms_version: TERMS_VERSION,
     privacy_policy_accepted_at: acceptedAt,
-    privacy_policy_version: PRIVACY_POLICY_VERSION
+    privacy_policy_version: PRIVACY_POLICY_VERSION,
   };
 }
 
@@ -223,7 +278,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
         "--auth-message-bg": "#fff7f1",
         "--auth-selected-bg": "#fff2ea",
         "--auth-disabled-border": "#efe3da",
-        "--auth-disabled-bg": "#faf6f2"
+        "--auth-disabled-bg": "#faf6f2",
       }
     : {
         "--auth-accent": "#7c3aed",
@@ -239,13 +294,15 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
         "--auth-message-bg": "#f8f4ff",
         "--auth-selected-bg": "#f3ecff",
         "--auth-disabled-border": "#ede4fb",
-        "--auth-disabled-bg": "#faf8ff"
+        "--auth-disabled-bg": "#faf8ff",
       };
   const errorTextClassName = "mt-2 text-sm text-[color:var(--auth-accent)]";
-  const roleToggleInactiveClassName = "bg-[color:var(--auth-accent-softer-bg)] text-slate-600 hover:text-[color:var(--auth-accent)]";
+  const roleToggleInactiveClassName =
+    "bg-[color:var(--auth-accent-softer-bg)] text-slate-600 hover:text-[color:var(--auth-accent)]";
   const backButtonClassName =
     "inline-flex items-center gap-2 rounded-full border border-[color:var(--auth-border)] bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-[color:var(--auth-accent-soft-bg)] hover:text-[color:var(--auth-accent)]";
-  const tabRailClassName = "mt-6 grid grid-cols-2 rounded-full bg-[color:var(--auth-accent-soft-bg)] p-1";
+  const tabRailClassName =
+    "mt-6 grid grid-cols-2 rounded-full bg-[color:var(--auth-accent-soft-bg)] p-1";
   const activeTabClassName = "bg-[color:var(--auth-accent)] text-white";
   const inactiveTabClassName = "text-slate-600";
   const submitButtonClassName =
@@ -253,27 +310,32 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
   const messageClassName =
     "mt-5 rounded-2xl border border-[color:var(--auth-message-border)] bg-[color:var(--auth-message-bg)] px-4 py-3 text-sm text-slate-600";
   const leftPanelBackground = isClient
-    ? "linear-gradient(155deg,#f5e9dc 0%,#ecdccd 52%,#dccdc2 100%)"
-    : "linear-gradient(155deg,#f3ecff 0%,#e4d9ff 48%,#d5c7fa 100%)";
+    ? "linear-gradient(180deg,#fff8f1 0%,#f5ebdf 100%)"
+    : "linear-gradient(180deg,#faf6ff 0%,#efe8fb 100%)";
   const leftPanelOverlay = isClient
-    ? "radial-gradient(circle_at_top_left,rgba(216,90,47,0.18),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(123,147,178,0.18),transparent_34%)"
-    : "radial-gradient(circle_at_top_left,rgba(124,58,237,0.2),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(103,80,164,0.16),transparent_34%)";
+    ? "radial-gradient(circle_at_top_left,rgba(216,90,47,0.08),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(123,147,178,0.12),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.8),transparent_70%)"
+    : "radial-gradient(circle_at_top_left,rgba(124,58,237,0.1),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(103,80,164,0.1),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.8),transparent_70%)";
   const pageBackground = isClient
-    ? "radial-gradient(circle_at_top_left,rgba(216,90,47,0.12),transparent 22%),radial-gradient(circle_at_top_right,rgba(123,147,178,0.18),transparent 22%),linear-gradient(180deg,#fffdf9 0%,#f7f2eb 100%)"
-    : "radial-gradient(circle_at_top_left,rgba(124,58,237,0.14),transparent 22%),radial-gradient(circle_at_top_right,rgba(99,102,241,0.14),transparent 24%),linear-gradient(180deg,#fdfbff 0%,#f4f0fb 100%)";
+    ? "radial-gradient(circle_at_top_left,rgba(216,90,47,0.08),transparent 20%),radial-gradient(circle_at_top_right,rgba(123,147,178,0.12),transparent 20%),linear-gradient(180deg,#fffdf9 0%,#f7f2eb 100%)"
+    : "radial-gradient(circle_at_top_left,rgba(124,58,237,0.08),transparent 20%),radial-gradient(circle_at_top_right,rgba(99,102,241,0.08),transparent 22%),linear-gradient(180deg,#fdfbff 0%,#f4f0fb 100%)";
 
   const [activeTab, setActiveTab] = useState<"signup" | "login">("signup");
-  const [institutionOptions, setInstitutionOptions] = useState<string[]>(popularUniversities);
-  const [institutionStatus, setInstitutionStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [institutionOptions, setInstitutionOptions] =
+    useState<string[]>(popularUniversities);
+  const [institutionStatus, setInstitutionStatus] = useState<
+    "idle" | "loading" | "ready" | "error"
+  >("idle");
   const [interestsOpen, setInterestsOpen] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
-  const [authPending, setAuthPending] = useState<"signup" | "login" | null>(null);
+  const [authPending, setAuthPending] = useState<"signup" | "login" | null>(
+    null,
+  );
 
   const signUp = useForm<SignUpFormValues>({
     defaultValues: {
       interests: [],
-      acceptLegal: false
-    }
+      acceptLegal: false,
+    },
   });
   const login = useForm<LoginFormValues>();
 
@@ -284,7 +346,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
     getValues,
     handleSubmit,
     control,
-    formState: { errors }
+    formState: { errors },
   } = signUp;
 
   const {
@@ -292,7 +354,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
     clearErrors: clearLoginErrors,
     handleSubmit: handleLoginSubmit,
     setError: setLoginError,
-    formState: { errors: loginErrors }
+    formState: { errors: loginErrors },
   } = login;
 
   const selectedCountry = watch("country");
@@ -311,14 +373,18 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
       setInstitutionStatus("loading");
 
       try {
-        const response = await fetch(`/api/universities?country=${encodeURIComponent(selectedCountry)}`);
+        const response = await fetch(
+          `/api/universities?country=${encodeURIComponent(selectedCountry)}`,
+        );
 
         if (!response.ok) {
           throw new Error("Could not load universities.");
         }
 
         const payload = (await response.json()) as { universities?: string[] };
-        const universities = payload.universities?.length ? payload.universities : popularUniversities;
+        const universities = payload.universities?.length
+          ? payload.universities
+          : popularUniversities;
 
         if (cancelled) return;
 
@@ -326,7 +392,11 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
         setInstitutionStatus("ready");
 
         const currentInstitution = getValues("educationalInstitution");
-        if (currentInstitution && currentInstitution !== "Other" && !universities.includes(currentInstitution)) {
+        if (
+          currentInstitution &&
+          currentInstitution !== "Other" &&
+          !universities.includes(currentInstitution)
+        ) {
           setValue("educationalInstitution", "");
         }
       } catch {
@@ -358,14 +428,20 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
 
   async function handleRoleSubmit(values: SignUpFormValues) {
     const normalizedInstitution =
-      values.educationalInstitution === "Other" ? values.customInstitution.trim() : values.educationalInstitution;
+      values.educationalInstitution === "Other"
+        ? values.customInstitution.trim()
+        : values.educationalInstitution;
 
     setSubmitMessage(null);
     setAuthPending("signup");
 
     try {
       const supabase = createClient();
-      const profilePayload = buildProfilePayload(role, values, normalizedInstitution);
+      const profilePayload = buildProfilePayload(
+        role,
+        values,
+        normalizedInstitution,
+      );
       const signUpMetadata = buildSignUpMetadata(profilePayload);
       const { data, error } = await supabase.auth.signUp({
         email: profilePayload.email,
@@ -375,8 +451,8 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
             typeof window !== "undefined"
               ? `${window.location.origin}/auth/confirm?next=${encodeURIComponent(getDashboardPath(role))}`
               : undefined,
-          data: signUpMetadata
-        }
+          data: signUpMetadata,
+        },
       });
 
       if (error) {
@@ -387,7 +463,10 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
         try {
           await upsertProfileRecords(supabase, data.user.id, profilePayload);
         } catch (profileError) {
-          console.warn("Supabase profile upsert during sign-up failed.", profileError);
+          console.warn(
+            "Supabase profile upsert during sign-up failed.",
+            profileError,
+          );
         }
 
         router.push(getDashboardPath(role, data.user.id));
@@ -395,7 +474,9 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
         return;
       }
 
-      setSubmitMessage("Account created. Check your email to confirm your sign up, then log in.");
+      setSubmitMessage(
+        "Account created. Check your email to confirm your sign up, then log in.",
+      );
       setActiveTab("login");
     } catch (error) {
       setSubmitMessage(getAuthErrorMessage(error));
@@ -413,7 +494,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
       const supabase = createClient();
       const { data, error } = await supabase.auth.signInWithPassword({
         email: normalizeEmail(values.email),
-        password: values.password
+        password: values.password,
       });
 
       if (error) {
@@ -421,7 +502,10 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
       }
 
       const metadataRole = data.user.user_metadata?.role;
-      let resolvedRole: AuthRole = metadataRole === "client" || metadataRole === "community" ? metadataRole : role;
+      let resolvedRole: AuthRole =
+        metadataRole === "client" || metadataRole === "community"
+          ? metadataRole
+          : role;
 
       if (!(metadataRole === "client" || metadataRole === "community")) {
         const { data: profileData, error: profileError } = await supabase
@@ -430,7 +514,10 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
           .eq("id", data.user.id)
           .maybeSingle();
 
-        if (!profileError && (profileData?.role === "client" || profileData?.role === "community")) {
+        if (
+          !profileError &&
+          (profileData?.role === "client" || profileData?.role === "community")
+        ) {
           resolvedRole = profileData.role;
         }
       }
@@ -440,7 +527,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
     } catch (error) {
       setLoginError("password", {
         type: "manual",
-        message: getAuthErrorMessage(error)
+        message: getAuthErrorMessage(error),
       });
     } finally {
       setAuthPending(null);
@@ -448,9 +535,12 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
   }
 
   return (
-    <main className="min-h-screen overflow-hidden px-4 py-6 sm:px-6 lg:px-8" style={{ ...authThemeStyle, backgroundImage: pageBackground }}>
+    <main
+      className="min-h-screen overflow-hidden px-4 py-6 sm:px-6 lg:px-8"
+      style={{ ...authThemeStyle, backgroundImage: pageBackground }}
+    >
       <div className="mx-auto max-w-7xl">
-        <header className="rounded-full border border-white/70 bg-white/85 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+        <header className="rounded-[32px] border border-white/80 bg-white/92 px-5 py-4 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link href="/" aria-label="MERGEN home">
               <SiteLogo />
@@ -460,7 +550,9 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
               <Link
                 href="/auth?type=client"
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  isClient ? "bg-[color:var(--auth-accent)] text-white" : roleToggleInactiveClassName
+                  isClient
+                    ? "bg-[color:var(--auth-accent)] text-white"
+                    : roleToggleInactiveClassName
                 }`}
               >
                 Client
@@ -468,15 +560,14 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
               <Link
                 href="/auth?type=community"
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  !isClient ? "bg-[color:var(--auth-accent)] text-white" : roleToggleInactiveClassName
+                  !isClient
+                    ? "bg-[color:var(--auth-accent)] text-white"
+                    : roleToggleInactiveClassName
                 }`}
               >
                 Community
               </Link>
-              <Link
-                href="/"
-                className={backButtonClassName}
-              >
+              <Link href="/" className={backButtonClassName}>
                 <ArrowLeft className="h-4 w-4" />
                 Back
               </Link>
@@ -484,20 +575,34 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
           </div>
         </header>
 
-        <section className="mt-6 grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="relative overflow-hidden rounded-[36px] border border-white/40 p-8 shadow-[0_32px_90px_rgba(15,23,42,0.12)] sm:p-10" style={{ backgroundImage: leftPanelBackground }}>
-            <div className="absolute inset-0" style={{ backgroundImage: leftPanelOverlay }} />
+        <section className="mt-6 grid gap-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
+          <div
+            className="order-2 relative overflow-hidden rounded-[36px] border border-[color:var(--auth-border)] p-8 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:p-10 lg:order-1"
+            style={{ backgroundImage: leftPanelBackground }}
+          >
             <div
-              className="absolute right-[-6rem] top-[-4rem] h-64 w-64 rounded-full blur-3xl"
-              style={{ backgroundColor: isClient ? "rgba(216,90,47,0.14)" : "rgba(124,58,237,0.16)" }}
+              className="absolute inset-0"
+              style={{ backgroundImage: leftPanelOverlay }}
             />
             <div
-              className="absolute bottom-[-5rem] left-[-4rem] h-64 w-64 rounded-full blur-3xl"
-              style={{ backgroundColor: isClient ? "rgba(123,147,178,0.16)" : "rgba(99,102,241,0.14)" }}
+              className="absolute right-[-4rem] top-[-2rem] h-40 w-40 rounded-full blur-3xl"
+              style={{
+                backgroundColor: isClient
+                  ? "rgba(216,90,47,0.08)"
+                  : "rgba(124,58,237,0.1)",
+              }}
+            />
+            <div
+              className="absolute bottom-[-4rem] left-[-3rem] h-44 w-44 rounded-full blur-3xl"
+              style={{
+                backgroundColor: isClient
+                  ? "rgba(123,147,178,0.1)"
+                  : "rgba(99,102,241,0.08)",
+              }}
             />
 
             <div className="relative">
-              <span className="inline-flex items-center rounded-full border border-white/55 bg-white/45 px-4 py-2 text-sm font-semibold text-[color:var(--auth-accent)] backdrop-blur-sm">
+              <span className="inline-flex items-center rounded-full border border-white/75 bg-white px-4 py-2 text-sm font-semibold text-[color:var(--auth-accent)] shadow-sm">
                 {copy.badge}
               </span>
 
@@ -512,15 +617,19 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                   return (
                     <div
                       key={benefit.title}
-                      className="rounded-[28px] border border-white/55 bg-white/45 px-5 py-5 backdrop-blur-sm"
+                      className="rounded-[28px] border border-white/80 bg-white/88 px-5 py-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]"
                     >
                       <div className="flex items-start gap-4">
                         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--auth-chip-bg)] text-[color:var(--auth-accent)] shadow-[0_12px_30px_rgba(15,23,42,0.1)]">
                           <Icon className="h-5 w-5" />
                         </span>
                         <div>
-                          <p className="text-base font-extrabold tracking-[-0.02em] text-[color:var(--auth-title)]">{benefit.title}</p>
-                          <p className="mt-2 text-sm leading-7 text-slate-700">{benefit.description}</p>
+                          <p className="text-base font-extrabold tracking-[-0.02em] text-[color:var(--auth-title)]">
+                            {benefit.title}
+                          </p>
+                          <p className="mt-2 text-sm leading-7 text-slate-700">
+                            {benefit.description}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -530,20 +639,31 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
             </div>
           </div>
 
-          <div className="rounded-[36px] border border-white/70 bg-white/88 p-6 shadow-[0_32px_90px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-8">
+          <div className="order-1 rounded-[36px] border border-white/80 bg-white/94 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:p-8 lg:order-2">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--auth-accent)]">{copy.badge}</p>
-                <h2 className="mt-3 text-3xl font-extrabold tracking-[-0.04em] text-slate-900">{copy.heading}</h2>
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[color:var(--auth-accent)]">
+                  {copy.badge}
+                </p>
+                <h2 className="mt-3 text-3xl font-extrabold tracking-[-0.04em] text-slate-900">
+                  {copy.heading}
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+                  Choose the path that fits you, then complete the form below.
+                </p>
               </div>
             </div>
 
-            <div className={tabRailClassName}>
+            <div
+              className={`${tabRailClassName} border border-[color:var(--auth-border)]`}
+            >
               <button
                 type="button"
                 onClick={() => setActiveTab("signup")}
                 className={`rounded-full px-4 py-3 text-sm font-semibold transition ${
-                  activeTab === "signup" ? activeTabClassName : inactiveTabClassName
+                  activeTab === "signup"
+                    ? activeTabClassName
+                    : inactiveTabClassName
                 }`}
               >
                 Sign up
@@ -552,7 +672,9 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                 type="button"
                 onClick={() => setActiveTab("login")}
                 className={`rounded-full px-4 py-3 text-sm font-semibold transition ${
-                  activeTab === "login" ? activeTabClassName : inactiveTabClassName
+                  activeTab === "login"
+                    ? activeTabClassName
+                    : inactiveTabClassName
                 }`}
               >
                 Log in
@@ -560,354 +682,107 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
             </div>
 
             {activeTab === "signup" ? (
-              <form className="mt-6 space-y-5" onSubmit={handleSubmit(handleRoleSubmit)}>
+              <form
+                className="mt-6 space-y-6"
+                onSubmit={handleSubmit(handleRoleSubmit)}
+              >
                 {isClient ? (
                   <>
-                    <div className="grid gap-5 sm:grid-cols-2">
-                      <div>
-                        <label className={labelClassName} htmlFor="client-name">
-                          Name
-                        </label>
-                        <input
-                          id="client-name"
-                          autoComplete="given-name"
-                          {...register("name", { required: "Name is required." })}
-                          className={inputClassName}
-                        />
-                        {errors.name ? <p className={errorTextClassName}>{errors.name.message}</p> : null}
+                    <AuthFormSection
+                      title="Basic information"
+                      description="Tell us who is creating this research account."
+                    >
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="client-name"
+                          >
+                            Name
+                          </label>
+                          <input
+                            id="client-name"
+                            autoComplete="given-name"
+                            {...register("name", {
+                              required: "Name is required.",
+                            })}
+                            className={inputClassName}
+                          />
+                          {errors.name ? (
+                            <p className={errorTextClassName}>
+                              {errors.name.message}
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="client-surname"
+                          >
+                            Surname
+                          </label>
+                          <input
+                            id="client-surname"
+                            autoComplete="family-name"
+                            {...register("surname", {
+                              required: "Surname is required.",
+                            })}
+                            className={inputClassName}
+                          />
+                          {errors.surname ? (
+                            <p className={errorTextClassName}>
+                              {errors.surname.message}
+                            </p>
+                          ) : null}
+                        </div>
                       </div>
 
                       <div>
-                        <label className={labelClassName} htmlFor="client-surname">
-                          Surname
-                        </label>
-                        <input
-                          id="client-surname"
-                          autoComplete="family-name"
-                          {...register("surname", { required: "Surname is required." })}
-                          className={inputClassName}
-                        />
-                        {errors.surname ? (
-                          <p className={errorTextClassName}>{errors.surname.message}</p>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className={labelClassName} htmlFor="client-email">
-                        University email
-                      </label>
-                      <input
-                        id="client-email"
-                        type="email"
-                        autoComplete="email"
-                        {...register("universityEmail", {
-                          required: "University email is required.",
-                          pattern: {
-                            value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                            message: "Enter a valid email address."
-                          }
-                        })}
-                        className={inputClassName}
-                      />
-                      {errors.universityEmail ? (
-                        <p className={errorTextClassName}>{errors.universityEmail.message}</p>
-                      ) : null}
-                    </div>
-
-                    <div>
-                      <label className={labelClassName} htmlFor="client-country">
-                        Country
-                      </label>
-                      <div className="relative">
-                        <select
-                          id="client-country"
-                          {...register("country", { required: "Country is required." })}
-                          className={`${inputClassName} appearance-none pr-11`}
+                        <label
+                          className={labelClassName}
+                          htmlFor="client-email"
                         >
-                          <option value="">Select country</option>
-                          {countryOptions.map((country) => (
-                            <option key={country} value={country}>
-                              {country}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                      </div>
-                      {errors.country ? (
-                        <p className={errorTextClassName}>{errors.country.message}</p>
-                      ) : null}
-                    </div>
-
-                    <div>
-                      <label className={labelClassName} htmlFor="client-institution">
-                        Educational institution
-                      </label>
-                      <div className="relative">
-                        <select
-                          id="client-institution"
-                          {...register("educationalInstitution", {
-                            required: "Educational institution is required."
-                          })}
-                          className={`${inputClassName} appearance-none pr-11`}
-                        >
-                          <option value="">Select institution</option>
-                          {institutionOptions.map((institution) => (
-                            <option key={institution} value={institution}>
-                              {institution}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                      </div>
-                      <p className="mt-2 text-sm text-slate-500">
-                        {institutionStatus === "loading"
-                          ? "Loading universities for the selected country..."
-                          : institutionStatus === "error"
-                            ? "University lookup fell back to a local list."
-                            : "Choose country to narrow the university list, or use Other."}
-                      </p>
-                      {errors.educationalInstitution ? (
-                        <p className={errorTextClassName}>{errors.educationalInstitution.message}</p>
-                      ) : null}
-                    </div>
-
-                    {selectedInstitution === "Other" ? (
-                      <div>
-                        <label className={labelClassName} htmlFor="client-custom-institution">
-                          Other institution
+                          University email
                         </label>
                         <input
-                          id="client-custom-institution"
-                          {...register("customInstitution", {
-                            validate: (value) =>
-                              selectedInstitution === "Other" && !value.trim() ? "Write your institution." : true
+                          id="client-email"
+                          type="email"
+                          autoComplete="email"
+                          {...register("universityEmail", {
+                            required: "University email is required.",
+                            pattern: {
+                              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                              message: "Enter a valid email address.",
+                            },
                           })}
                           className={inputClassName}
                         />
-                        {errors.customInstitution ? (
-                          <p className={errorTextClassName}>{errors.customInstitution.message}</p>
+                        {errors.universityEmail ? (
+                          <p className={errorTextClassName}>
+                            {errors.universityEmail.message}
+                          </p>
                         ) : null}
                       </div>
-                    ) : null}
+                    </AuthFormSection>
 
-                    <div>
-                      <label className={labelClassName} htmlFor="client-position">
-                        Position
-                      </label>
-                      <div className="relative">
-                        <select
-                          id="client-position"
-                          {...register("position", { required: "Position is required." })}
-                          className={`${inputClassName} appearance-none pr-11`}
+                    <AuthFormSection
+                      title="Work and institution"
+                      description="These details shape the university list and client profile."
+                    >
+                      <div>
+                        <label
+                          className={labelClassName}
+                          htmlFor="client-country"
                         >
-                          <option value="">Select position</option>
-                          {clientPositionOptions.map((position) => (
-                            <option key={position} value={position}>
-                              {position}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                      </div>
-                      {errors.position ? (
-                        <p className={errorTextClassName}>{errors.position.message}</p>
-                      ) : null}
-                    </div>
-
-                    <div className="grid gap-5 sm:grid-cols-2">
-                      <div>
-                        <label className={labelClassName} htmlFor="client-phone">
-                          Phone number (optional)
-                        </label>
-                        <input
-                          id="client-phone"
-                          type="tel"
-                          autoComplete="tel"
-                          {...register("phoneNumber")}
-                          className={inputClassName}
-                        />
-                      </div>
-
-                      <div>
-                        <label className={labelClassName} htmlFor="client-password">
-                          Password
-                        </label>
-                        <PasswordInput
-                          id="client-password"
-                          autoComplete="new-password"
-                          {...register("password", {
-                            required: "Password is required.",
-                            minLength: {
-                              value: 8,
-                              message: "Password must be at least 8 characters."
-                            }
-                          })}
-                          className={inputClassName}
-                        />
-                        {errors.password ? (
-                          <p className={errorTextClassName}>{errors.password.message}</p>
-                        ) : null}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="grid gap-5 sm:grid-cols-2">
-                      <div>
-                        <label className={labelClassName} htmlFor="community-name">
-                          Name
-                        </label>
-                        <input
-                          id="community-name"
-                          autoComplete="given-name"
-                          {...register("name", { required: "Name is required." })}
-                          className={inputClassName}
-                        />
-                        {errors.name ? <p className={errorTextClassName}>{errors.name.message}</p> : null}
-                      </div>
-
-                      <div>
-                        <label className={labelClassName} htmlFor="community-surname">
-                          Surname
-                        </label>
-                        <input
-                          id="community-surname"
-                          autoComplete="family-name"
-                          {...register("surname", { required: "Surname is required." })}
-                          className={inputClassName}
-                        />
-                        {errors.surname ? (
-                          <p className={errorTextClassName}>{errors.surname.message}</p>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className={labelClassName} htmlFor="community-email">
-                        Email
-                      </label>
-                      <input
-                        id="community-email"
-                        type="email"
-                        autoComplete="email"
-                        {...register("email", {
-                          required: "Email is required.",
-                          pattern: {
-                            value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                            message: "Enter a valid email address."
-                          }
-                        })}
-                        className={inputClassName}
-                      />
-                      {errors.email ? <p className={errorTextClassName}>{errors.email.message}</p> : null}
-                    </div>
-
-                    <div className="grid gap-5 sm:grid-cols-2">
-                      <div>
-                        <label className={labelClassName} htmlFor="community-age">
-                          Age span
-                        </label>
-                        <div className="relative">
-                          <select
-                            id="community-age"
-                            {...register("ageSpan", { required: "Age span is required." })}
-                            className={`${inputClassName} appearance-none pr-11`}
-                          >
-                            <option value="">Select age span</option>
-                            {ageSpanOptions.map((ageSpan) => (
-                              <option key={ageSpan} value={ageSpan}>
-                                {ageSpan}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        </div>
-                        {errors.ageSpan ? <p className={errorTextClassName}>{errors.ageSpan.message}</p> : null}
-                      </div>
-
-                      <div>
-                        <label className={labelClassName} htmlFor="community-gender">
-                          Gender
-                        </label>
-                        <div className="relative">
-                          <select
-                            id="community-gender"
-                            {...register("gender", { required: "Gender is required." })}
-                            className={`${inputClassName} appearance-none pr-11`}
-                          >
-                            <option value="">Select gender</option>
-                            {genderOptions.map((gender) => (
-                              <option key={gender} value={gender}>
-                                {gender}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        </div>
-                        {errors.gender ? <p className={errorTextClassName}>{errors.gender.message}</p> : null}
-                      </div>
-                    </div>
-
-                    <div className="grid gap-5 sm:grid-cols-2">
-                      <div>
-                        <label className={labelClassName} htmlFor="community-salary">
-                          Salary range (USD)
-                        </label>
-                        <div className="relative">
-                          <select
-                            id="community-salary"
-                            {...register("salaryRange", { required: "Salary range is required." })}
-                            className={`${inputClassName} appearance-none pr-11`}
-                          >
-                            <option value="">Select salary range</option>
-                            {salaryRangeOptions.map((salaryRange) => (
-                              <option key={salaryRange} value={salaryRange}>
-                                {salaryRange}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        </div>
-                        {errors.salaryRange ? (
-                          <p className={errorTextClassName}>{errors.salaryRange.message}</p>
-                        ) : null}
-                      </div>
-
-                      <div>
-                        <label className={labelClassName} htmlFor="community-education">
-                          Educational level
-                        </label>
-                        <div className="relative">
-                          <select
-                            id="community-education"
-                            {...register("educationalLevel", { required: "Educational level is required." })}
-                            className={`${inputClassName} appearance-none pr-11`}
-                          >
-                            <option value="">Select educational level</option>
-                            {educationLevelOptions.map((educationLevel) => (
-                              <option key={educationLevel} value={educationLevel}>
-                                {educationLevel}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        </div>
-                        {errors.educationalLevel ? (
-                          <p className={errorTextClassName}>{errors.educationalLevel.message}</p>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    <div className="grid gap-5 sm:grid-cols-2">
-                      <div>
-                        <label className={labelClassName} htmlFor="community-country">
                           Country
                         </label>
                         <div className="relative">
                           <select
-                            id="community-country"
-                            {...register("country", { required: "Country is required." })}
+                            id="client-country"
+                            {...register("country", {
+                              required: "Country is required.",
+                            })}
                             className={`${inputClassName} appearance-none pr-11`}
                           >
                             <option value="">Select country</option>
@@ -920,231 +795,698 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                           <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         </div>
                         {errors.country ? (
-                          <p className={errorTextClassName}>{errors.country.message}</p>
+                          <p className={errorTextClassName}>
+                            {errors.country.message}
+                          </p>
                         ) : null}
                       </div>
 
                       <div>
-                        <label className={labelClassName} htmlFor="community-residence">
-                          Place of residence
+                        <label
+                          className={labelClassName}
+                          htmlFor="client-institution"
+                        >
+                          Educational institution
                         </label>
                         <div className="relative">
                           <select
-                            id="community-residence"
-                            {...register("placeOfResidence", { required: "Place of residence is required." })}
+                            id="client-institution"
+                            {...register("educationalInstitution", {
+                              required: "Educational institution is required.",
+                            })}
                             className={`${inputClassName} appearance-none pr-11`}
                           >
-                            <option value="">Select place of residence</option>
-                            {residenceOptions.map((placeOfResidence) => (
-                              <option key={placeOfResidence} value={placeOfResidence}>
-                                {placeOfResidence}
+                            <option value="">Select institution</option>
+                            {institutionOptions.map((institution) => (
+                              <option key={institution} value={institution}>
+                                {institution}
                               </option>
                             ))}
                           </select>
                           <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         </div>
-                        {errors.placeOfResidence ? (
-                          <p className={errorTextClassName}>{errors.placeOfResidence.message}</p>
+                        <p className="mt-2 text-sm text-slate-500">
+                          {institutionStatus === "loading"
+                            ? "Loading universities for the selected country..."
+                            : institutionStatus === "error"
+                              ? "University lookup fell back to a local list."
+                              : "Choose country to narrow the university list, or use Other."}
+                        </p>
+                        {errors.educationalInstitution ? (
+                          <p className={errorTextClassName}>
+                            {errors.educationalInstitution.message}
+                          </p>
                         ) : null}
                       </div>
-                    </div>
 
-                    <div className="grid gap-5 sm:grid-cols-2">
-                      <div>
-                        <label className={labelClassName} htmlFor="community-family-status">
-                          Family status
-                        </label>
-                        <div className="relative">
-                          <select
-                            id="community-family-status"
-                            {...register("familyStatus", { required: "Family status is required." })}
-                            className={`${inputClassName} appearance-none pr-11`}
+                      {selectedInstitution === "Other" ? (
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="client-custom-institution"
                           >
-                            <option value="">Select family status</option>
-                            {familyStatusOptions.map((familyStatus) => (
-                              <option key={familyStatus} value={familyStatus}>
-                                {familyStatus}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            Other institution
+                          </label>
+                          <input
+                            id="client-custom-institution"
+                            {...register("customInstitution", {
+                              validate: (value) =>
+                                selectedInstitution === "Other" && !value.trim()
+                                  ? "Write your institution."
+                                  : true,
+                            })}
+                            className={inputClassName}
+                          />
+                          {errors.customInstitution ? (
+                            <p className={errorTextClassName}>
+                              {errors.customInstitution.message}
+                            </p>
+                          ) : null}
                         </div>
-                        {errors.familyStatus ? (
-                          <p className={errorTextClassName}>{errors.familyStatus.message}</p>
-                        ) : null}
-                      </div>
-
-                      <div>
-                        <label className={labelClassName} htmlFor="community-car-count">
-                          Car count
-                        </label>
-                        <div className="relative">
-                          <select
-                            id="community-car-count"
-                            {...register("carCount", { required: "Car count is required." })}
-                            className={`${inputClassName} appearance-none pr-11`}
-                          >
-                            <option value="">Select car count</option>
-                            {carCountOptions.map((carCount) => (
-                              <option key={carCount} value={carCount}>
-                                {carCount}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        </div>
-                        {errors.carCount ? (
-                          <p className={errorTextClassName}>{errors.carCount.message}</p>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className={labelClassName}>Interests</label>
-                      <Controller
-                        control={control}
-                        name="interests"
-                        rules={{
-                          validate: (value) =>
-                            value.length > 0 ? true : "Select at least 1 interest. You can choose up to 3."
-                        }}
-                        render={({ field }) => (
-                          <div className="rounded-[28px] border border-[color:var(--auth-border)] bg-[color:var(--auth-input-bg)] p-4">
-                            <button
-                              type="button"
-                              onClick={() => setInterestsOpen((current) => !current)}
-                              className="flex w-full items-center justify-between rounded-2xl bg-[color:var(--auth-accent-softer-bg)] px-4 py-3 text-left text-sm font-semibold text-slate-700"
-                            >
-                              <span>
-                                {field.value.length > 0
-                                  ? `${field.value.length} interest${field.value.length > 1 ? "s" : ""} selected`
-                                  : "Select up to 3 interests"}
-                              </span>
-                              <ChevronDown
-                                className={`h-4 w-4 text-slate-400 transition ${interestsOpen ? "rotate-180" : ""}`}
-                              />
-                            </button>
-
-                            {interestsOpen ? (
-                              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                                {interestOptions.map((interest) => {
-                                  const selected = field.value.includes(interest);
-                                  const disabled = !selected && field.value.length >= 3;
-
-                                  return (
-                                    <button
-                                      key={interest}
-                                      type="button"
-                                      onClick={() => {
-                                        if (selected) {
-                                          field.onChange(field.value.filter((value) => value !== interest));
-                                          return;
-                                        }
-
-                                        if (field.value.length < 3) {
-                                          field.onChange([...field.value, interest]);
-                                        }
-                                      }}
-                                      disabled={disabled}
-                                      className={`rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
-                                        selected
-                                          ? "border-[color:var(--auth-accent)] bg-[color:var(--auth-selected-bg)] text-[color:var(--auth-accent)]"
-                                          : disabled
-                                            ? "border-[color:var(--auth-disabled-border)] bg-[color:var(--auth-disabled-bg)] text-slate-300"
-                                            : "border-[color:var(--auth-disabled-border)] bg-white text-slate-600 hover:border-[color:var(--auth-accent)] hover:text-[color:var(--auth-accent)]"
-                                      }`}
-                                    >
-                                      {interest}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            ) : null}
-
-                            {field.value.length > 0 ? (
-                              <div className="mt-3 flex flex-wrap gap-2">
-                                {field.value.map((interest) => (
-                                  <span
-                                    key={interest}
-                                    className="inline-flex items-center rounded-full bg-[color:var(--auth-selected-bg)] px-3 py-1 text-xs font-semibold text-[color:var(--auth-accent)]"
-                                  >
-                                    {interest}
-                                  </span>
-                                ))}
-                              </div>
-                            ) : null}
-
-                            <p className="mt-3 text-sm text-slate-500">Maximum 3 choices.</p>
-                          </div>
-                        )}
-                      />
-                      {errors.interests ? (
-                        <p className={errorTextClassName}>{errors.interests.message}</p>
                       ) : null}
-                    </div>
 
-                    <div className="grid gap-5 sm:grid-cols-2">
                       <div>
-                        <label className={labelClassName} htmlFor="community-phone">
-                          Phone number (optional)
+                        <label
+                          className={labelClassName}
+                          htmlFor="client-position"
+                        >
+                          Position
+                        </label>
+                        <div className="relative">
+                          <select
+                            id="client-position"
+                            {...register("position", {
+                              required: "Position is required.",
+                            })}
+                            className={`${inputClassName} appearance-none pr-11`}
+                          >
+                            <option value="">Select position</option>
+                            {clientPositionOptions.map((position) => (
+                              <option key={position} value={position}>
+                                {position}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        </div>
+                        {errors.position ? (
+                          <p className={errorTextClassName}>
+                            {errors.position.message}
+                          </p>
+                        ) : null}
+                      </div>
+                    </AuthFormSection>
+
+                    <AuthFormSection
+                      title="Account security"
+                      description="Add an optional phone number and choose a password."
+                    >
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="client-phone"
+                          >
+                            Phone number (optional)
+                          </label>
+                          <input
+                            id="client-phone"
+                            type="tel"
+                            autoComplete="tel"
+                            {...register("phoneNumber")}
+                            className={inputClassName}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="client-password"
+                          >
+                            Password
+                          </label>
+                          <PasswordInput
+                            id="client-password"
+                            autoComplete="new-password"
+                            {...register("password", {
+                              required: "Password is required.",
+                              minLength: {
+                                value: 8,
+                                message:
+                                  "Password must be at least 8 characters.",
+                              },
+                            })}
+                            className={inputClassName}
+                          />
+                          {errors.password ? (
+                            <p className={errorTextClassName}>
+                              {errors.password.message}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </AuthFormSection>
+                  </>
+                ) : (
+                  <>
+                    <AuthFormSection
+                      title="Basic information"
+                      description="Start with the details used to create your account."
+                    >
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="community-name"
+                          >
+                            Name
+                          </label>
+                          <input
+                            id="community-name"
+                            autoComplete="given-name"
+                            {...register("name", {
+                              required: "Name is required.",
+                            })}
+                            className={inputClassName}
+                          />
+                          {errors.name ? (
+                            <p className={errorTextClassName}>
+                              {errors.name.message}
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="community-surname"
+                          >
+                            Surname
+                          </label>
+                          <input
+                            id="community-surname"
+                            autoComplete="family-name"
+                            {...register("surname", {
+                              required: "Surname is required.",
+                            })}
+                            className={inputClassName}
+                          />
+                          {errors.surname ? (
+                            <p className={errorTextClassName}>
+                              {errors.surname.message}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label
+                          className={labelClassName}
+                          htmlFor="community-email"
+                        >
+                          Email
                         </label>
                         <input
-                          id="community-phone"
-                          type="tel"
-                          autoComplete="tel"
-                          {...register("phoneNumber")}
-                          className={inputClassName}
-                        />
-                      </div>
-
-                      <div>
-                        <label className={labelClassName} htmlFor="community-password">
-                          Password
-                        </label>
-                        <PasswordInput
-                          id="community-password"
-                          autoComplete="new-password"
-                          {...register("password", {
-                            required: "Password is required.",
-                            minLength: {
-                              value: 8,
-                              message: "Password must be at least 8 characters."
-                            }
+                          id="community-email"
+                          type="email"
+                          autoComplete="email"
+                          {...register("email", {
+                            required: "Email is required.",
+                            pattern: {
+                              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                              message: "Enter a valid email address.",
+                            },
                           })}
                           className={inputClassName}
                         />
-                        {errors.password ? (
-                          <p className={errorTextClassName}>{errors.password.message}</p>
+                        {errors.email ? (
+                          <p className={errorTextClassName}>
+                            {errors.email.message}
+                          </p>
                         ) : null}
                       </div>
-                    </div>
+                    </AuthFormSection>
+
+                    <AuthFormSection
+                      title="Profile details"
+                      description="These answers help MERGEN match you with relevant surveys."
+                    >
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="community-age"
+                          >
+                            Age span
+                          </label>
+                          <div className="relative">
+                            <select
+                              id="community-age"
+                              {...register("ageSpan", {
+                                required: "Age span is required.",
+                              })}
+                              className={`${inputClassName} appearance-none pr-11`}
+                            >
+                              <option value="">Select age span</option>
+                              {ageSpanOptions.map((ageSpan) => (
+                                <option key={ageSpan} value={ageSpan}>
+                                  {ageSpan}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          </div>
+                          {errors.ageSpan ? (
+                            <p className={errorTextClassName}>
+                              {errors.ageSpan.message}
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="community-gender"
+                          >
+                            Gender
+                          </label>
+                          <div className="relative">
+                            <select
+                              id="community-gender"
+                              {...register("gender", {
+                                required: "Gender is required.",
+                              })}
+                              className={`${inputClassName} appearance-none pr-11`}
+                            >
+                              <option value="">Select gender</option>
+                              {genderOptions.map((gender) => (
+                                <option key={gender} value={gender}>
+                                  {gender}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          </div>
+                          {errors.gender ? (
+                            <p className={errorTextClassName}>
+                              {errors.gender.message}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="community-salary"
+                          >
+                            Salary range (USD)
+                          </label>
+                          <div className="relative">
+                            <select
+                              id="community-salary"
+                              {...register("salaryRange", {
+                                required: "Salary range is required.",
+                              })}
+                              className={`${inputClassName} appearance-none pr-11`}
+                            >
+                              <option value="">Select salary range</option>
+                              {salaryRangeOptions.map((salaryRange) => (
+                                <option key={salaryRange} value={salaryRange}>
+                                  {salaryRange}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          </div>
+                          {errors.salaryRange ? (
+                            <p className={errorTextClassName}>
+                              {errors.salaryRange.message}
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="community-education"
+                          >
+                            Educational level
+                          </label>
+                          <div className="relative">
+                            <select
+                              id="community-education"
+                              {...register("educationalLevel", {
+                                required: "Educational level is required.",
+                              })}
+                              className={`${inputClassName} appearance-none pr-11`}
+                            >
+                              <option value="">Select educational level</option>
+                              {educationLevelOptions.map((educationLevel) => (
+                                <option
+                                  key={educationLevel}
+                                  value={educationLevel}
+                                >
+                                  {educationLevel}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          </div>
+                          {errors.educationalLevel ? (
+                            <p className={errorTextClassName}>
+                              {errors.educationalLevel.message}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="community-country"
+                          >
+                            Country
+                          </label>
+                          <div className="relative">
+                            <select
+                              id="community-country"
+                              {...register("country", {
+                                required: "Country is required.",
+                              })}
+                              className={`${inputClassName} appearance-none pr-11`}
+                            >
+                              <option value="">Select country</option>
+                              {countryOptions.map((country) => (
+                                <option key={country} value={country}>
+                                  {country}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          </div>
+                          {errors.country ? (
+                            <p className={errorTextClassName}>
+                              {errors.country.message}
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="community-residence"
+                          >
+                            Place of residence
+                          </label>
+                          <div className="relative">
+                            <select
+                              id="community-residence"
+                              {...register("placeOfResidence", {
+                                required: "Place of residence is required.",
+                              })}
+                              className={`${inputClassName} appearance-none pr-11`}
+                            >
+                              <option value="">
+                                Select place of residence
+                              </option>
+                              {residenceOptions.map((placeOfResidence) => (
+                                <option
+                                  key={placeOfResidence}
+                                  value={placeOfResidence}
+                                >
+                                  {placeOfResidence}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          </div>
+                          {errors.placeOfResidence ? (
+                            <p className={errorTextClassName}>
+                              {errors.placeOfResidence.message}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="community-family-status"
+                          >
+                            Family status
+                          </label>
+                          <div className="relative">
+                            <select
+                              id="community-family-status"
+                              {...register("familyStatus", {
+                                required: "Family status is required.",
+                              })}
+                              className={`${inputClassName} appearance-none pr-11`}
+                            >
+                              <option value="">Select family status</option>
+                              {familyStatusOptions.map((familyStatus) => (
+                                <option key={familyStatus} value={familyStatus}>
+                                  {familyStatus}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          </div>
+                          {errors.familyStatus ? (
+                            <p className={errorTextClassName}>
+                              {errors.familyStatus.message}
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="community-car-count"
+                          >
+                            Car count
+                          </label>
+                          <div className="relative">
+                            <select
+                              id="community-car-count"
+                              {...register("carCount", {
+                                required: "Car count is required.",
+                              })}
+                              className={`${inputClassName} appearance-none pr-11`}
+                            >
+                              <option value="">Select car count</option>
+                              {carCountOptions.map((carCount) => (
+                                <option key={carCount} value={carCount}>
+                                  {carCount}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          </div>
+                          {errors.carCount ? (
+                            <p className={errorTextClassName}>
+                              {errors.carCount.message}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className={labelClassName}>Interests</label>
+                        <Controller
+                          control={control}
+                          name="interests"
+                          rules={{
+                            validate: (value) =>
+                              value.length > 0
+                                ? true
+                                : "Select at least 1 interest. You can choose up to 3.",
+                          }}
+                          render={({ field }) => (
+                            <div className="rounded-[28px] border border-[color:var(--auth-border)] bg-[color:var(--auth-input-bg)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setInterestsOpen((current) => !current)
+                                }
+                                className="flex w-full items-center justify-between rounded-2xl bg-[color:var(--auth-accent-softer-bg)] px-4 py-3 text-left text-sm font-semibold text-slate-700"
+                              >
+                                <span>
+                                  {field.value.length > 0
+                                    ? `${field.value.length} interest${field.value.length > 1 ? "s" : ""} selected`
+                                    : "Select up to 3 interests"}
+                                </span>
+                                <ChevronDown
+                                  className={`h-4 w-4 text-slate-400 transition ${interestsOpen ? "rotate-180" : ""}`}
+                                />
+                              </button>
+
+                              {interestsOpen ? (
+                                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                  {interestOptions.map((interest) => {
+                                    const selected =
+                                      field.value.includes(interest);
+                                    const disabled =
+                                      !selected && field.value.length >= 3;
+
+                                    return (
+                                      <button
+                                        key={interest}
+                                        type="button"
+                                        onClick={() => {
+                                          if (selected) {
+                                            field.onChange(
+                                              field.value.filter(
+                                                (value) => value !== interest,
+                                              ),
+                                            );
+                                            return;
+                                          }
+
+                                          if (field.value.length < 3) {
+                                            field.onChange([
+                                              ...field.value,
+                                              interest,
+                                            ]);
+                                          }
+                                        }}
+                                        disabled={disabled}
+                                        className={`rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
+                                          selected
+                                            ? "border-[color:var(--auth-accent)] bg-[color:var(--auth-selected-bg)] text-[color:var(--auth-accent)]"
+                                            : disabled
+                                              ? "border-[color:var(--auth-disabled-border)] bg-[color:var(--auth-disabled-bg)] text-slate-300"
+                                              : "border-[color:var(--auth-disabled-border)] bg-white text-slate-600 hover:border-[color:var(--auth-accent)] hover:text-[color:var(--auth-accent)]"
+                                        }`}
+                                      >
+                                        {interest}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              ) : null}
+
+                              {field.value.length > 0 ? (
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                  {field.value.map((interest) => (
+                                    <span
+                                      key={interest}
+                                      className="inline-flex items-center rounded-full bg-[color:var(--auth-selected-bg)] px-3 py-1 text-xs font-semibold text-[color:var(--auth-accent)]"
+                                    >
+                                      {interest}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : null}
+
+                              <p className="mt-3 text-sm text-slate-500">
+                                Maximum 3 choices.
+                              </p>
+                            </div>
+                          )}
+                        />
+                        {errors.interests ? (
+                          <p className={errorTextClassName}>
+                            {errors.interests.message}
+                          </p>
+                        ) : null}
+                      </div>
+                    </AuthFormSection>
+
+                    <AuthFormSection
+                      title="Account security"
+                      description="Add an optional phone number and choose a password."
+                    >
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="community-phone"
+                          >
+                            Phone number (optional)
+                          </label>
+                          <input
+                            id="community-phone"
+                            type="tel"
+                            autoComplete="tel"
+                            {...register("phoneNumber")}
+                            className={inputClassName}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="community-password"
+                          >
+                            Password
+                          </label>
+                          <PasswordInput
+                            id="community-password"
+                            autoComplete="new-password"
+                            {...register("password", {
+                              required: "Password is required.",
+                              minLength: {
+                                value: 8,
+                                message:
+                                  "Password must be at least 8 characters.",
+                              },
+                            })}
+                            className={inputClassName}
+                          />
+                          {errors.password ? (
+                            <p className={errorTextClassName}>
+                              {errors.password.message}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </AuthFormSection>
                   </>
                 )}
 
-                <div className="rounded-[24px] border border-[color:var(--auth-border)] bg-[color:var(--auth-accent-softer-bg)] px-4 py-4">
-                  <label className="flex items-start gap-3 text-sm leading-6 text-slate-600" htmlFor="accept-legal">
+                <div className="rounded-[28px] border border-[color:var(--auth-border)] bg-[color:var(--auth-accent-softer-bg)] px-5 py-5 shadow-[0_18px_40px_rgba(15,23,42,0.04)]">
+                  <label
+                    className="flex items-start gap-3 text-sm leading-6 text-slate-600"
+                    htmlFor="accept-legal"
+                  >
                     <input
                       id="accept-legal"
                       type="checkbox"
                       {...register("acceptLegal", {
-                        required: "You must accept the Terms and Conditions to create an account."
+                        required:
+                          "You must accept the Terms and Conditions to create an account.",
                       })}
                       className="mt-1 h-4 w-4 rounded border-[color:var(--auth-border)] text-[color:var(--auth-accent)] focus:ring-[color:var(--auth-accent-soft)]"
                     />
                     <span>
                       I confirm that I am at least 18 years old, I agree to the{" "}
-                      <Link href="/terms" target="_blank" className="font-semibold text-[color:var(--auth-accent)] underline underline-offset-2">
+                      <Link
+                        href="/terms"
+                        target="_blank"
+                        className="font-semibold text-[color:var(--auth-accent)] underline underline-offset-2"
+                      >
                         Terms &amp; Conditions
                       </Link>
                       , and I acknowledge the{" "}
-                      <Link href="/privacy" target="_blank" className="font-semibold text-[color:var(--auth-accent)] underline underline-offset-2">
+                      <Link
+                        href="/privacy"
+                        target="_blank"
+                        className="font-semibold text-[color:var(--auth-accent)] underline underline-offset-2"
+                      >
                         Privacy Policy
                       </Link>
                       .
                     </span>
                   </label>
                   {errors.acceptLegal ? (
-                    <p className={errorTextClassName}>{errors.acceptLegal.message}</p>
+                    <p className={errorTextClassName}>
+                      {errors.acceptLegal.message}
+                    </p>
                   ) : null}
                 </div>
 
@@ -1153,47 +1495,63 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                   disabled={authPending !== null}
                   className={submitButtonClassName}
                 >
-                  {authPending === "signup" ? "Creating account..." : copy.submitLabel}
+                  {authPending === "signup"
+                    ? "Creating account..."
+                    : copy.submitLabel}
                 </button>
               </form>
             ) : (
-              <form className="mt-6 space-y-5" onSubmit={handleLoginSubmit(handleRoleLogin)}>
-                <div>
-                  <label className={labelClassName} htmlFor="login-email">
-                    {copy.emailLabel}
-                  </label>
-                  <input
-                    id="login-email"
-                    type="email"
-                    autoComplete="email"
-                    {...registerLogin("email", {
-                      required: "Email is required.",
-                      pattern: {
-                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                        message: "Enter a valid email address."
-                      }
-                    })}
-                    className={inputClassName}
-                  />
-                  {loginErrors.email ? (
-                    <p className={errorTextClassName}>{loginErrors.email.message}</p>
-                  ) : null}
-                </div>
+              <form
+                className="mt-6 space-y-6"
+                onSubmit={handleLoginSubmit(handleRoleLogin)}
+              >
+                <AuthFormSection
+                  title="Welcome back"
+                  description="Use the same details you signed up with."
+                >
+                  <div>
+                    <label className={labelClassName} htmlFor="login-email">
+                      {copy.emailLabel}
+                    </label>
+                    <input
+                      id="login-email"
+                      type="email"
+                      autoComplete="email"
+                      {...registerLogin("email", {
+                        required: "Email is required.",
+                        pattern: {
+                          value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                          message: "Enter a valid email address.",
+                        },
+                      })}
+                      className={inputClassName}
+                    />
+                    {loginErrors.email ? (
+                      <p className={errorTextClassName}>
+                        {loginErrors.email.message}
+                      </p>
+                    ) : null}
+                  </div>
 
-                <div>
-                  <label className={labelClassName} htmlFor="login-password">
-                    Password
-                  </label>
-                  <PasswordInput
-                    id="login-password"
-                    autoComplete="current-password"
-                    {...registerLogin("password", { required: "Password is required." })}
-                    className={inputClassName}
-                  />
-                  {loginErrors.password ? (
-                    <p className={errorTextClassName}>{loginErrors.password.message}</p>
-                  ) : null}
-                </div>
+                  <div>
+                    <label className={labelClassName} htmlFor="login-password">
+                      Password
+                    </label>
+                    <PasswordInput
+                      id="login-password"
+                      autoComplete="current-password"
+                      {...registerLogin("password", {
+                        required: "Password is required.",
+                      })}
+                      className={inputClassName}
+                    />
+                    {loginErrors.password ? (
+                      <p className={errorTextClassName}>
+                        {loginErrors.password.message}
+                      </p>
+                    ) : null}
+                  </div>
+                </AuthFormSection>
 
                 <button
                   type="submit"
@@ -1206,9 +1564,7 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
             )}
 
             {submitMessage ? (
-              <div className={messageClassName}>
-                {submitMessage}
-              </div>
+              <div className={messageClassName}>{submitMessage}</div>
             ) : null}
           </div>
         </section>
