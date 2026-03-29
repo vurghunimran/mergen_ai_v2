@@ -1,0 +1,122 @@
+import Image from "next/image";
+import { Building2, GraduationCap, Microscope, Sparkles } from "lucide-react";
+
+const audienceGroups = [
+  {
+    icon: GraduationCap,
+    title: "Students",
+    description:
+      "Bachelor, Master, and PhD students conducting thesis, dissertations, and academic research.",
+    accent: "For thesis, capstone, and dissertation work",
+    imageAlt: "Student studying in a university library",
+    imageSrc:
+      "https://images.unsplash.com/photo-1741699427788-74db37639fc3?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=60&w=3000"
+  },
+  {
+    icon: Microscope,
+    title: "Professors & Academic Researchers",
+    description:
+      "Faculty members and independent researchers conducting academic and educational studies.",
+    accent: "For faculty-led and independent studies",
+    imageAlt: "Professor standing in front of a classroom board",
+    imageSrc:
+      "https://images.unsplash.com/photo-1758685734565-fc8ff6e9ffcc?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=60&w=3000"
+  },
+  {
+    icon: Building2,
+    title: "Research Centers & Universities",
+    description:
+      "Institutions and research teams conducting collaborative and large-scale educational research.",
+    accent: "For research teams and institutional projects",
+    imageAlt: "Research team collaborating around a table",
+    imageSrc:
+      "https://images.unsplash.com/photo-1768796370577-c6e8b708b980?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=60&w=3000"
+  }
+];
+
+export default function WhoCanUseMergen() {
+  return (
+    <section id="who-can-use" className="px-4 pb-8 pt-14 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <div className="relative overflow-hidden rounded-[40px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,248,239,0.8)_0%,rgba(255,241,225,0.84)_45%,rgba(255,235,212,0.88)_100%)] px-5 py-12 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur sm:px-8 lg:px-12 lg:py-14">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_18%,rgba(255,255,255,0.65),transparent_20%),radial-gradient(circle_at_80%_16%,rgba(241,163,95,0.24),transparent_24%),radial-gradient(circle_at_50%_80%,rgba(216,90,47,0.12),transparent_24%)]" />
+          <div className="absolute left-[-7%] top-16 h-52 w-52 rounded-full bg-white/35 blur-3xl" />
+          <div className="absolute right-[-6%] top-10 h-64 w-64 rounded-full bg-[#efaa57]/18 blur-3xl" />
+
+          <div className="relative z-10">
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(300px,0.7fr)] lg:items-end">
+              <div className="max-w-3xl">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#d85a2f]/15 bg-white/80 px-4 py-2 text-sm font-semibold text-[#d85a2f] shadow-[0_12px_24px_rgba(216,90,47,0.08)]">
+                  <Sparkles className="h-4 w-4" />
+                  Who Can Use MERGEN?
+                </span>
+                <h2 className="mt-6 text-3xl font-extrabold tracking-[-0.05em] text-slate-900 sm:text-4xl lg:text-[2.9rem]">
+                  Built for <span className="text-[#d85a2f]">academic research</span>.
+                </h2>
+                <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
+                  Connect with the right participants and collect reliable data for your educational studies.
+                </p>
+              </div>
+
+              <div className="rounded-[30px] border border-white/75 bg-white/70 p-5 shadow-[0_18px_36px_rgba(15,23,42,0.05)]">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#d85a2f]/75">Why it fits</p>
+                <p className="mt-3 text-[1.1rem] font-bold leading-7 text-slate-900">
+                  MERGEN helps academic teams move from research setup to usable insight with less manual overhead.
+                </p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {["Verified participants", "AI-assisted drafting", "Report-ready insights"].map((item) => (
+                    <span
+                      key={item}
+                      className="inline-flex rounded-full border border-[#f1d5c2] bg-[#fff7f1] px-3 py-1.5 text-xs font-semibold text-slate-600"
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-10 grid gap-6 lg:grid-cols-3">
+              {audienceGroups.map((group) => {
+                const Icon = group.icon;
+
+                return (
+                  <article
+                    key={group.title}
+                    className="group overflow-hidden rounded-[32px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.82)_0%,rgba(255,249,242,0.95)_100%)] shadow-[0_22px_50px_rgba(15,23,42,0.07)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_60px_rgba(15,23,42,0.10)]"
+                  >
+                    <div className="relative aspect-[1.2/1] overflow-hidden">
+                      <Image
+                        src={group.imageSrc}
+                        alt={group.imageAlt}
+                        fill
+                        sizes="(min-width: 1024px) 33vw, 100vw"
+                        className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                      />
+                      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(17,24,39,0.06)_0%,rgba(17,24,39,0.10)_40%,rgba(17,24,39,0.55)_100%)]" />
+                      <div className="absolute left-5 top-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/90 text-[#d85a2f] shadow-[0_12px_24px_rgba(15,23,42,0.12)] backdrop-blur">
+                        <Icon className="h-6 w-6" />
+                      </div>
+                      <div className="absolute bottom-5 left-5 right-5">
+                        <span className="inline-flex rounded-full border border-white/30 bg-white/18 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur">
+                          {group.accent}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-6">
+                      <h3 className="text-[1.55rem] font-extrabold leading-tight tracking-[-0.03em] text-slate-900">
+                        {group.title}
+                      </h3>
+                      <p className="mt-3 text-[15px] leading-7 text-slate-600">{group.description}</p>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

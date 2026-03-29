@@ -6,10 +6,12 @@ import Footer from "@/components/Footer";
 import HowItWorks from "@/components/HowItWorks";
 import PromoVideo from "@/components/PromoVideo";
 import SiteLogo from "@/components/SiteLogo";
+import WhoCanUseMergen from "@/components/WhoCanUseMergen";
 import { getCommunityMapData } from "@/lib/community-map-data";
 
 const navItems = [
   { href: "#promo-video", label: "Vision" },
+  { href: "#who-can-use", label: "Who Uses MERGEN" },
   { href: "#how-it-works", label: "How It Works" },
   { href: "#community-map", label: "Community" },
   { href: "#ai-workflow", label: "AI" },
@@ -119,6 +121,7 @@ export default async function HomePage() {
 
         <div className="relative z-10">
           <PromoVideo />
+          <WhoCanUseMergen />
           <HowItWorks />
           <CommunityMap {...communityMapData} />
           <AISection />
