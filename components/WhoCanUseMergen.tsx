@@ -18,9 +18,9 @@ const audienceGroups = [
     description:
       "Faculty members and independent researchers conducting academic and educational studies.",
     accent: "For faculty-led and independent studies",
-    imageAlt: "Professor standing in front of a classroom board",
+    imageAlt: "Professor teaching students in a lecture hall",
     imageSrc:
-      "https://images.unsplash.com/photo-1758685734565-fc8ff6e9ffcc?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=60&w=3000"
+      "https://images.unsplash.com/photo-1758270703884-e1c40c43465f?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=60&w=3000"
   },
   {
     icon: Building2,
@@ -44,8 +44,7 @@ export default function WhoCanUseMergen() {
           <div className="absolute right-[-6%] top-10 h-64 w-64 rounded-full bg-[#efaa57]/18 blur-3xl" />
 
           <div className="relative z-10">
-            <div className="grid gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(300px,0.7fr)] lg:items-end">
-              <div className="max-w-3xl">
+            <div className="max-w-3xl">
                 <span className="inline-flex items-center gap-2 rounded-full border border-[#d85a2f]/15 bg-white/80 px-4 py-2 text-sm font-semibold text-[#d85a2f] shadow-[0_12px_24px_rgba(216,90,47,0.08)]">
                   <Sparkles className="h-4 w-4" />
                   Who Can Use MERGEN?
@@ -56,24 +55,6 @@ export default function WhoCanUseMergen() {
                 <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
                   Connect with the right participants and collect reliable data for your educational studies.
                 </p>
-              </div>
-
-              <div className="rounded-[30px] border border-white/75 bg-white/70 p-5 shadow-[0_18px_36px_rgba(15,23,42,0.05)]">
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#d85a2f]/75">Why it fits</p>
-                <p className="mt-3 text-[1.1rem] font-bold leading-7 text-slate-900">
-                  MERGEN helps academic teams move from research setup to usable insight with less manual overhead.
-                </p>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {["Verified participants", "AI-assisted drafting", "Report-ready insights"].map((item) => (
-                    <span
-                      key={item}
-                      className="inline-flex rounded-full border border-[#f1d5c2] bg-[#fff7f1] px-3 py-1.5 text-xs font-semibold text-slate-600"
-                    >
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
             </div>
 
             <div className="mt-10 grid gap-6 lg:grid-cols-3">
@@ -94,18 +75,18 @@ export default function WhoCanUseMergen() {
                         className="object-cover transition duration-500 group-hover:scale-[1.03]"
                       />
                       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(17,24,39,0.06)_0%,rgba(17,24,39,0.10)_40%,rgba(17,24,39,0.55)_100%)]" />
-                      <div className="absolute left-5 top-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/90 text-[#d85a2f] shadow-[0_12px_24px_rgba(15,23,42,0.12)] backdrop-blur">
+                      <div className="absolute left-5 top-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/70 bg-[#fff3ea] text-[#d85a2f] shadow-[0_12px_24px_rgba(15,23,42,0.12)] backdrop-blur">
                         <Icon className="h-6 w-6" />
                       </div>
                       <div className="absolute bottom-5 left-5 right-5">
-                        <span className="inline-flex rounded-full border border-white/30 bg-white/18 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur">
+                        <span className="inline-flex rounded-full border border-[#f3c9aa] bg-[#d85a2f] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white shadow-[0_12px_22px_rgba(216,90,47,0.22)]">
                           {group.accent}
                         </span>
                       </div>
                     </div>
 
                     <div className="p-6">
-                      <h3 className="text-[1.55rem] font-extrabold leading-tight tracking-[-0.03em] text-slate-900">
+                      <h3 className="text-[1.55rem] font-extrabold leading-tight tracking-[-0.03em] text-[#d85a2f]">
                         {group.title}
                       </h3>
                       <p className="mt-3 text-[15px] leading-7 text-slate-600">{group.description}</p>
