@@ -14,15 +14,38 @@ create table if not exists public.community_profiles (
   country text,
   age_span text,
   gender text,
+  employment_status text,
+  industry text,
   salary_range text,
   educational_level text,
+  field_of_study text,
+  language_skills text[] not null default '{}',
+  english_proficiency text,
   place_of_residence text,
   family_status text,
+  household_size text,
+  children_count text,
   interests text[] not null default '{}',
   car_count text,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
+
+alter table public.community_profiles add column if not exists employment_status text;
+alter table public.community_profiles add column if not exists industry text;
+alter table public.community_profiles add column if not exists field_of_study text;
+alter table public.community_profiles add column if not exists language_skills text[] not null default '{}';
+alter table public.community_profiles add column if not exists english_proficiency text;
+alter table public.community_profiles add column if not exists household_size text;
+alter table public.community_profiles add column if not exists children_count text;
+
+alter table public.profiles add column if not exists employment_status text;
+alter table public.profiles add column if not exists industry text;
+alter table public.profiles add column if not exists field_of_study text;
+alter table public.profiles add column if not exists language_skills text[] not null default '{}';
+alter table public.profiles add column if not exists english_proficiency text;
+alter table public.profiles add column if not exists household_size text;
+alter table public.profiles add column if not exists children_count text;
 
 create table if not exists public.community_launch_regions (
   id text primary key,
@@ -282,12 +305,20 @@ as $$
 declare
   user_role text;
   user_interests text[];
+  user_language_skills text[];
 begin
   user_role := coalesce(new.raw_user_meta_data ->> 'role', 'community');
   user_interests :=
     case
       when jsonb_typeof(new.raw_user_meta_data -> 'interests') = 'array' then
         array(select jsonb_array_elements_text(new.raw_user_meta_data -> 'interests'))
+      else
+        '{}'::text[]
+    end;
+  user_language_skills :=
+    case
+      when jsonb_typeof(new.raw_user_meta_data -> 'language_skills') = 'array' then
+        array(select jsonb_array_elements_text(new.raw_user_meta_data -> 'language_skills'))
       else
         '{}'::text[]
     end;
@@ -327,10 +358,17 @@ begin
       country,
       age_span,
       gender,
+      employment_status,
+      industry,
       salary_range,
       educational_level,
+      field_of_study,
+      language_skills,
+      english_proficiency,
       place_of_residence,
       family_status,
+      household_size,
+      children_count,
       interests,
       car_count
     )
@@ -339,10 +377,17 @@ begin
       new.raw_user_meta_data ->> 'country',
       new.raw_user_meta_data ->> 'age_span',
       new.raw_user_meta_data ->> 'gender',
+      new.raw_user_meta_data ->> 'employment_status',
+      new.raw_user_meta_data ->> 'industry',
       new.raw_user_meta_data ->> 'salary_range',
       new.raw_user_meta_data ->> 'educational_level',
+      new.raw_user_meta_data ->> 'field_of_study',
+      user_language_skills,
+      new.raw_user_meta_data ->> 'english_proficiency',
       new.raw_user_meta_data ->> 'place_of_residence',
       new.raw_user_meta_data ->> 'family_status',
+      new.raw_user_meta_data ->> 'household_size',
+      new.raw_user_meta_data ->> 'children_count',
       user_interests,
       new.raw_user_meta_data ->> 'car_count'
     )
@@ -350,10 +395,17 @@ begin
       country = excluded.country,
       age_span = excluded.age_span,
       gender = excluded.gender,
+      employment_status = excluded.employment_status,
+      industry = excluded.industry,
       salary_range = excluded.salary_range,
       educational_level = excluded.educational_level,
+      field_of_study = excluded.field_of_study,
+      language_skills = excluded.language_skills,
+      english_proficiency = excluded.english_proficiency,
       place_of_residence = excluded.place_of_residence,
       family_status = excluded.family_status,
+      household_size = excluded.household_size,
+      children_count = excluded.children_count,
       interests = excluded.interests,
       car_count = excluded.car_count;
   end if;
@@ -391,10 +443,17 @@ insert into public.community_profiles (
   country,
   age_span,
   gender,
+  employment_status,
+  industry,
   salary_range,
   educational_level,
+  field_of_study,
+  language_skills,
+  english_proficiency,
   place_of_residence,
   family_status,
+  household_size,
+  children_count,
   interests,
   car_count
 )
@@ -403,10 +462,17 @@ select
   country,
   age_span,
   gender,
+  employment_status,
+  industry,
   salary_range,
   educational_level,
+  field_of_study,
+  coalesce(language_skills, '{}'::text[]),
+  english_proficiency,
   place_of_residence,
   family_status,
+  household_size,
+  children_count,
   coalesce(interests, '{}'::text[]),
   car_count
 from public.profiles
@@ -415,10 +481,17 @@ on conflict (id) do update set
   country = excluded.country,
   age_span = excluded.age_span,
   gender = excluded.gender,
+  employment_status = excluded.employment_status,
+  industry = excluded.industry,
   salary_range = excluded.salary_range,
   educational_level = excluded.educational_level,
+  field_of_study = excluded.field_of_study,
+  language_skills = excluded.language_skills,
+  english_proficiency = excluded.english_proficiency,
   place_of_residence = excluded.place_of_residence,
   family_status = excluded.family_status,
+  household_size = excluded.household_size,
+  children_count = excluded.children_count,
   interests = excluded.interests,
   car_count = excluded.car_count;
 

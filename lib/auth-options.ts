@@ -227,6 +227,38 @@ export const salaryRangeOptions = [
   "$10,000+"
 ];
 
+export const employmentStatusOptions = [
+  "Student",
+  "Employed full-time",
+  "Employed part-time",
+  "Self-employed",
+  "Freelance / Contract",
+  "Unemployed",
+  "Homemaker / Caregiver",
+  "Retired",
+  "Prefer not to say"
+];
+
+export const industryOptions = [
+  "Technology",
+  "Healthcare",
+  "Education",
+  "Finance",
+  "Government",
+  "Retail and E-commerce",
+  "Manufacturing",
+  "Media and Entertainment",
+  "Hospitality and Tourism",
+  "Transportation and Logistics",
+  "Energy and Utilities",
+  "Construction and Real Estate",
+  "Legal Services",
+  "Nonprofit / NGO",
+  "Agriculture",
+  "Not currently working / Not applicable",
+  "Other"
+];
+
 export const educationLevelOptions = [
   "Secondary School",
   "High School Diploma",
@@ -235,6 +267,30 @@ export const educationLevelOptions = [
   "Bachelor's Degree",
   "Master's Degree",
   "Doctorate",
+  "Other"
+];
+
+export const fieldOfStudyOptions = [
+  "Computer Science",
+  "Engineering",
+  "Business and Management",
+  "Economics",
+  "Finance and Accounting",
+  "Education",
+  "Psychology",
+  "Sociology",
+  "Political Science",
+  "Law",
+  "Medicine and Health Sciences",
+  "Biology and Life Sciences",
+  "Physical Sciences",
+  "Mathematics and Statistics",
+  "Environmental Studies",
+  "Arts and Humanities",
+  "Communications and Media",
+  "Architecture and Design",
+  "Agriculture and Food Sciences",
+  "Not currently studying / Not applicable",
   "Other"
 ];
 
@@ -252,6 +308,43 @@ export const familyStatusOptions = [
   "Divorced",
   "Widowed",
   "Prefer not to say"
+];
+
+export const householdSizeOptions = ["1", "2", "3", "4", "5", "6", "7+"];
+
+export const childrenCountOptions = ["0", "1", "2", "3", "4+"];
+
+export const englishLevelOptions = [
+  "Basic",
+  "Intermediate",
+  "Upper-intermediate",
+  "Advanced",
+  "Fluent",
+  "Native / Bilingual",
+  "Prefer not to say"
+];
+
+export const languageSkillOptions = [
+  "English",
+  "Spanish",
+  "French",
+  "German",
+  "Turkish",
+  "Azerbaijani",
+  "Arabic",
+  "Persian",
+  "Russian",
+  "Hindi",
+  "Urdu",
+  "Bengali",
+  "Portuguese",
+  "Italian",
+  "Chinese (Mandarin)",
+  "Japanese",
+  "Korean",
+  "Indonesian",
+  "Malay",
+  "Vietnamese"
 ];
 
 export const interestOptions = [

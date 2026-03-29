@@ -14,10 +14,17 @@ export type PersistedProfilePayload = {
   position?: string;
   age_span?: string;
   gender?: string;
+  employment_status?: string;
+  industry?: string;
   salary_range?: string;
   educational_level?: string;
+  field_of_study?: string;
+  language_skills?: string[];
+  english_proficiency?: string;
   place_of_residence?: string;
   family_status?: string;
+  household_size?: string;
+  children_count?: string;
   interests?: string[];
   car_count?: string;
 };
@@ -38,10 +45,17 @@ export function buildPersistedProfilePayload(profile: UserProfile): PersistedPro
     position: profile.position,
     age_span: profile.ageSpan,
     gender: profile.gender,
+    employment_status: profile.employmentStatus,
+    industry: profile.industry,
     salary_range: profile.salaryRange,
     educational_level: profile.educationalLevel,
+    field_of_study: profile.fieldOfStudy,
+    language_skills: profile.languageSkills,
+    english_proficiency: profile.englishProficiency,
     place_of_residence: profile.placeOfResidence,
     family_status: profile.familyStatus,
+    household_size: profile.householdSize,
+    children_count: profile.childrenCount,
     interests: profile.interests,
     car_count: profile.carCount
   };
@@ -98,10 +112,17 @@ export async function upsertProfileRecords(
       country: payload.country || null,
       age_span: payload.age_span || null,
       gender: payload.gender || null,
+      employment_status: payload.employment_status || null,
+      industry: payload.industry || null,
       salary_range: payload.salary_range || null,
       educational_level: payload.educational_level || null,
+      field_of_study: payload.field_of_study || null,
+      language_skills: payload.language_skills ?? [],
+      english_proficiency: payload.english_proficiency || null,
       place_of_residence: payload.place_of_residence || null,
       family_status: payload.family_status || null,
+      household_size: payload.household_size || null,
+      children_count: payload.children_count || null,
       interests: payload.interests ?? [],
       car_count: payload.car_count || null
     },

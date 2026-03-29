@@ -17,12 +17,19 @@ import {
 import {
   ageSpanOptions,
   carCountOptions,
+  childrenCountOptions,
   clientPositionOptions,
   countryOptions,
   educationLevelOptions,
+  employmentStatusOptions,
+  englishLevelOptions,
   familyStatusOptions,
+  fieldOfStudyOptions,
   genderOptions,
+  householdSizeOptions,
+  industryOptions,
   interestOptions,
+  languageSkillOptions,
   popularUniversities,
   residenceOptions,
   salaryRangeOptions,
@@ -52,10 +59,17 @@ type SignUpFormValues = {
   email: string;
   ageSpan: string;
   gender: string;
+  employmentStatus: string;
+  industry: string;
   salaryRange: string;
   educationalLevel: string;
+  fieldOfStudy: string;
+  languageSkills: string[];
+  englishProficiency: string;
   placeOfResidence: string;
   familyStatus: string;
+  householdSize: string;
+  childrenCount: string;
   interests: string[];
   carCount: string;
   acceptLegal: boolean;
@@ -255,10 +269,17 @@ function buildProfilePayload(
     ...commonPayload,
     age_span: values.ageSpan,
     gender: values.gender,
+    employment_status: values.employmentStatus,
+    industry: values.industry,
     salary_range: values.salaryRange,
     educational_level: values.educationalLevel,
+    field_of_study: values.fieldOfStudy,
+    language_skills: values.languageSkills,
+    english_proficiency: values.englishProficiency,
     place_of_residence: values.placeOfResidence,
     family_status: values.familyStatus,
+    household_size: values.householdSize,
+    children_count: values.childrenCount,
     interests: values.interests,
     car_count: values.carCount,
   };
@@ -350,6 +371,7 @@ export default function AuthClient({
     "idle" | "loading" | "ready" | "error"
   >("idle");
   const [interestsOpen, setInterestsOpen] = useState(false);
+  const [languageSkillsOpen, setLanguageSkillsOpen] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
   const [authPending, setAuthPending] = useState<"signup" | "login" | null>(
     null,
@@ -357,6 +379,7 @@ export default function AuthClient({
 
   const signUp = useForm<SignUpFormValues>({
     defaultValues: {
+      languageSkills: [],
       interests: [],
       acceptLegal: false,
     },
@@ -454,6 +477,7 @@ export default function AuthClient({
   useEffect(() => {
     setSubmitMessage(null);
     setInterestsOpen(false);
+    setLanguageSkillsOpen(false);
     setAuthPending(null);
     clearLoginErrors();
   }, [activeTab, clearLoginErrors, role]);
@@ -1161,6 +1185,70 @@ export default function AuthClient({
                         <div>
                           <label
                             className={labelClassName}
+                            htmlFor="community-employment-status"
+                          >
+                            Employment status
+                          </label>
+                          <div className="relative">
+                            <select
+                              id="community-employment-status"
+                              {...register("employmentStatus", {
+                                required: "Employment status is required.",
+                              })}
+                              className={`${inputClassName} appearance-none pr-11`}
+                            >
+                              <option value="">Select employment status</option>
+                              {employmentStatusOptions.map((employmentStatus) => (
+                                <option key={employmentStatus} value={employmentStatus}>
+                                  {employmentStatus}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          </div>
+                          {errors.employmentStatus ? (
+                            <p className={errorTextClassName}>
+                              {errors.employmentStatus.message}
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="community-industry"
+                          >
+                            Industry
+                          </label>
+                          <div className="relative">
+                            <select
+                              id="community-industry"
+                              {...register("industry", {
+                                required: "Industry is required.",
+                              })}
+                              className={`${inputClassName} appearance-none pr-11`}
+                            >
+                              <option value="">Select industry</option>
+                              {industryOptions.map((industry) => (
+                                <option key={industry} value={industry}>
+                                  {industry}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          </div>
+                          {errors.industry ? (
+                            <p className={errorTextClassName}>
+                              {errors.industry.message}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        <div>
+                          <label
+                            className={labelClassName}
                             htmlFor="community-salary"
                           >
                             Salary range (USD)
@@ -1219,6 +1307,70 @@ export default function AuthClient({
                           {errors.educationalLevel ? (
                             <p className={errorTextClassName}>
                               {errors.educationalLevel.message}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="community-field-of-study"
+                          >
+                            Field of study
+                          </label>
+                          <div className="relative">
+                            <select
+                              id="community-field-of-study"
+                              {...register("fieldOfStudy", {
+                                required: "Field of study is required.",
+                              })}
+                              className={`${inputClassName} appearance-none pr-11`}
+                            >
+                              <option value="">Select field of study</option>
+                              {fieldOfStudyOptions.map((fieldOfStudy) => (
+                                <option key={fieldOfStudy} value={fieldOfStudy}>
+                                  {fieldOfStudy}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          </div>
+                          {errors.fieldOfStudy ? (
+                            <p className={errorTextClassName}>
+                              {errors.fieldOfStudy.message}
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="community-english-level"
+                          >
+                            English level
+                          </label>
+                          <div className="relative">
+                            <select
+                              id="community-english-level"
+                              {...register("englishProficiency", {
+                                required: "English level is required.",
+                              })}
+                              className={`${inputClassName} appearance-none pr-11`}
+                            >
+                              <option value="">Select English level</option>
+                              {englishLevelOptions.map((englishLevel) => (
+                                <option key={englishLevel} value={englishLevel}>
+                                  {englishLevel}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          </div>
+                          {errors.englishProficiency ? (
+                            <p className={errorTextClassName}>
+                              {errors.englishProficiency.message}
                             </p>
                           ) : null}
                         </div>
@@ -1317,6 +1469,70 @@ export default function AuthClient({
                         <div>
                           <label
                             className={labelClassName}
+                            htmlFor="community-household-size"
+                          >
+                            Household size
+                          </label>
+                          <div className="relative">
+                            <select
+                              id="community-household-size"
+                              {...register("householdSize", {
+                                required: "Household size is required.",
+                              })}
+                              className={`${inputClassName} appearance-none pr-11`}
+                            >
+                              <option value="">Select household size</option>
+                              {householdSizeOptions.map((householdSize) => (
+                                <option key={householdSize} value={householdSize}>
+                                  {householdSize}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          </div>
+                          {errors.householdSize ? (
+                            <p className={errorTextClassName}>
+                              {errors.householdSize.message}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        <div>
+                          <label
+                            className={labelClassName}
+                            htmlFor="community-children-count"
+                          >
+                            Number of children
+                          </label>
+                          <div className="relative">
+                            <select
+                              id="community-children-count"
+                              {...register("childrenCount", {
+                                required: "Number of children is required.",
+                              })}
+                              className={`${inputClassName} appearance-none pr-11`}
+                            >
+                              <option value="">Select number of children</option>
+                              {childrenCountOptions.map((childrenCount) => (
+                                <option key={childrenCount} value={childrenCount}>
+                                  {childrenCount}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          </div>
+                          {errors.childrenCount ? (
+                            <p className={errorTextClassName}>
+                              {errors.childrenCount.message}
+                            </p>
+                          ) : null}
+                        </div>
+
+                        <div>
+                          <label
+                            className={labelClassName}
                             htmlFor="community-car-count"
                           >
                             Car count
@@ -1344,6 +1560,107 @@ export default function AuthClient({
                             </p>
                           ) : null}
                         </div>
+                      </div>
+
+                      <div>
+                        <label className={labelClassName}>Language skills</label>
+                        <Controller
+                          control={control}
+                          name="languageSkills"
+                          rules={{
+                            validate: (value) =>
+                              value.length > 0
+                                ? true
+                                : "Select at least 1 language skill. You can choose up to 5.",
+                          }}
+                          render={({ field }) => (
+                            <div className="rounded-[28px] border border-[color:var(--auth-border)] bg-[color:var(--auth-input-bg)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setLanguageSkillsOpen((current) => !current)
+                                }
+                                className="flex w-full items-center justify-between rounded-2xl bg-[color:var(--auth-accent-softer-bg)] px-4 py-3 text-left text-sm font-semibold text-slate-700"
+                              >
+                                <span>
+                                  {field.value.length > 0
+                                    ? `${field.value.length} language${field.value.length > 1 ? "s" : ""} selected`
+                                    : "Select up to 5 languages"}
+                                </span>
+                                <ChevronDown
+                                  className={`h-4 w-4 text-slate-400 transition ${languageSkillsOpen ? "rotate-180" : ""}`}
+                                />
+                              </button>
+
+                              {languageSkillsOpen ? (
+                                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                  {languageSkillOptions.map((languageSkill) => {
+                                    const selected =
+                                      field.value.includes(languageSkill);
+                                    const disabled =
+                                      !selected && field.value.length >= 5;
+
+                                    return (
+                                      <button
+                                        key={languageSkill}
+                                        type="button"
+                                        onClick={() => {
+                                          if (selected) {
+                                            field.onChange(
+                                              field.value.filter(
+                                                (value) => value !== languageSkill,
+                                              ),
+                                            );
+                                            return;
+                                          }
+
+                                          if (field.value.length < 5) {
+                                            field.onChange([
+                                              ...field.value,
+                                              languageSkill,
+                                            ]);
+                                          }
+                                        }}
+                                        disabled={disabled}
+                                        className={`rounded-2xl border px-4 py-3 text-left text-sm font-semibold transition ${
+                                          selected
+                                            ? "border-[color:var(--auth-accent)] bg-[color:var(--auth-selected-bg)] text-[color:var(--auth-accent)]"
+                                            : disabled
+                                              ? "border-[color:var(--auth-disabled-border)] bg-[color:var(--auth-disabled-bg)] text-slate-300"
+                                              : "border-[color:var(--auth-disabled-border)] bg-white text-slate-600 hover:border-[color:var(--auth-accent)] hover:text-[color:var(--auth-accent)]"
+                                        }`}
+                                      >
+                                        {languageSkill}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              ) : null}
+
+                              {field.value.length > 0 ? (
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                  {field.value.map((languageSkill) => (
+                                    <span
+                                      key={languageSkill}
+                                      className="inline-flex items-center rounded-full bg-[color:var(--auth-selected-bg)] px-3 py-1 text-xs font-semibold text-[color:var(--auth-accent)]"
+                                    >
+                                      {languageSkill}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : null}
+
+                              <p className="mt-3 text-sm text-slate-500">
+                                Maximum 5 choices.
+                              </p>
+                            </div>
+                          )}
+                        />
+                        {errors.languageSkills ? (
+                          <p className={errorTextClassName}>
+                            {errors.languageSkills.message}
+                          </p>
+                        ) : null}
                       </div>
 
                       <div>
