@@ -155,7 +155,7 @@ export async function POST(request: Request) {
     const payload: SurveyAssistantRequest = {
       surveyTitle: (requestBody.surveyTitle ?? "").trim(),
       researchArea: (requestBody.researchArea ?? "").trim() || "Education Science",
-      targetRegion: (requestBody.targetRegion ?? "").trim() || "Asia Pacific",
+      targetRegion: (requestBody.targetRegion ?? "").trim() || "North America",
       selectedCountries: Array.isArray(requestBody.selectedCountries) ? requestBody.selectedCountries.filter(Boolean) : [],
       ageMin: Number(requestBody.ageMin ?? 18),
       ageMax: Number(requestBody.ageMax ?? 80),

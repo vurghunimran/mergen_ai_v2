@@ -34,7 +34,13 @@ import {
   formatUsd,
   getAcademicSurveyBasePrice
 } from "@/lib/survey-pricing";
-import { surveyRegionCountries, surveyRegionGroups, type SurveyRegion } from "@/lib/country-regions";
+import {
+  surveyRegionCountries,
+  surveyRegionGroups,
+  surveyRegionTargets,
+  surveyRegionTotalTarget,
+  type SurveyRegion
+} from "@/lib/country-regions";
 import {
   questionOptionsForType,
   surveyQuestionTypes,
@@ -143,8 +149,8 @@ function buildInitialDraft(): SurveyDraft {
   return {
     surveyTitle: "",
     researchArea: "Education Science",
-    targetRegion: "Asia Pacific",
-    selectedCountries: ["India", "Singapore"],
+    targetRegion: "North America",
+    selectedCountries: ["United States", "Canada"],
     ageMin: 25,
     ageMax: 55,
     financialSituation: "All salary ranges",
@@ -296,6 +302,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
   const availableCountries = surveyRegionCountries[currentRegion].filter(
     (country) => !draft.selectedCountries.includes(country)
   );
+  const currentRegionTarget = surveyRegionTargets[currentRegion];
   const ageMinPercentage = ((draft.ageMin - 18) / (80 - 18)) * 100;
   const ageMaxPercentage = ((draft.ageMax - 18) / (80 - 18)) * 100;
 
@@ -777,7 +784,9 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
             <div className="mt-6 rounded-[24px] border border-gray-200 bg-[#fcfcfd] p-5">
               <div className="mb-5">
                 <h3 className="text-[18px] font-semibold text-[#344054]">Target Regions</h3>
-                <p className="mt-1 text-sm text-[#98a2b3]">Switch between region groups and build one list of up to 7 countries across any regions.</p>
+                <p className="mt-1 text-sm text-[#98a2b3]">
+                  Build your audience from the stage-one community rollout covering {surveyRegionTotalTarget.toLocaleString()} planned members across the regions below.
+                </p>
               </div>
 
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -794,6 +803,9 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                       </option>
                     ))}
                   </select>
+                  <p className="mt-2 text-xs text-[#98a2b3]">
+                    Planned panel size for {currentRegion}: {currentRegionTarget.toLocaleString()} members.
+                  </p>
                 </label>
 
                 <label className="block">
@@ -814,6 +826,10 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                       </option>
                     ))}
                   </select>
+                  <p className="mt-2 text-xs text-[#98a2b3]">
+                    Only countries from the first-stage rollout are selectable here.
+                    {currentRegion === "Eastern Asia" ? " China is intentionally reserved for a later stage." : ""}
+                  </p>
                 </label>
               </div>
 
@@ -831,7 +847,9 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                 ))}
               </div>
 
-              <p className="mt-3 text-xs text-[#98a2b3]">{draft.selectedCountries.length} / 7 countries selected. You can switch regions without losing the countries already added.</p>
+              <p className="mt-3 text-xs text-[#98a2b3]">
+                {draft.selectedCountries.length} / 7 countries selected. You can switch regions without losing the countries already added.
+              </p>
             </div>
 
             <div className="mt-6 rounded-[24px] border border-gray-200 bg-[#fcfcfd] p-5">

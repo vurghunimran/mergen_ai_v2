@@ -27,6 +27,12 @@ import {
   residenceOptions,
   salaryRangeOptions,
 } from "@/lib/auth-options";
+import {
+  communityLaunchRegions,
+  communityLaunchTotalMembers,
+  getCommunityLaunchRegionByCountry,
+  normalizeCommunityLaunchCountry
+} from "@/lib/community-distribution";
 import SiteLogo from "@/components/SiteLogo";
 import { PRIVACY_POLICY_VERSION, TERMS_VERSION } from "@/lib/legal";
 import PasswordInput from "@/components/ui/password-input";
@@ -196,6 +202,14 @@ function getAuthErrorMessage(error: unknown) {
       return "Supabase profile storage is not ready yet. Run the SQL in supabase/schema.sql.";
     }
 
+    if (normalizedMessage.includes("community sign-up is currently limited")) {
+      return "Community sign-up is currently open only in the launch countries listed in the form.";
+    }
+
+    if (normalizedMessage.includes("community allocation is full")) {
+      return error.message;
+    }
+
     return error.message;
   }
 
@@ -219,7 +233,10 @@ function buildProfilePayload(
     first_name: values.name.trim(),
     last_name: values.surname.trim(),
     phone_number: values.phoneNumber.trim(),
-    country: values.country,
+    country:
+      role === "community"
+        ? normalizeCommunityLaunchCountry(values.country) ?? values.country
+        : values.country,
     appearance: "light" as const,
     two_factor_enabled: false,
   };
@@ -359,6 +376,9 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
 
   const selectedCountry = watch("country");
   const selectedInstitution = watch("educationalInstitution");
+  const selectedCommunityRegion = isClient
+    ? null
+    : getCommunityLaunchRegionByCountry(selectedCountry ?? "");
 
   useEffect(() => {
     if (!isClient || !selectedCountry) {
@@ -1179,14 +1199,26 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                               className={`${inputClassName} appearance-none pr-11`}
                             >
                               <option value="">Select country</option>
-                              {countryOptions.map((country) => (
-                                <option key={country} value={country}>
-                                  {country}
-                                </option>
+                              {communityLaunchRegions.map((region) => (
+                                <optgroup
+                                  key={region.id}
+                                  label={`${region.label} (${region.targetMembers.toLocaleString()} members)`}
+                                >
+                                  {region.countries.map((country) => (
+                                    <option key={country} value={country}>
+                                      {country}
+                                    </option>
+                                  ))}
+                                </optgroup>
                               ))}
                             </select>
                             <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                           </div>
+                          <p className="mt-2 text-sm text-slate-500">
+                            {selectedCommunityRegion
+                              ? `${selectedCommunityRegion.label} is planned for ${selectedCommunityRegion.targetMembers.toLocaleString()} members in the first ${communityLaunchTotalMembers.toLocaleString()}-member rollout.`
+                              : "Community access is currently limited to the stage-one launch countries listed here."}
+                          </p>
                           {errors.country ? (
                             <p className={errorTextClassName}>
                               {errors.country.message}

@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import type { SurveyCheckoutPayload } from "@/lib/dashboard-data";
+import {
+  getUnsupportedCommunityLaunchCountries,
+  normalizeCommunityLaunchCountries
+} from "@/lib/community-distribution";
 import { buildSurveyInsertPayload, listClientSurveysForUser, mapSurveyRowToClientSurvey, type SurveyRow } from "@/lib/survey-db";
 import { buildForbiddenSurveyResponse, requireAuthorizedProfile } from "@/lib/survey-authorization";
 import { getSurveyStorageErrorMessage } from "@/lib/survey-storage-errors";
@@ -73,6 +77,19 @@ export async function POST(request: Request) {
   if (!payload) {
     return NextResponse.json({ error: "Invalid survey payload." }, { status: 400 });
   }
+
+  const unsupportedCountries = getUnsupportedCommunityLaunchCountries(payload.audience.countries);
+
+  if (unsupportedCountries.length > 0) {
+    return NextResponse.json(
+      {
+        error: `Survey audience countries must stay within the first-stage community rollout. Unsupported: ${unsupportedCountries.join(", ")}.`
+      },
+      { status: 400 }
+    );
+  }
+
+  payload.audience.countries = normalizeCommunityLaunchCountries(payload.audience.countries);
 
   try {
     const supabase = createClient();

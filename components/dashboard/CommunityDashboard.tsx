@@ -190,7 +190,7 @@ function estimateSurveyCredits(survey: ClientSurvey) {
 }
 
 function matchesSurveyToMember(survey: ClientSurvey, memberProfile: ReturnType<typeof buildMemberProfile>) {
-  return matchesSurveyAudience(survey.audience, memberProfile, { allowCountryFallback: true });
+  return matchesSurveyAudience(survey.audience, memberProfile);
 }
 
 function buildFallbackQuestions(survey: ClientSurvey): StoredSurveyQuestion[] {

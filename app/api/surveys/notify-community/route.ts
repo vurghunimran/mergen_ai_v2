@@ -160,7 +160,8 @@ export async function POST(request: Request) {
       body.audience,
       candidateRecipients,
       (candidate) => candidate.memberProfile,
-      body.targetResponses
+      body.targetResponses,
+      { allowCountryFallback: false }
     )) {
       if (!matchingRecipientsByEmail.has(email)) {
         matchingRecipientsByEmail.set(email, {

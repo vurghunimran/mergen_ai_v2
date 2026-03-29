@@ -14,5 +14,9 @@ export function getSurveyStorageErrorMessage(error: unknown) {
     return "Supabase survey storage is not ready yet. Run the SQL in supabase/schema.sql or supabase/migrate-separate-profiles.sql.";
   }
 
+  if (message.toLowerCase().includes("first-stage community rollout")) {
+    return message;
+  }
+
   return null;
 }

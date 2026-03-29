@@ -1,4 +1,5 @@
 import type { SurveyAudience } from "@/lib/dashboard-data";
+import { areCommunityCountriesEquivalent } from "@/lib/community-distribution";
 
 export type CommunityAudienceProfile = {
   age: number;
@@ -309,7 +310,7 @@ export function evaluateSurveyAudienceMatch(
 
   const matchesCountry =
     audience.countries.length === 0 ||
-    audience.countries.some((country) => normalizeText(country) === normalizeText(memberProfile.country));
+    audience.countries.some((country) => areCommunityCountriesEquivalent(country, memberProfile.country));
   const matchesAge = memberProfile.age >= audience.ageMin && memberProfile.age <= audience.ageMax;
   const matchesGender =
     normalizeGender(audience.gender) === "any" ||
@@ -397,8 +398,10 @@ export function prioritizeAudienceCandidates<T>(
   audience: SurveyAudience | undefined,
   candidates: T[],
   getMemberProfile: (candidate: T) => CommunityAudienceProfile,
-  targetResponses = 0
+  targetResponses = 0,
+  options?: { allowCountryFallback?: boolean }
 ) {
+  const allowCountryFallback = options?.allowCountryFallback ?? false;
   const evaluatedCandidates = candidates
     .map((candidate) => {
       const memberProfile = getMemberProfile(candidate);
@@ -406,7 +409,7 @@ export function prioritizeAudienceCandidates<T>(
       return {
         candidate,
         memberProfile,
-        match: evaluateSurveyAudienceMatch(audience, memberProfile, { allowCountryFallback: true })
+        match: evaluateSurveyAudienceMatch(audience, memberProfile, { allowCountryFallback })
       };
     })
     .filter((item) => item.match.isQualified);
@@ -415,7 +418,12 @@ export function prioritizeAudienceCandidates<T>(
     .filter((item) => item.match.tier === "country_priority")
     .sort(compareAudienceCandidates);
 
-  if (!audience || audience.countries.length === 0 || prioritizedCountryMatches.length >= targetResponses) {
+  if (
+    !audience ||
+    audience.countries.length === 0 ||
+    !allowCountryFallback ||
+    prioritizedCountryMatches.length >= targetResponses
+  ) {
     return prioritizedCountryMatches.map((item) => item.candidate);
   }
 
