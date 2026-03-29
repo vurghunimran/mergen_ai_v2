@@ -27,12 +27,7 @@ import {
   residenceOptions,
   salaryRangeOptions,
 } from "@/lib/auth-options";
-import {
-  communityLaunchRegions,
-  communityLaunchTotalMembers,
-  getCommunityLaunchRegionByCountry,
-  normalizeCommunityLaunchCountry
-} from "@/lib/community-distribution";
+import { normalizeCommunityLaunchCountry } from "@/lib/community-distribution";
 import SiteLogo from "@/components/SiteLogo";
 import { PRIVACY_POLICY_VERSION, TERMS_VERSION } from "@/lib/legal";
 import PasswordInput from "@/components/ui/password-input";
@@ -69,6 +64,13 @@ type SignUpFormValues = {
 type LoginFormValues = {
   email: string;
   password: string;
+};
+
+type CommunitySignupEligibilityResponse = {
+  allowed?: boolean;
+  detectedCountry?: string | null;
+  verifiedCountry?: string | null;
+  message?: string;
 };
 
 const roleCopy = {
@@ -202,12 +204,11 @@ function getAuthErrorMessage(error: unknown) {
       return "Supabase profile storage is not ready yet. Run the SQL in supabase/schema.sql.";
     }
 
-    if (normalizedMessage.includes("community sign-up is currently limited")) {
-      return "Community sign-up is currently open only in the launch countries listed in the form.";
-    }
-
-    if (normalizedMessage.includes("community allocation is full")) {
-      return error.message;
+    if (
+      normalizedMessage.includes("community sign-up is currently limited") ||
+      normalizedMessage.includes("community allocation is full")
+    ) {
+      return "Community sign-up isn't available for your current location.";
     }
 
     return error.message;
@@ -275,7 +276,13 @@ function buildSignUpMetadata(profilePayload: PersistedProfilePayload) {
   };
 }
 
-export default function AuthClient({ initialType }: { initialType?: string }) {
+export default function AuthClient({
+  initialType,
+  initialCommunityCountry,
+}: {
+  initialType?: string;
+  initialCommunityCountry?: string | null;
+}) {
   const role: AuthRole = initialType === "community" ? "community" : "client";
   const copy = roleCopy[role];
   const isClient = role === "client";
@@ -376,9 +383,14 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
 
   const selectedCountry = watch("country");
   const selectedInstitution = watch("educationalInstitution");
-  const selectedCommunityRegion = isClient
-    ? null
-    : getCommunityLaunchRegionByCountry(selectedCountry ?? "");
+
+  useEffect(() => {
+    if (isClient) {
+      return;
+    }
+
+    setValue("country", initialCommunityCountry ?? "");
+  }, [initialCommunityCountry, isClient, setValue]);
 
   useEffect(() => {
     if (!isClient || !selectedCountry) {
@@ -457,9 +469,39 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
 
     try {
       const supabase = createClient();
+      let verifiedCommunityCountry: string | null = null;
+
+      if (role === "community") {
+        const verificationResponse = await fetch("/api/community-signup/eligibility", {
+          cache: "no-store",
+        });
+        const verificationPayload =
+          (await verificationResponse.json().catch(() => null)) as CommunitySignupEligibilityResponse | null;
+
+        if (verificationPayload?.detectedCountry) {
+          setValue("country", verificationPayload.detectedCountry);
+        }
+
+        if (
+          !verificationResponse.ok ||
+          !verificationPayload?.allowed ||
+          !verificationPayload.verifiedCountry
+        ) {
+          setSubmitMessage(
+            verificationPayload?.message ||
+              "Community sign-up isn't available for your current location.",
+          );
+          return;
+        }
+
+        verifiedCommunityCountry = verificationPayload.verifiedCountry;
+      }
+
       const profilePayload = buildProfilePayload(
         role,
-        values,
+        verifiedCommunityCountry
+          ? { ...values, country: verifiedCommunityCountry }
+          : values,
         normalizedInstitution,
       );
       const signUpMetadata = buildSignUpMetadata(profilePayload);
@@ -1188,42 +1230,19 @@ export default function AuthClient({ initialType }: { initialType?: string }) {
                             className={labelClassName}
                             htmlFor="community-country"
                           >
-                            Country
+                            Detected country
                           </label>
-                          <div className="relative">
-                            <select
-                              id="community-country"
-                              {...register("country", {
-                                required: "Country is required.",
-                              })}
-                              className={`${inputClassName} appearance-none pr-11`}
-                            >
-                              <option value="">Select country</option>
-                              {communityLaunchRegions.map((region) => (
-                                <optgroup
-                                  key={region.id}
-                                  label={`${region.label} (${region.targetMembers.toLocaleString()} members)`}
-                                >
-                                  {region.countries.map((country) => (
-                                    <option key={country} value={country}>
-                                      {country}
-                                    </option>
-                                  ))}
-                                </optgroup>
-                              ))}
-                            </select>
-                            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                          </div>
+                          <input
+                            id="community-country"
+                            value={selectedCountry || ""}
+                            readOnly
+                            className={`${inputClassName} bg-slate-50 text-slate-600`}
+                            placeholder="Detected when you sign up"
+                          />
+                          <input type="hidden" {...register("country")} />
                           <p className="mt-2 text-sm text-slate-500">
-                            {selectedCommunityRegion
-                              ? `${selectedCommunityRegion.label} is planned for ${selectedCommunityRegion.targetMembers.toLocaleString()} members in the first ${communityLaunchTotalMembers.toLocaleString()}-member rollout.`
-                              : "Community access is currently limited to the stage-one launch countries listed here."}
+                            Your community country is verified automatically from your connection. Manual country switching is disabled.
                           </p>
-                          {errors.country ? (
-                            <p className={errorTextClassName}>
-                              {errors.country.message}
-                            </p>
-                          ) : null}
                         </div>
 
                         <div>
