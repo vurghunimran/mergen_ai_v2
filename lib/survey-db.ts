@@ -9,6 +9,12 @@ import type {
   SurveyQuestionType,
   SurveySubmissionAnswer
 } from "@/lib/dashboard-data";
+import {
+  buildSurveyRolloutWindow,
+  calculateSurveyDaysRemaining,
+  hasSurveyExpired,
+  normalizeSurveyDistributionStage
+} from "@/lib/survey-rollout";
 
 type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
@@ -27,6 +33,12 @@ export type SurveyRow = {
   research_scope: string | null;
   hypothesis: string | null;
   include_detailed_ai: boolean;
+  distribution_stage?: number | null;
+  distribution_started_at?: string | null;
+  distribution_last_sent_at?: string | null;
+  distribution_completed_at?: string | null;
+  distribution_window_days?: number | null;
+  distribution_expires_at?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -121,7 +133,7 @@ function parseStoredSurveyQuestions(value: unknown): StoredSurveyQuestion[] {
   });
 }
 
-function parseSurveyAudience(value: unknown): SurveyAudience | undefined {
+export function parseSurveyAudience(value: unknown): SurveyAudience | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
@@ -220,19 +232,31 @@ function formatCreatedDate(value: string) {
 export function mapSurveyRowToClientSurvey(row: SurveyRow, responseRows: SurveyResponseRow[] = []): ClientSurvey {
   const rawResponses = responseRows.map(mapSurveyResponseRow);
   const parsedQuestions = parseStoredSurveyQuestions(row.questions);
+  const daysRemaining = calculateSurveyDaysRemaining(
+    row.distribution_expires_at,
+    row.days_remaining,
+    new Date()
+  );
+  const responseCount = rawResponses.length;
+  const isSurveyClosed =
+    row.status === "published" &&
+    (hasSurveyExpired(row.distribution_expires_at, new Date()) || responseCount >= row.target_responses);
 
   return {
     id: row.id,
     userId: row.user_id,
     name: row.name,
-    status: row.status,
-    responses: rawResponses.length,
+    status: isSurveyClosed ? "archived" : row.status,
+    responses: responseCount,
     targetResponses: row.target_responses,
-    daysRemaining: row.days_remaining,
+    daysRemaining,
     createdDate: formatCreatedDate(row.created_at),
     description: row.description,
     questionCount: row.question_count ?? parsedQuestions.length,
     audience: parseSurveyAudience(row.audience),
+    distributionStage: normalizeSurveyDistributionStage(row.distribution_stage),
+    distributionWindowDays: row.distribution_window_days ?? undefined,
+    distributionExpiresAt: row.distribution_expires_at ?? undefined,
     questions: parsedQuestions,
     researchDescription: row.research_description ?? row.description,
     researchScope: row.research_scope ?? "",
@@ -243,12 +267,14 @@ export function mapSurveyRowToClientSurvey(row: SurveyRow, responseRows: SurveyR
 }
 
 export function buildSurveyInsertPayload(payload: SurveyCheckoutPayload, userId: string) {
+  const rolloutWindow = buildSurveyRolloutWindow(payload.targetResponses);
+
   return {
     user_id: userId,
     name: payload.title.trim(),
     status: "published",
     target_responses: payload.targetResponses,
-    days_remaining: 14,
+    days_remaining: rolloutWindow.activeDays,
     description: payload.description.trim(),
     question_count: payload.questionCount,
     audience: payload.audience,
@@ -256,7 +282,13 @@ export function buildSurveyInsertPayload(payload: SurveyCheckoutPayload, userId:
     research_description: payload.researchDescription.trim(),
     research_scope: payload.researchScope.trim(),
     hypothesis: payload.hypothesis.trim(),
-    include_detailed_ai: Boolean(payload.includeDetailedAI)
+    include_detailed_ai: Boolean(payload.includeDetailedAI),
+    distribution_stage: 0,
+    distribution_started_at: rolloutWindow.startedAt,
+    distribution_last_sent_at: null,
+    distribution_completed_at: null,
+    distribution_window_days: rolloutWindow.activeDays,
+    distribution_expires_at: rolloutWindow.expiresAt
   };
 }
 
@@ -341,7 +373,9 @@ export async function listPublishedSurveys(supabase: SupabaseClient) {
     throw error;
   }
 
-  return ((data ?? []) as SurveyRow[]).map((survey) => mapSurveyRowToClientSurvey(survey));
+  return ((data ?? []) as SurveyRow[])
+    .map((survey) => mapSurveyRowToClientSurvey(survey))
+    .filter((survey) => survey.status === "published" && survey.daysRemaining > 0);
 }
 
 export async function listPublishedSurveysForRespondent(supabase: SupabaseClient, respondentId: string) {

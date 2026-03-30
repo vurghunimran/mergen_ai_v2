@@ -38,6 +38,7 @@ cp .env.local.example .env.local
 - `RESEND_API_KEY`
 - `CONTACT_TO_EMAIL` or the legacy `TO_EMAIL`
 - `RESEND_FROM_EMAIL`
+- `CRON_SECRET` if you want automated staged survey rollout
 - `POLAR_ACCESS_TOKEN`
 - `POLAR_SURVEY_PRODUCT_ID`
 - `POLAR_SERVER`
@@ -92,6 +93,7 @@ Add these in the Vercel project settings:
 - `RESEND_API_KEY`
 - `CONTACT_TO_EMAIL` or the legacy `TO_EMAIL`
 - `RESEND_FROM_EMAIL`
+- `CRON_SECRET` if a scheduler will call the staged survey rollout route
 - `POLAR_ACCESS_TOKEN`
 - `POLAR_SURVEY_PRODUCT_ID`
 - `POLAR_SERVER`
@@ -146,11 +148,13 @@ The app now uses:
 
 - The Supabase schema is in [supabase/schema.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/schema.sql).
 - The migration for existing mixed-profile setups is in [supabase/migrate-separate-profiles.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-separate-profiles.sql).
+- The incremental rollout migration for existing survey tables is in [supabase/migrate-survey-distribution.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-survey-distribution.sql).
 - Browser/server Supabase helpers are in [lib/supabase/client.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/lib/supabase/client.ts) and [lib/supabase/server.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/lib/supabase/server.ts).
 - The server-side survey AI route lives in [app/api/survey-assistant/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/survey-assistant/route.ts).
 - Route session refresh runs in [middleware.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/middleware.ts).
 - The contact API uses Resend in [app/api/contact/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/contact/route.ts).
 - Community launch emails are sent from [app/api/surveys/notify-community/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/surveys/notify-community/route.ts).
+- Automated staged survey sends can be triggered through [app/api/cron/survey-distribution/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/cron/survey-distribution/route.ts). Set `CRON_SECRET` before exposing that route to a scheduler.
 - Polar checkout creation and verification live in [app/api/polar/checkout/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/polar/checkout/route.ts) and [app/api/polar/checkout/[checkoutId]/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/polar/checkout/[checkoutId]/route.ts).
 - Remote images are already allowed for `images.unsplash.com` in [next.config.mjs](/Users/vurghun1903/Desktop/mergen_ai_v2/next.config.mjs).
 - `vercel.json` is included for explicit Next.js detection.

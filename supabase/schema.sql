@@ -159,7 +159,7 @@ create table if not exists public.surveys (
   name text not null,
   status text not null default 'published' check (status in ('draft', 'published', 'archived')),
   target_responses integer not null check (target_responses > 0),
-  days_remaining integer not null default 14 check (days_remaining >= 0),
+  days_remaining integer not null default 3 check (days_remaining >= 0),
   description text not null default '',
   question_count integer,
   audience jsonb,
@@ -168,6 +168,12 @@ create table if not exists public.surveys (
   research_scope text,
   hypothesis text,
   include_detailed_ai boolean not null default false,
+  distribution_stage integer not null default 0 check (distribution_stage between 0 and 4),
+  distribution_started_at timestamptz not null default timezone('utc', now()),
+  distribution_last_sent_at timestamptz,
+  distribution_completed_at timestamptz,
+  distribution_window_days integer not null default 3 check (distribution_window_days > 0),
+  distribution_expires_at timestamptz not null default timezone('utc', now()) + interval '3 days',
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
@@ -184,6 +190,75 @@ create table if not exists public.survey_responses (
   answers jsonb not null default '[]'::jsonb,
   unique (survey_id, respondent_id)
 );
+
+create table if not exists public.survey_notifications (
+  id uuid primary key default gen_random_uuid(),
+  survey_id bigint not null references public.surveys (id) on delete cascade,
+  recipient_id uuid not null references public.profiles (id) on delete cascade,
+  recipient_email text not null,
+  stage integer not null check (stage between 1 and 4),
+  sent_at timestamptz not null default timezone('utc', now()),
+  created_at timestamptz not null default timezone('utc', now()),
+  unique (survey_id, recipient_id)
+);
+
+alter table public.surveys add column if not exists distribution_stage integer;
+alter table public.surveys add column if not exists distribution_started_at timestamptz;
+alter table public.surveys add column if not exists distribution_last_sent_at timestamptz;
+alter table public.surveys add column if not exists distribution_completed_at timestamptz;
+alter table public.surveys add column if not exists distribution_window_days integer;
+alter table public.surveys add column if not exists distribution_expires_at timestamptz;
+
+update public.surveys
+set distribution_window_days = case
+  when target_responses >= 1000 then 7
+  when target_responses >= 500 then 5
+  else 3
+end
+where distribution_window_days is null;
+
+update public.surveys
+set distribution_stage = 0
+where distribution_stage is null;
+
+update public.surveys
+set distribution_started_at = created_at
+where distribution_started_at is null;
+
+update public.surveys
+set distribution_expires_at = distribution_started_at + make_interval(days => distribution_window_days)
+where distribution_expires_at is null;
+
+alter table public.surveys alter column distribution_stage set default 0;
+alter table public.surveys alter column distribution_stage set not null;
+alter table public.surveys alter column distribution_started_at set default timezone('utc', now());
+alter table public.surveys alter column distribution_started_at set not null;
+alter table public.surveys alter column distribution_window_days set default 3;
+alter table public.surveys alter column distribution_window_days set not null;
+alter table public.surveys alter column distribution_expires_at set default timezone('utc', now()) + interval '3 days';
+alter table public.surveys alter column distribution_expires_at set not null;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'surveys_distribution_stage_check'
+  ) then
+    alter table public.surveys
+      add constraint surveys_distribution_stage_check check (distribution_stage between 0 and 4);
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint where conname = 'surveys_distribution_window_days_check'
+  ) then
+    alter table public.surveys
+      add constraint surveys_distribution_window_days_check check (distribution_window_days > 0);
+  end if;
+end
+$$;
+
+create index if not exists surveys_distribution_expires_at_idx on public.surveys (status, distribution_expires_at);
+create index if not exists survey_notifications_survey_id_idx on public.survey_notifications (survey_id);
+create index if not exists survey_notifications_recipient_id_idx on public.survey_notifications (recipient_id);
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -466,6 +541,7 @@ alter table public.client_profiles enable row level security;
 alter table public.community_profiles enable row level security;
 alter table public.surveys enable row level security;
 alter table public.survey_responses enable row level security;
+alter table public.survey_notifications enable row level security;
 
 drop policy if exists "Users can view their own profile" on public.profiles;
 create policy "Users can view their own profile"

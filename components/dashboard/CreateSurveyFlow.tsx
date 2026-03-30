@@ -47,6 +47,7 @@ import {
   type SurveyAssistantRequest,
   type SurveyAssistantResponse
 } from "@/lib/survey-assistant";
+import { getSurveyActiveWindowDays } from "@/lib/survey-rollout";
 
 const STEP_TITLE_CLASS_NAME = "text-[34px] font-bold tracking-[-0.04em] text-[#7c3412]";
 
@@ -305,6 +306,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
   const currentRegionTarget = surveyRegionTargets[currentRegion];
   const ageMinPercentage = ((draft.ageMin - 18) / (80 - 18)) * 100;
   const ageMaxPercentage = ((draft.ageMax - 18) / (80 - 18)) * 100;
+  const surveyActiveWindowDays = getSurveyActiveWindowDays(draft.respondentCount);
 
   function updateDraft<Key extends keyof SurveyDraft>(field: Key, value: SurveyDraft[Key]) {
     setDraft((currentDraft) => ({
@@ -1334,6 +1336,10 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
               <div className="flex items-center justify-between text-sm text-[#667085]">
                 <span>{pricing.questionTier} questions x {draft.respondentCount} respondents</span>
                 <span>Included</span>
+              </div>
+              <div className="flex items-center justify-between text-sm text-[#667085]">
+                <span>Survey active window</span>
+                <span>{surveyActiveWindowDays} days</span>
               </div>
               <div className="flex items-center justify-between text-sm text-[#667085]">
                 <span>AI-based detailed survey</span>

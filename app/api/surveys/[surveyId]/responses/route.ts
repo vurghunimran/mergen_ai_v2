@@ -1,5 +1,17 @@
 import { NextResponse } from "next/server";
+import {
+  buildCommunityAudienceProfile,
+  matchesSurveyAudience
+} from "@/lib/audience-matching";
+import { archiveSurvey } from "@/lib/survey-distribution";
+import {
+  buildAudienceForDistributionStage,
+  hasSurveyExpired,
+  normalizeSurveyDistributionStage
+} from "@/lib/survey-rollout";
 import { buildForbiddenSurveyResponse, requireAuthorizedProfile } from "@/lib/survey-authorization";
+import { parseSurveyAudience, type SurveyRow } from "@/lib/survey-db";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -70,12 +82,38 @@ export async function POST(request: Request, context: RouteContext) {
     const supabase = createClient();
     const { data: survey } = await supabase
       .from("surveys")
-      .select("id")
+      .select("*")
       .eq("id", surveyId)
       .eq("status", "published")
       .maybeSingle();
 
     if (!survey) {
+      return buildForbiddenSurveyResponse();
+    }
+
+    const surveyRow = survey as SurveyRow;
+
+    if (surveyRow.days_remaining <= 0 || hasSurveyExpired(surveyRow.distribution_expires_at)) {
+      return NextResponse.json({ error: "This survey is no longer active." }, { status: 409 });
+    }
+
+    const memberProfile = buildCommunityAudienceProfile({
+      ageSpan: authorized.profile.ageSpan,
+      country: authorized.profile.country,
+      gender: authorized.profile.gender,
+      education: authorized.profile.educationalLevel,
+      interests: authorized.profile.interests,
+      salaryRange: authorized.profile.salaryRange,
+      residence: authorized.profile.placeOfResidence,
+      familyStatus: authorized.profile.familyStatus
+    });
+
+    const effectiveAudience = buildAudienceForDistributionStage(
+      parseSurveyAudience(surveyRow.audience),
+      Math.max(1, normalizeSurveyDistributionStage(surveyRow.distribution_stage)) as 1 | 2 | 3 | 4
+    );
+
+    if (!matchesSurveyAudience(effectiveAudience, memberProfile)) {
       return buildForbiddenSurveyResponse();
     }
 
@@ -99,6 +137,26 @@ export async function POST(request: Request, context: RouteContext) {
       }
 
       throw error;
+    }
+
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
+      try {
+        const admin = createAdminClient();
+        const { count, error: countError } = await admin
+          .from("survey_responses")
+          .select("id", { count: "exact", head: true })
+          .eq("survey_id", surveyId);
+
+        if (countError) {
+          throw countError;
+        }
+
+        if ((count ?? 0) >= surveyRow.target_responses) {
+          await archiveSurvey(admin, surveyId);
+        }
+      } catch (countSyncError) {
+        console.error("Survey closure sync failed after response submission.", countSyncError);
+      }
     }
 
     return NextResponse.json({

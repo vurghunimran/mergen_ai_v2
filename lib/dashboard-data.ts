@@ -124,6 +124,9 @@ export type ClientSurvey = {
   description: string;
   questionCount?: number;
   audience?: SurveyAudience;
+  distributionStage?: number;
+  distributionWindowDays?: number;
+  distributionExpiresAt?: string;
   questions?: StoredSurveyQuestion[];
   researchDescription?: string;
   researchScope?: string;

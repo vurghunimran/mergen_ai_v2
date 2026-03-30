@@ -465,15 +465,12 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          title: payload.title,
-          description: payload.description,
-          targetResponses: payload.targetResponses,
-          questionCount: payload.questionCount,
-          audience: payload.audience
+          surveyId: createData.survey.id
         })
       });
 
       const data = (await response.json()) as {
+        stage?: number;
         matchedRecipients?: number;
         sentEmails?: number;
         error?: string;

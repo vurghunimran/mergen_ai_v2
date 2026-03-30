@@ -51,6 +51,10 @@ import {
   buildFallbackTrustEvaluation,
   buildSurveySubmissionAnswers
 } from "@/lib/trust-score";
+import {
+  buildAudienceForDistributionStage,
+  normalizeSurveyDistributionStage
+} from "@/lib/survey-rollout";
 
 const navigationItems = [
   { icon: Home, label: "Dashboard", section: "dashboard" },
@@ -190,7 +194,12 @@ function estimateSurveyCredits(survey: ClientSurvey) {
 }
 
 function matchesSurveyToMember(survey: ClientSurvey, memberProfile: ReturnType<typeof buildMemberProfile>) {
-  return matchesSurveyAudience(survey.audience, memberProfile);
+  const effectiveAudience = buildAudienceForDistributionStage(
+    survey.audience,
+    Math.max(1, normalizeSurveyDistributionStage(survey.distributionStage)) as 1 | 2 | 3 | 4
+  );
+
+  return matchesSurveyAudience(effectiveAudience, memberProfile);
 }
 
 function buildFallbackQuestions(survey: ClientSurvey): StoredSurveyQuestion[] {
