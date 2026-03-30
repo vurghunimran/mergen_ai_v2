@@ -58,6 +58,7 @@ export async function POST(request: Request) {
       stage: result.stage,
       matchedRecipients: result.matchedRecipients,
       sentEmails: result.sentEmails,
+      sentTelegramMessages: result.sentTelegramMessages,
       remainingResponses: result.remainingResponses
     });
   } catch (error) {

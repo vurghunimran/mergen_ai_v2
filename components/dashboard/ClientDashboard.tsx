@@ -473,6 +473,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
         stage?: number;
         matchedRecipients?: number;
         sentEmails?: number;
+        sentTelegramMessages?: number;
         error?: string;
       };
 
@@ -480,6 +481,7 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
         return {
           matchedRecipients: 0,
           sentEmails: 0,
+          sentTelegramMessages: 0,
           notificationError: data.error ?? "Survey published, but community emails could not be sent."
         };
       }
@@ -487,12 +489,14 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
       return {
         matchedRecipients: data.matchedRecipients ?? 0,
         sentEmails: data.sentEmails ?? 0,
+        sentTelegramMessages: data.sentTelegramMessages ?? 0,
         notificationError: ""
       };
     } catch {
       return {
         matchedRecipients: 0,
         sentEmails: 0,
+        sentTelegramMessages: 0,
         notificationError: "Survey published, but community emails could not be sent."
       };
     }
@@ -666,8 +670,8 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
         setPaymentNotice(
           launchResult.notificationError
             ? `Payment confirmed and survey published. ${launchResult.notificationError}`
-            : launchResult.sentEmails > 0
-              ? `Payment confirmed and survey published. ${launchResult.sentEmails} matching community members were emailed.`
+            : launchResult.sentEmails > 0 || launchResult.sentTelegramMessages > 0
+              ? `Payment confirmed and survey published. ${launchResult.sentEmails} matching community members were emailed${launchResult.sentTelegramMessages > 0 ? ` and ${launchResult.sentTelegramMessages} received Telegram alerts` : ""}.`
               : "Payment confirmed and survey published."
         );
         window.history.replaceState(null, "", dashboardPath);

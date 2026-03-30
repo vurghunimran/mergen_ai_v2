@@ -10,6 +10,7 @@ import {
   getResendFromEmail,
   isValidEmail
 } from "@/lib/email/config";
+import { getPhoneComparisonKey } from "@/lib/phone-number";
 import {
   buildAudienceForDistributionStage,
   calculateSurveyDaysRemaining,
@@ -19,11 +20,18 @@ import {
   type SurveyDistributionStage
 } from "@/lib/survey-rollout";
 import { parseSurveyAudience, type SurveyRow } from "@/lib/survey-db";
+import {
+  buildSurveyLaunchTelegramMessage,
+  sendTelegramMessage,
+  shouldDisableTelegramSubscription,
+  isTelegramBotConfigured
+} from "@/lib/telegram";
 
 type CommunityBaseRow = {
   id: string;
   email: string | null;
   first_name: string | null;
+  phone_number: string | null;
 };
 
 type CommunityProfileRow = {
@@ -47,12 +55,20 @@ type SurveyNotificationRow = {
   recipient_id: string;
 };
 
+type TelegramSubscriptionRow = {
+  user_id: string;
+  phone_number_normalized: string;
+  telegram_chat_id: string;
+  notifications_enabled: boolean | null;
+};
+
 type SurveyDistributionCandidate = {
   id: string;
   email: string;
   firstName: string;
   completionCount: number;
   memberProfile: CommunityAudienceProfile;
+  telegramChatId: string | null;
 };
 
 type SurveyDistributionCandidateMatch = {
@@ -67,6 +83,7 @@ type SurveyDistributionSummary = {
   stage: SurveyDistributionStage;
   matchedRecipients: number;
   sentEmails: number;
+  sentTelegramMessages: number;
   remainingResponses: number;
 };
 
@@ -156,15 +173,23 @@ async function loadDistributionRecipientPool(
   admin: SupabaseClient,
   responseRows: SurveyResponseReferenceRow[]
 ) {
-  const [{ data: baseRows, error: baseError }, { data: communityRows, error: communityError }] =
-    await Promise.all([
-      admin.from("profiles").select("id,email,first_name").eq("role", "community"),
-      admin
-        .from("community_profiles")
-        .select(
-          "id,country,age_span,gender,educational_level,interests,salary_range,place_of_residence,family_status"
-        )
-    ]);
+  const [
+    { data: baseRows, error: baseError },
+    { data: communityRows, error: communityError },
+    { data: telegramRows, error: telegramError }
+  ] = await Promise.all([
+    admin.from("profiles").select("id,email,first_name,phone_number").eq("role", "community"),
+    admin
+      .from("community_profiles")
+      .select(
+        "id,country,age_span,gender,educational_level,interests,salary_range,place_of_residence,family_status"
+      ),
+    admin
+      .from("telegram_notification_subscriptions")
+      .select(
+        "user_id,phone_number_normalized,telegram_chat_id,notifications_enabled"
+      )
+  ]);
 
   if (baseError) {
     throw baseError;
@@ -174,15 +199,31 @@ async function loadDistributionRecipientPool(
     throw communityError;
   }
 
+  if (telegramError) {
+    throw telegramError;
+  }
+
   const completionCounts = buildCompletionCounts(responseRows);
   const communityById = new Map(
     ((communityRows as CommunityProfileRow[] | null) ?? []).map((row) => [row.id, row])
+  );
+  const telegramSubscriptionByUserId = new Map(
+    ((telegramRows as TelegramSubscriptionRow[] | null) ?? [])
+      .filter((row) => Boolean(row.notifications_enabled && row.telegram_chat_id))
+      .map((row) => [row.user_id, row])
   );
 
   return ((baseRows as CommunityBaseRow[] | null) ?? [])
     .map((baseRow) => {
       const normalizedEmail = baseRow.email?.trim().toLowerCase() ?? "";
       const communityRow = communityById.get(baseRow.id);
+      const currentPhoneKey = getPhoneComparisonKey(baseRow.phone_number);
+      const telegramSubscription = telegramSubscriptionByUserId.get(baseRow.id);
+      const hasVerifiedTelegramLink = Boolean(
+        telegramSubscription &&
+          currentPhoneKey &&
+          telegramSubscription.phone_number_normalized === currentPhoneKey
+      );
 
       if (!communityRow || !normalizedEmail || !isValidEmail(normalizedEmail)) {
         return null;
@@ -193,6 +234,9 @@ async function loadDistributionRecipientPool(
         email: normalizedEmail,
         firstName: baseRow.first_name?.trim() || "there",
         completionCount: completionCounts.get(baseRow.id) ?? 0,
+        telegramChatId: hasVerifiedTelegramLink
+          ? telegramSubscription?.telegram_chat_id ?? null
+          : null,
         memberProfile: buildCommunityAudienceProfile({
           ageSpan: communityRow.age_span,
           country: communityRow.country,
@@ -366,6 +410,100 @@ async function sendSurveyEmails(params: {
   return sentEmails;
 }
 
+async function sendSurveyTelegramMessages(params: {
+  admin: SupabaseClient;
+  survey: SurveyRow;
+  recipients: SurveyDistributionCandidate[];
+  appBaseUrl: string;
+}) {
+  if (!isTelegramBotConfigured()) {
+    return 0;
+  }
+
+  const recipientsWithTelegram = params.recipients.filter(
+    (recipient) => recipient.telegramChatId
+  );
+
+  if (recipientsWithTelegram.length === 0) {
+    return 0;
+  }
+
+  const dashboardUrl = `${params.appBaseUrl}/dashboard/community`;
+  const deliveredRecipientIds: string[] = [];
+  const disabledRecipientIds: string[] = [];
+
+  for (const recipientChunk of chunkArray(recipientsWithTelegram, 20)) {
+    const results = await Promise.allSettled(
+      recipientChunk.map(async (recipient) => {
+        await sendTelegramMessage({
+          chatId: recipient.telegramChatId ?? "",
+          text: buildSurveyLaunchTelegramMessage({
+            firstName: recipient.firstName,
+            title: params.survey.name,
+            description: params.survey.description,
+            questionCount: params.survey.question_count ?? 0,
+            targetResponses: params.survey.target_responses,
+            dashboardUrl
+          })
+        });
+
+        return recipient.id;
+      })
+    );
+
+    results.forEach((result, index) => {
+      const recipientId = recipientChunk[index]?.id;
+
+      if (!recipientId) {
+        return;
+      }
+
+      if (result.status === "fulfilled") {
+        deliveredRecipientIds.push(result.value);
+        return;
+      }
+
+      console.error("Telegram survey notification failed.", result.reason);
+
+      if (shouldDisableTelegramSubscription(result.reason)) {
+        disabledRecipientIds.push(recipientId);
+      }
+    });
+  }
+
+  if (deliveredRecipientIds.length > 0) {
+    const notifiedAt = new Date().toISOString();
+    const { error } = await params.admin
+      .from("telegram_notification_subscriptions")
+      .update({
+        last_notified_at: notifiedAt,
+        updated_at: notifiedAt
+      })
+      .in("user_id", deliveredRecipientIds);
+
+    if (error) {
+      console.error("Failed to update Telegram notification timestamps.", error);
+    }
+  }
+
+  if (disabledRecipientIds.length > 0) {
+    const disabledAt = new Date().toISOString();
+    const { error } = await params.admin
+      .from("telegram_notification_subscriptions")
+      .update({
+        notifications_enabled: false,
+        updated_at: disabledAt
+      })
+      .in("user_id", disabledRecipientIds);
+
+    if (error) {
+      console.error("Failed to disable unreachable Telegram subscriptions.", error);
+    }
+  }
+
+  return deliveredRecipientIds.length;
+}
+
 async function persistNotificationRows(params: {
   admin: SupabaseClient;
   surveyId: number;
@@ -465,6 +603,12 @@ export async function dispatchSurveyStage(params: {
     recipients: matchedRecipients,
     appBaseUrl: params.appBaseUrl
   });
+  const sentTelegramMessages = await sendSurveyTelegramMessages({
+    admin: params.admin,
+    survey: params.survey,
+    recipients: matchedRecipients,
+    appBaseUrl: params.appBaseUrl
+  });
 
   await persistNotificationRows({
     admin: params.admin,
@@ -485,6 +629,7 @@ export async function dispatchSurveyStage(params: {
     stage: params.stage,
     matchedRecipients: matchedRecipients.length,
     sentEmails,
+    sentTelegramMessages,
     remainingResponses
   };
 }

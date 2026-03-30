@@ -555,7 +555,13 @@ export default function AuthClient({
           );
         }
 
-        router.push(getDashboardPath(role, data.user.id));
+        const shouldPromptTelegramSetup =
+          role === "community" && Boolean(profilePayload.phone_number.trim());
+        router.push(
+          shouldPromptTelegramSetup
+            ? `${getDashboardPath(role, data.user.id)}?section=settings&telegram=setup`
+            : getDashboardPath(role, data.user.id)
+        );
         router.refresh();
         return;
       }
@@ -1781,9 +1787,13 @@ export default function AuthClient({
                             id="community-phone"
                             type="tel"
                             autoComplete="tel"
+                            placeholder="+994501234567"
                             {...register("phoneNumber")}
                             className={inputClassName}
                           />
+                          <p className="mt-2 text-sm text-slate-500">
+                            Add it now if you want to activate Telegram alerts for new surveys after sign up.
+                          </p>
                         </div>
 
                         <div>

@@ -15,6 +15,9 @@ import {
   LogOut,
   Mail,
   Moon,
+  Phone,
+  RefreshCw,
+  Send,
   type LucideIcon,
   Settings,
   Shield,
@@ -29,6 +32,7 @@ import ProfileAvatarPicker from "@/components/dashboard/ProfileAvatarPicker";
 import SiteLogo from "@/components/SiteLogo";
 import PasswordInput from "@/components/ui/password-input";
 import { buildCommunityAudienceProfile, matchesSurveyAudience } from "@/lib/audience-matching";
+import { isLikelyInternationalPhoneNumber } from "@/lib/phone-number";
 import { AVATAR_METADATA_KEYS, getDefaultAvatarSrc, resolveAvatarSrc } from "@/lib/profile-avatars";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { buildPersistedProfilePayload, upsertProfileRecords } from "@/lib/supabase/profile-db";
@@ -69,11 +73,25 @@ type CommunitySettings = {
   firstName: string;
   lastName: string;
   email: string;
+  phone: string;
   appearance: "light" | "dark";
   twoFactorEnabled: boolean;
   avatarMode: UserProfile["avatarMode"];
   avatarPreset: string;
   avatarCustomDataUrl: string;
+};
+
+type TelegramLinkStatus = {
+  linked: boolean;
+  phoneNumber: string;
+  phoneAvailable: boolean;
+  phoneReady: boolean;
+  phoneMismatch: boolean;
+  botConfigured: boolean;
+  botUsername: string | null;
+  notificationsEnabled: boolean;
+  telegramUsername: string | null;
+  linkedAt: string | null;
 };
 
 type RewardItem = {
@@ -90,12 +108,30 @@ function buildInitialSettings(profile: UserProfile): CommunitySettings {
     firstName: profile.firstName || "Maya",
     lastName: profile.lastName || "Chen",
     email: profile.email,
+    phone: profile.phoneNumber,
     appearance: profile.appearance,
     twoFactorEnabled: profile.twoFactorEnabled,
     avatarMode: profile.avatarMode,
     avatarPreset: profile.avatarPreset,
     avatarCustomDataUrl: profile.avatarCustomDataUrl
   };
+}
+
+function formatTelegramLinkedAt(value: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  const timestamp = new Date(value);
+
+  if (Number.isNaN(timestamp.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(timestamp);
 }
 
 function buildMemberProfile(profile: UserProfile) {
@@ -342,6 +378,12 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [settingsError, setSettingsError] = useState("");
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [telegramStatus, setTelegramStatus] = useState<TelegramLinkStatus | null>(null);
+  const [isLoadingTelegramStatus, setIsLoadingTelegramStatus] = useState(true);
+  const [isStartingTelegramLink, setIsStartingTelegramLink] = useState(false);
+  const [isDisconnectingTelegram, setIsDisconnectingTelegram] = useState(false);
+  const [telegramMessage, setTelegramMessage] = useState("");
+  const [telegramError, setTelegramError] = useState("");
   const [trustScoreOpen, setTrustScoreOpen] = useState(false);
   const [activatedRewardId, setActivatedRewardId] = useState<string | null>(null);
   const [rewardNotice, setRewardNotice] = useState<string | null>(null);
@@ -445,7 +487,27 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
     if (searchParams.get("error") === "access-denied") {
       setSurveyLoadError("403 Unauthorized. You can only access dashboards that belong to your account.");
     }
+
+    const requestedSection = searchParams.get("section");
+
+    if (
+      requestedSection === "dashboard" ||
+      requestedSection === "earnings" ||
+      requestedSection === "rewards" ||
+      requestedSection === "settings"
+    ) {
+      setActiveSection(requestedSection);
+    }
+
+    if (searchParams.get("telegram") === "setup") {
+      setActiveSection("settings");
+      setTelegramMessage("Finish Telegram activation below to receive new survey alerts.");
+    }
   }, [searchParams]);
+
+  useEffect(() => {
+    void refreshTelegramStatus({ preserveMessage: true });
+  }, []);
 
   useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
@@ -564,6 +626,14 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
     avatarPreset: savedSettings.avatarPreset,
     avatarCustomDataUrl: savedSettings.avatarCustomDataUrl
   });
+  const hasUnsavedPhoneChange = settingsForm.phone.trim() !== savedSettings.phone.trim();
+  const canActivateTelegram =
+    Boolean(savedSettings.phone.trim()) &&
+    isLikelyInternationalPhoneNumber(savedSettings.phone) &&
+    telegramStatus?.botConfigured !== false &&
+    !hasUnsavedPhoneChange &&
+    !isSavingSettings &&
+    !isStartingTelegramLink;
   const sectionTitleClassName = "text-[34px] font-bold tracking-[-0.04em] text-[#4f2a78]";
   const isSettingsDark = settingsForm.appearance === "dark";
   const settingsFormClassName = isSettingsDark
@@ -616,6 +686,123 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
     }));
   }
 
+  async function refreshTelegramStatus(options?: { preserveMessage?: boolean }) {
+    setIsLoadingTelegramStatus(true);
+
+    if (!options?.preserveMessage) {
+      setTelegramError("");
+    }
+
+    try {
+      const response = await fetch("/api/telegram/link", { cache: "no-store" });
+      const data = (await response.json().catch(() => ({}))) as Partial<TelegramLinkStatus> & {
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Could not load Telegram status.");
+      }
+
+      setTelegramStatus({
+        linked: Boolean(data.linked),
+        phoneNumber: typeof data.phoneNumber === "string" ? data.phoneNumber : "",
+        phoneAvailable: Boolean(data.phoneAvailable),
+        phoneReady: Boolean(data.phoneReady),
+        phoneMismatch: Boolean(data.phoneMismatch),
+        botConfigured: Boolean(data.botConfigured),
+        botUsername: typeof data.botUsername === "string" ? data.botUsername : null,
+        notificationsEnabled: Boolean(data.notificationsEnabled),
+        telegramUsername:
+          typeof data.telegramUsername === "string" ? data.telegramUsername : null,
+        linkedAt: typeof data.linkedAt === "string" ? data.linkedAt : null
+      });
+    } catch (error) {
+      setTelegramError(
+        error instanceof Error ? error.message : "Could not load Telegram status."
+      );
+    } finally {
+      setIsLoadingTelegramStatus(false);
+    }
+  }
+
+  async function handleStartTelegramLink() {
+    if (isStartingTelegramLink) {
+      return;
+    }
+
+    setTelegramError("");
+    setTelegramMessage("");
+    setIsStartingTelegramLink(true);
+    const popup = window.open("", "_blank", "noopener,noreferrer");
+
+    try {
+      const response = await fetch("/api/telegram/link", {
+        method: "POST"
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        botUrl?: string;
+        instructions?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !data.botUrl) {
+        throw new Error(data.error ?? "Could not create Telegram activation link.");
+      }
+
+      if (popup) {
+        popup.location.href = data.botUrl;
+      } else {
+        window.location.href = data.botUrl;
+      }
+
+      setTelegramMessage(
+        data.instructions ??
+          "Finish the Telegram activation steps, then refresh your status here."
+      );
+    } catch (error) {
+      popup?.close();
+      setTelegramError(
+        error instanceof Error
+          ? error.message
+          : "Could not create Telegram activation link."
+      );
+    } finally {
+      setIsStartingTelegramLink(false);
+    }
+  }
+
+  async function handleDisconnectTelegram() {
+    if (isDisconnectingTelegram) {
+      return;
+    }
+
+    setTelegramError("");
+    setTelegramMessage("");
+    setIsDisconnectingTelegram(true);
+
+    try {
+      const response = await fetch("/api/telegram/link", {
+        method: "DELETE"
+      });
+      const data = (await response.json().catch(() => ({}))) as { error?: string };
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Could not disconnect Telegram notifications.");
+      }
+
+      setTelegramMessage("Telegram notifications were disconnected.");
+      await refreshTelegramStatus({ preserveMessage: true });
+    } catch (error) {
+      setTelegramError(
+        error instanceof Error
+          ? error.message
+          : "Could not disconnect Telegram notifications."
+      );
+    } finally {
+      setIsDisconnectingTelegram(false);
+    }
+  }
+
   async function handleSettingsSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -635,7 +822,8 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
       ...settingsForm,
       firstName: settingsForm.firstName.trim(),
       lastName: settingsForm.lastName.trim(),
-      email: settingsForm.email.trim().toLowerCase()
+      email: settingsForm.email.trim().toLowerCase(),
+      phone: settingsForm.phone.trim()
     };
 
     try {
@@ -648,7 +836,7 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
           role: "community",
           first_name: nextSettings.firstName,
           last_name: nextSettings.lastName,
-          phone_number: profileSnapshot.phoneNumber,
+          phone_number: nextSettings.phone,
           country: profileSnapshot.country,
           age_span: profileSnapshot.ageSpan,
           gender: profileSnapshot.gender,
@@ -692,6 +880,7 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
         email: nextSettings.email,
         firstName: nextSettings.firstName,
         lastName: nextSettings.lastName,
+        phoneNumber: nextSettings.phone,
         appearance: nextSettings.appearance,
         twoFactorEnabled: nextSettings.twoFactorEnabled,
         avatarMode: nextSettings.avatarMode,
@@ -718,6 +907,14 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
         confirmPassword: ""
       });
       setSettingsSaved(true);
+
+      if (nextSettings.phone !== savedSettings.phone) {
+        setTelegramMessage(
+          "Phone number updated. If you changed the number used for Telegram alerts, activate Telegram again to verify the new number."
+        );
+      }
+
+      await refreshTelegramStatus({ preserveMessage: true });
     } catch (error) {
       setSettingsError(getSettingsErrorMessage(error));
     } finally {
@@ -1646,6 +1843,23 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
                               className={settingsInputClassName}
                             />
                           </label>
+
+                          <label className="block md:col-span-2">
+                            <span className={settingsLabelClassName}>
+                              <Phone className="h-4 w-4 text-[#7c3aed]" />
+                              Phone number
+                            </span>
+                            <input
+                              type="tel"
+                              value={settingsForm.phone}
+                              onChange={(event) => handleSettingsChange("phone", event.target.value)}
+                              className={settingsInputClassName}
+                              placeholder="+994501234567"
+                            />
+                            <p className={`mt-2 text-sm ${settingsMutedTextClassName}`}>
+                              Use international format if you want to receive new survey alerts from our Telegram bot.
+                            </p>
+                          </label>
                         </div>
                       </div>
                     </div>
@@ -1765,6 +1979,157 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
                             </button>
                           </div>
                         </div>
+                      </div>
+                    </div>
+
+                    <div className={settingsCardClassName}>
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
+                            isSettingsDark ? "bg-[#302345]" : "bg-[#f1ebff]"
+                          }`}
+                        >
+                          <Send className="h-5 w-5 text-[#7c3aed]" />
+                        </div>
+                        <div>
+                          <h3 className={`text-[20px] font-semibold ${isSettingsDark ? "text-white" : "text-[#111827]"}`}>
+                            Telegram Notifications
+                          </h3>
+                          <p className={`mt-1 text-[15px] ${settingsMutedTextClassName}`}>
+                            Send new survey alerts to your Telegram chat after you verify the same phone number you saved here.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div
+                        className={`mt-6 rounded-2xl border px-5 py-4 ${
+                          telegramStatus?.linked
+                            ? isSettingsDark
+                              ? "border-[#4b2e72] bg-[#221731]"
+                              : "border-[#d6c1ff] bg-[#f7f1ff]"
+                            : isSettingsDark
+                              ? "border-[#433154] bg-[#160f1f]"
+                              : "border-[#eadff9] bg-white"
+                        }`}
+                      >
+                        {isLoadingTelegramStatus ? (
+                          <p className={`text-sm ${settingsMutedTextClassName}`}>
+                            Checking Telegram status...
+                          </p>
+                        ) : telegramStatus?.linked ? (
+                          <div className="flex items-start gap-3">
+                            <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#7c3aed]" />
+                            <div>
+                              <p className={`text-sm font-semibold ${isSettingsDark ? "text-white" : "text-[#111827]"}`}>
+                                Telegram alerts are active
+                                {telegramStatus.telegramUsername
+                                  ? ` for @${telegramStatus.telegramUsername}`
+                                  : "."}
+                              </p>
+                              <p className={`mt-1 text-sm ${settingsMutedTextClassName}`}>
+                                Linked {formatTelegramLinkedAt(telegramStatus.linkedAt)}.
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-start gap-3">
+                            <AlertCircle className="mt-0.5 h-5 w-5 text-[#7c3aed]" />
+                            <div>
+                              <p className={`text-sm font-semibold ${isSettingsDark ? "text-white" : "text-[#111827]"}`}>
+                                Telegram is not connected yet
+                              </p>
+                              <p className={`mt-1 text-sm ${settingsMutedTextClassName}`}>
+                                Activate it once and we will use the bot for new survey notifications.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-4 space-y-2">
+                        {hasUnsavedPhoneChange ? (
+                          <p className={`text-sm ${settingsMutedTextClassName}`}>
+                            Save your phone number changes first, then activate Telegram with the updated number.
+                          </p>
+                        ) : !savedSettings.phone.trim() ? (
+                          <p className={`text-sm ${settingsMutedTextClassName}`}>
+                            Add a phone number above to activate Telegram notifications.
+                          </p>
+                        ) : !isLikelyInternationalPhoneNumber(savedSettings.phone) ? (
+                          <p className={`text-sm ${settingsMutedTextClassName}`}>
+                            Telegram verification works best with an international number format like +994501234567.
+                          </p>
+                        ) : telegramStatus?.phoneMismatch ? (
+                          <p className={`text-sm ${settingsMutedTextClassName}`}>
+                            Your phone number changed since the last Telegram verification. Activate Telegram again to keep alerts working.
+                          </p>
+                        ) : telegramStatus?.botConfigured === false ? (
+                          <p className={`text-sm ${settingsMutedTextClassName}`}>
+                            Telegram bot configuration is not finished in this deployment yet.
+                          </p>
+                        ) : (
+                          <p className={`text-sm ${settingsMutedTextClassName}`}>
+                            We only use Telegram to notify you when a new survey matches your profile.
+                          </p>
+                        )}
+
+                        {telegramError ? (
+                          <p className="text-sm font-medium text-red-500">{telegramError}</p>
+                        ) : null}
+                        {telegramMessage ? (
+                          <p className="text-sm font-medium text-[#7c3aed]">{telegramMessage}</p>
+                        ) : null}
+                      </div>
+
+                      <div className="mt-5 flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          onClick={() => void handleStartTelegramLink()}
+                          disabled={!canActivateTelegram || isDisconnectingTelegram}
+                          className={`inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition ${
+                            canActivateTelegram && !isDisconnectingTelegram
+                              ? "bg-[linear-gradient(135deg,#6d3fd1_0%,#8b5cf6_100%)] text-white shadow-[0_18px_35px_rgba(124,58,237,0.18)] hover:opacity-90"
+                              : isSettingsDark
+                                ? "cursor-not-allowed border border-[#433154] bg-[#160f1f] text-[#8e7fa0]"
+                                : "cursor-not-allowed border border-gray-200 bg-gray-100 text-gray-400"
+                          }`}
+                        >
+                          <Send className="h-4 w-4" />
+                          {isStartingTelegramLink
+                            ? "Opening Telegram..."
+                            : telegramStatus?.linked
+                              ? "Reactivate Telegram"
+                              : "Activate Telegram"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => void refreshTelegramStatus({ preserveMessage: true })}
+                          disabled={isLoadingTelegramStatus}
+                          className={`inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold transition ${
+                            isSettingsDark
+                              ? "border-[#433154] bg-[#160f1f] text-[#ddd2ef] hover:border-[#8b5cf6]"
+                              : "border-gray-200 bg-white text-[#4f2a78] hover:border-[#d9c7ff]"
+                          }`}
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                          Refresh status
+                        </button>
+
+                        {telegramStatus?.linked ? (
+                          <button
+                            type="button"
+                            onClick={() => void handleDisconnectTelegram()}
+                            disabled={isDisconnectingTelegram}
+                            className={`inline-flex items-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold transition ${
+                              isSettingsDark
+                                ? "border-[#5f3140] bg-[#26131b] text-[#f3c6d2] hover:border-[#f08ab2]"
+                                : "border-[#f1c8d6] bg-[#fff5f8] text-[#ad2a62] hover:border-[#e89bbc]"
+                            }`}
+                          >
+                            {isDisconnectingTelegram ? "Disconnecting..." : "Disconnect Telegram"}
+                          </button>
+                        ) : null}
                       </div>
                     </div>
 

@@ -39,6 +39,9 @@ cp .env.local.example .env.local
 - `CONTACT_TO_EMAIL` or the legacy `TO_EMAIL`
 - `RESEND_FROM_EMAIL`
 - `CRON_SECRET` if you want automated staged survey rollout
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_BOT_USERNAME`
+- `TELEGRAM_WEBHOOK_SECRET`
 - `POLAR_ACCESS_TOKEN`
 - `POLAR_SURVEY_PRODUCT_ID`
 - `POLAR_SERVER`
@@ -55,6 +58,7 @@ Use:
 
 - [supabase/schema.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/schema.sql) for a fresh Supabase setup
 - [supabase/migrate-separate-profiles.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-separate-profiles.sql) if you already created the older mixed profile structure
+- [supabase/migrate-telegram-notifications.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-telegram-notifications.sql) if you want to add Telegram notifications onto an already updated project without re-running the larger upgrade scripts
 
 This creates:
 
@@ -94,11 +98,30 @@ Add these in the Vercel project settings:
 - `CONTACT_TO_EMAIL` or the legacy `TO_EMAIL`
 - `RESEND_FROM_EMAIL`
 - `CRON_SECRET` if a scheduler will call the staged survey rollout route
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_BOT_USERNAME`
+- `TELEGRAM_WEBHOOK_SECRET`
 - `POLAR_ACCESS_TOKEN`
 - `POLAR_SURVEY_PRODUCT_ID`
 - `POLAR_SERVER`
 
 If you do not configure the Supabase variables, sign-up, login, dashboard protection, and profile storage will fail. If you do not configure `SUPABASE_SERVICE_ROLE_KEY`, survey publish will still work locally in the client dashboard, but the server cannot read matching community profiles to send launch emails. `APP_BASE_URL` should be set to your production site, for example `https://mergen-ai.com`, so email links stay on the custom domain. If you do not configure the Gemini key, the survey builder can still fall back to template questions locally, but the server-side AI assistant will not generate tailored survey content. If you do not configure the Resend variables, the contact form API and community notification API will deploy, but sending email will return a server error. If you do not configure the Polar variables, the payment button cannot create a checkout session. `POLAR_SURVEY_PRODUCT_ID` must be a one-time product, not a recurring monthly subscription product.
+
+Telegram setup checklist:
+
+- Create a bot with [BotFather](https://t.me/BotFather)
+- Set `TELEGRAM_BOT_TOKEN` from BotFather
+- Set `TELEGRAM_BOT_USERNAME` to the bot handle without the `@`
+- Set `TELEGRAM_WEBHOOK_SECRET` to a long random string
+- Point the webhook to `https://mergen-ai.com/api/telegram/webhook`
+
+Example webhook registration:
+
+```bash
+curl -X POST "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook" \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://mergen-ai.com/api/telegram/webhook","secret_token":"<YOUR_TELEGRAM_WEBHOOK_SECRET>"}'
+```
 
 Custom uploaded avatar images are intentionally kept in browser local storage, not Supabase auth metadata. Supabase exposes `raw_user_meta_data` in JWTs, so storing large base64 images there can make cookies too large for Vercel requests.
 
@@ -149,11 +172,13 @@ The app now uses:
 - The Supabase schema is in [supabase/schema.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/schema.sql).
 - The migration for existing mixed-profile setups is in [supabase/migrate-separate-profiles.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-separate-profiles.sql).
 - The incremental rollout migration for existing survey tables is in [supabase/migrate-survey-distribution.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-survey-distribution.sql).
+- The Telegram notification migration is in [supabase/migrate-telegram-notifications.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-telegram-notifications.sql).
 - Browser/server Supabase helpers are in [lib/supabase/client.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/lib/supabase/client.ts) and [lib/supabase/server.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/lib/supabase/server.ts).
 - The server-side survey AI route lives in [app/api/survey-assistant/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/survey-assistant/route.ts).
 - Route session refresh runs in [middleware.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/middleware.ts).
 - The contact API uses Resend in [app/api/contact/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/contact/route.ts).
 - Community launch emails are sent from [app/api/surveys/notify-community/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/surveys/notify-community/route.ts).
+- Telegram activation lives in [app/api/telegram/link/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/telegram/link/route.ts) and the Telegram bot webhook lives in [app/api/telegram/webhook/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/telegram/webhook/route.ts).
 - Automated staged survey sends can be triggered through [app/api/cron/survey-distribution/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/cron/survey-distribution/route.ts). Set `CRON_SECRET` before exposing that route to a scheduler.
 - Polar checkout creation and verification live in [app/api/polar/checkout/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/polar/checkout/route.ts) and [app/api/polar/checkout/[checkoutId]/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/polar/checkout/[checkoutId]/route.ts).
 - Remote images are already allowed for `images.unsplash.com` in [next.config.mjs](/Users/vurghun1903/Desktop/mergen_ai_v2/next.config.mjs).
