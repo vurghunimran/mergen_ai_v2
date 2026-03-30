@@ -21,7 +21,13 @@ export default function PromoVideo() {
           </div>
 
           <div className="overflow-hidden rounded-[20px]">
-            <video controls preload="metadata" className="aspect-video w-full bg-black object-cover" src="/vision-goals.mp4" />
+            <video
+              controls
+              preload="metadata"
+              poster="/vision-goals-2026-poster.jpg"
+              className="aspect-video w-full bg-black object-cover"
+              src="/vision-goals-2026.mp4"
+            />
           </div>
         </div>
       </div>
