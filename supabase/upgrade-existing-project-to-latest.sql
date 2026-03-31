@@ -1221,17 +1221,6 @@ with check (
 );
 
 drop policy if exists "Clients can delete their own surveys" on public.surveys;
-create policy "Clients can delete their own surveys"
-on public.surveys
-for delete
-using (
-  user_id = auth.uid()
-  and exists (
-    select 1
-    from public.profiles
-    where id = auth.uid() and role = 'client'
-  )
-);
 
 drop policy if exists "Community members can view published surveys" on public.surveys;
 create policy "Community members can view published surveys"

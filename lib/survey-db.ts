@@ -339,7 +339,9 @@ export async function listClientSurveysForUser(supabase: SupabaseClient, userId:
   );
   const responsesBySurveyId = groupResponsesBySurveyId(responseRows);
 
-  return surveyRows.map((survey) => mapSurveyRowToClientSurvey(survey, responsesBySurveyId[survey.id] ?? []));
+  return surveyRows
+    .map((survey) => mapSurveyRowToClientSurvey(survey, responsesBySurveyId[survey.id] ?? []))
+    .filter((survey) => survey.status !== "archived");
 }
 
 export async function getClientSurveyForUser(supabase: SupabaseClient, surveyId: number, userId: string) {

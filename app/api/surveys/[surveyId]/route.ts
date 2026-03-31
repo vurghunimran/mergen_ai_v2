@@ -65,15 +65,23 @@ export async function DELETE(_request: Request, context: RouteContext) {
       return buildForbiddenSurveyResponse();
     }
 
-    const { error } = await supabase.from("surveys").delete().eq("id", surveyId).eq("user_id", authorized.profile.id);
+    const { error } = await supabase
+      .from("surveys")
+      .update({
+        status: "archived",
+        days_remaining: 0,
+        distribution_completed_at: new Date().toISOString()
+      })
+      .eq("id", surveyId)
+      .eq("user_id", authorized.profile.id);
 
     if (error) {
       throw error;
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, archived: true });
   } catch (error) {
-    console.error("Failed to delete survey.", error);
-    return NextResponse.json({ error: "Could not delete survey." }, { status: 500 });
+    console.error("Failed to archive survey.", error);
+    return NextResponse.json({ error: "Could not archive survey." }, { status: 500 });
   }
 }

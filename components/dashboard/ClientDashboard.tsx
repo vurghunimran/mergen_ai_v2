@@ -414,6 +414,7 @@ export default function ClientDashboard({
 
   async function handleDeleteSurvey(surveyId: number) {
     setPaymentError("");
+    setPaymentNotice("");
     setOpenMenuId(null);
 
     try {
@@ -423,13 +424,14 @@ export default function ClientDashboard({
       const data = (await response.json().catch(() => ({}))) as { error?: string };
 
       if (!response.ok) {
-        throw new Error(data.error ?? "Could not delete survey.");
+        throw new Error(data.error ?? "Could not archive survey.");
       }
 
       setSurveys((currentSurveys) => currentSurveys.filter((survey) => survey.id !== surveyId));
       setSelectedReportSurveyId((currentId) => (currentId === surveyId ? null : currentId));
+      setPaymentNotice("Survey archived. Member credits and response history were kept in the system.");
     } catch (error) {
-      setPaymentError(error instanceof Error ? error.message : "Could not delete survey.");
+      setPaymentError(error instanceof Error ? error.message : "Could not archive survey.");
     }
 
     setOpenMenuId(null);
@@ -1169,7 +1171,7 @@ export default function ClientDashboard({
                                       className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
                                     >
                                       <Trash2 className="h-4 w-4" />
-                                      Delete survey
+                                      Archive survey
                                     </button>
                                   </div>
                                 ) : null}
@@ -1313,7 +1315,7 @@ export default function ClientDashboard({
                                     className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-red-600 transition hover:bg-red-50"
                                   >
                                     <Trash2 className="h-4 w-4" />
-                                    Delete survey
+                                    Archive survey
                                   </button>
                                 </div>
                               ) : null}
