@@ -6,32 +6,33 @@ import { ClipboardList, Users } from "lucide-react";
 
 const navItems = [
   {
-    href: "/dashboard/admin/surveys",
+    href: "/surveys",
     label: "Active surveys",
     description: "Track live research and client ownership",
     icon: ClipboardList
   },
   {
-    href: "/dashboard/admin/community",
+    href: "/community",
     label: "Community stats",
     description: "Rewards, members, and demographic signals",
     icon: Users
   }
 ];
 
-export default function AdminNav() {
+export default function AdminNav({ basePath = "/dashboard/admin" }: { basePath?: string }) {
   const pathname = usePathname();
 
   return (
     <div className="grid gap-3 md:grid-cols-2">
       {navItems.map((item) => {
         const Icon = item.icon;
-        const isActive = pathname === item.href;
+        const href = `${basePath}${item.href}`;
+        const isActive = pathname === href;
 
         return (
           <Link
-            key={item.href}
-            href={item.href}
+            key={href}
+            href={href}
             className={`rounded-[24px] border px-5 py-4 transition ${
               isActive
                 ? "border-[#cdd3ff] bg-[#eef1ff] text-[#202a6b] shadow-[0_18px_35px_rgba(32,42,107,0.08)]"

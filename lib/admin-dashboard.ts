@@ -213,6 +213,15 @@ function buildAudienceSummary(survey: SurveyRow) {
   return parts.join(" • ") || "General audience";
 }
 
+function isMissingRewardActivationTableError(error: { message?: string; details?: string } | null) {
+  const combinedMessage = `${error?.message ?? ""} ${error?.details ?? ""}`.toLowerCase();
+
+  return (
+    combinedMessage.includes("reward_activations") &&
+    (combinedMessage.includes("does not exist") || combinedMessage.includes("could not find"))
+  );
+}
+
 export async function getAdminSurveyOverview(): Promise<AdminSurveyOverview> {
   const admin = createAdminClient();
   const now = new Date();
@@ -348,14 +357,14 @@ export async function getAdminCommunityOverview(): Promise<AdminCommunityOvervie
     throw responseError;
   }
 
-  if (rewardError) {
+  if (rewardError && !isMissingRewardActivationTableError(rewardError)) {
     throw rewardError;
   }
 
   const profileRows = (profileData ?? []) as AdminProfileRow[];
   const communityRows = (communityData ?? []) as CommunityProfileRow[];
   const responseRows = (responseData ?? []) as SurveyResponseSummaryRow[];
-  const rewardRows = (rewardData ?? []) as RewardActivationRow[];
+  const rewardRows = rewardError ? [] : ((rewardData ?? []) as RewardActivationRow[]);
 
   const communityProfilesById = new Map(communityRows.map((row) => [row.id, row]));
   const communityMembers = profileRows.filter(
