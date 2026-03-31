@@ -5,7 +5,7 @@ import {
   type RewardActivationRow
 } from "@/lib/reward-activations";
 import { requireAuthorizedProfile } from "@/lib/survey-authorization";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -23,17 +23,45 @@ type RewardSpendRow = {
 };
 
 function getRewardActivationStorageErrorMessage(error: unknown) {
-  if (!(error instanceof Error)) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" && error !== null && "message" in error && typeof error.message === "string"
+        ? error.message
+        : "";
+
+  if (!message) {
     return "Could not load reward activations.";
   }
 
-  const normalizedMessage = error.message.toLowerCase();
+  const normalizedMessage = message.toLowerCase();
 
   if (normalizedMessage.includes("reward_activations")) {
     return "Reward activation storage is not ready yet. Run the SQL in supabase/migrate-admin-reward-activations.sql.";
   }
 
-  return error.message;
+  return message;
+}
+
+function isMissingRewardActivationsStorageError(error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" && error !== null && "message" in error && typeof error.message === "string"
+        ? error.message
+        : "";
+
+  const details =
+    typeof error === "object" && error !== null && "details" in error && typeof error.details === "string"
+      ? error.details
+      : "";
+
+  const combinedMessage = `${message} ${details}`.toLowerCase();
+
+  return (
+    combinedMessage.includes("reward_activations") &&
+    (combinedMessage.includes("does not exist") || combinedMessage.includes("could not find"))
+  );
 }
 
 export async function GET() {
@@ -44,14 +72,18 @@ export async function GET() {
   }
 
   try {
-    const supabase = createClient();
-    const { data, error } = await supabase
+    const admin = createAdminClient();
+    const { data, error } = await admin
       .from("reward_activations")
       .select("id,member_id,reward_id,reward_company,reward_subtitle,activation_email,credits,status,activated_at")
       .eq("member_id", authorized.profile.id)
       .order("activated_at", { ascending: false });
 
     if (error) {
+      if (isMissingRewardActivationsStorageError(error)) {
+        return NextResponse.json({ activations: [] });
+      }
+
       throw error;
     }
 
@@ -82,13 +114,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const supabase = createClient();
+    const admin = createAdminClient();
     const [earnedCreditsResult, redeemedCreditsResult] = await Promise.all([
-      supabase
+      admin
         .from("survey_responses")
         .select("earned_credits")
         .eq("respondent_id", authorized.profile.id),
-      supabase.from("reward_activations").select("credits,status").eq("member_id", authorized.profile.id)
+      admin.from("reward_activations").select("credits,status").eq("member_id", authorized.profile.id)
     ]);
 
     if (earnedCreditsResult.error) {
@@ -117,7 +149,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await admin
       .from("reward_activations")
       .insert({
         member_id: authorized.profile.id,

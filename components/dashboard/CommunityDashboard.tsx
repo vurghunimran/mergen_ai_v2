@@ -266,6 +266,61 @@ function normalizeCommunityCompletion(completion: CommunityCompletion): Communit
   };
 }
 
+function sortCommunityCompletions(completions: CommunityCompletion[]) {
+  return [...completions].sort(
+    (left, right) =>
+      new Date(right.completedAt).getTime() - new Date(left.completedAt).getTime()
+  );
+}
+
+function mergeCommunityCompletions(
+  localCompletions: CommunityCompletion[],
+  serverCompletions: CommunityCompletion[]
+) {
+  const mergedBySurveyId = new Map<number, CommunityCompletion>();
+
+  for (const completion of localCompletions.map(normalizeCommunityCompletion)) {
+    mergedBySurveyId.set(completion.surveyId, completion);
+  }
+
+  for (const completion of serverCompletions.map(normalizeCommunityCompletion)) {
+    const current = mergedBySurveyId.get(completion.surveyId);
+
+    if (!current) {
+      mergedBySurveyId.set(completion.surveyId, completion);
+      continue;
+    }
+
+    if (new Date(completion.completedAt).getTime() >= new Date(current.completedAt).getTime()) {
+      mergedBySurveyId.set(completion.surveyId, completion);
+    }
+  }
+
+  return sortCommunityCompletions([...mergedBySurveyId.values()]);
+}
+
+function readStoredCommunityCompletions(storageKey: string) {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(storageKey);
+
+    if (!rawValue) {
+      return [];
+    }
+
+    const parsedValue = JSON.parse(rawValue) as CommunityProgress;
+
+    return Array.isArray(parsedValue?.completions)
+      ? sortCommunityCompletions(parsedValue.completions.map(normalizeCommunityCompletion))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 function readLocalAvatarSettings(storageKey: string) {
   if (typeof window === "undefined") {
     return null;
@@ -348,14 +403,10 @@ export default function CommunityDashboard({
 
     async function hydrateDashboard() {
       try {
-        const storedProgress = window.localStorage.getItem(communityProgressStorageKey);
+        const storedCompletions = readStoredCommunityCompletions(communityProgressStorageKey);
 
-        if (storedProgress) {
-          const parsedProgress = JSON.parse(storedProgress) as CommunityProgress;
-
-          if (parsedProgress && Array.isArray(parsedProgress.completions)) {
-            setCompletedSurveys(parsedProgress.completions.map(normalizeCommunityCompletion));
-          }
+        if (storedCompletions.length > 0) {
+          setCompletedSurveys(storedCompletions);
         }
 
         const [surveyResponse, rewardResponse] = await Promise.all([
@@ -381,7 +432,10 @@ export default function CommunityDashboard({
           setClientSurveys(Array.isArray(surveyData.surveys) ? surveyData.surveys : []);
 
           if (Array.isArray(surveyData.completions)) {
-            const normalizedCompletions = surveyData.completions.map(normalizeCommunityCompletion);
+            const normalizedCompletions = mergeCommunityCompletions(
+              storedCompletions,
+              surveyData.completions
+            );
             setCompletedSurveys(normalizedCompletions);
             window.localStorage.setItem(
               communityProgressStorageKey,
@@ -997,12 +1051,14 @@ export default function CommunityDashboard({
     const nextCompletions = Array.isArray(data.completions)
       ? data.completions.map(normalizeCommunityCompletion)
       : [];
+    const storedCompletions = readStoredCommunityCompletions(communityProgressStorageKey);
+    const mergedCompletions = mergeCommunityCompletions(storedCompletions, nextCompletions);
 
     setClientSurveys(nextSurveys);
-    setCompletedSurveys(nextCompletions);
+    setCompletedSurveys(mergedCompletions);
     window.localStorage.setItem(
       communityProgressStorageKey,
-      JSON.stringify({ completions: nextCompletions } satisfies CommunityProgress)
+      JSON.stringify({ completions: mergedCompletions } satisfies CommunityProgress)
     );
   }
 
@@ -1102,10 +1158,7 @@ export default function CommunityDashboard({
         source: evaluation.source
       };
 
-      const nextCompletions = [
-        normalizeCommunityCompletion(completion),
-        ...completedSurveys.filter((entry) => entry.surveyId !== completion.surveyId)
-      ];
+      const nextCompletions = mergeCommunityCompletions(completedSurveys, [completion]);
       window.localStorage.setItem(
         communityProgressStorageKey,
         JSON.stringify({ completions: nextCompletions } satisfies CommunityProgress)
