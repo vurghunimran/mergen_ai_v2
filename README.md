@@ -34,6 +34,7 @@ cp .env.local.example .env.local
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `APP_BASE_URL`
+- `ADMIN_EMAIL`
 - `GEMINI_API_KEY`
 - `RESEND_API_KEY`
 - `CONTACT_TO_EMAIL` or the legacy `TO_EMAIL`
@@ -59,12 +60,14 @@ Use:
 - [supabase/schema.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/schema.sql) for a fresh Supabase setup
 - [supabase/migrate-separate-profiles.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-separate-profiles.sql) if you already created the older mixed profile structure
 - [supabase/migrate-telegram-notifications.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-telegram-notifications.sql) if you want to add Telegram notifications onto an already updated project without re-running the larger upgrade scripts
+- [supabase/migrate-admin-reward-activations.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-admin-reward-activations.sql) if you already have a live database and want reward ledger + owner admin analytics support
 
 This creates:
 
 - `public.profiles` for shared account/auth data
 - `public.client_profiles` for client-only data
 - `public.community_profiles` for community-only data
+- `public.reward_activations` for persistent reward redemptions
 - row-level security policies
 - the auth trigger that stores sign-up data automatically
 
@@ -93,6 +96,7 @@ Add these in the Vercel project settings:
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `APP_BASE_URL`
+- `ADMIN_EMAIL`
 - `GEMINI_API_KEY`
 - `RESEND_API_KEY`
 - `CONTACT_TO_EMAIL` or the legacy `TO_EMAIL`
@@ -105,7 +109,7 @@ Add these in the Vercel project settings:
 - `POLAR_SURVEY_PRODUCT_ID`
 - `POLAR_SERVER`
 
-If you do not configure the Supabase variables, sign-up, login, dashboard protection, and profile storage will fail. If you do not configure `SUPABASE_SERVICE_ROLE_KEY`, survey publish will still work locally in the client dashboard, but the server cannot read matching community profiles to send launch emails. `APP_BASE_URL` should be set to your production site, for example `https://mergen-ai.com`, so email links stay on the custom domain. If you do not configure the Gemini key, the survey builder can still fall back to template questions locally, but the server-side AI assistant will not generate tailored survey content. If you do not configure the Resend variables, the contact form API and community notification API will deploy, but sending email will return a server error. If you do not configure the Polar variables, the payment button cannot create a checkout session. `POLAR_SURVEY_PRODUCT_ID` must be a one-time product, not a recurring monthly subscription product.
+If you do not configure the Supabase variables, sign-up, login, dashboard protection, and profile storage will fail. If you do not configure `SUPABASE_SERVICE_ROLE_KEY`, survey publish will still work locally in the client dashboard, but the server cannot read matching community profiles to send launch emails or power the owner admin panel. `APP_BASE_URL` should be set to your production site, for example `https://mergen-ai.com`, so email links stay on the custom domain. Set `ADMIN_EMAIL` to the one dedicated email address that should open `/dashboard/admin`, for example `admin@mergen-ai.com`. Create that account through the normal client sign-up flow and choose its password there. If you do not configure the Gemini key, the survey builder can still fall back to template questions locally, but the server-side AI assistant will not generate tailored survey content. If you do not configure the Resend variables, the contact form API and community notification API will deploy, but sending email will return a server error. If you do not configure the Polar variables, the payment button cannot create a checkout session. `POLAR_SURVEY_PRODUCT_ID` must be a one-time product, not a recurring monthly subscription product.
 
 Telegram setup checklist:
 
@@ -166,6 +170,8 @@ The app now uses:
 - client-only data in `public.client_profiles`
 - community-only data in `public.community_profiles`
 - server-side dashboard route protection through Supabase session cookies
+- owner-only admin routing through `ADMIN_EMAIL`
+- persistent reward activation tracking for community redemptions
 
 ### Notes
 
@@ -173,6 +179,7 @@ The app now uses:
 - The migration for existing mixed-profile setups is in [supabase/migrate-separate-profiles.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-separate-profiles.sql).
 - The incremental rollout migration for existing survey tables is in [supabase/migrate-survey-distribution.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-survey-distribution.sql).
 - The Telegram notification migration is in [supabase/migrate-telegram-notifications.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-telegram-notifications.sql).
+- The reward ledger/admin migration is in [supabase/migrate-admin-reward-activations.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-admin-reward-activations.sql).
 - Browser/server Supabase helpers are in [lib/supabase/client.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/lib/supabase/client.ts) and [lib/supabase/server.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/lib/supabase/server.ts).
 - The server-side survey AI route lives in [app/api/survey-assistant/route.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/app/api/survey-assistant/route.ts).
 - Route session refresh runs in [middleware.ts](/Users/vurghun1903/Desktop/mergen_ai_v2/middleware.ts).
@@ -184,6 +191,16 @@ The app now uses:
 - Remote images are already allowed for `images.unsplash.com` in [next.config.mjs](/Users/vurghun1903/Desktop/mergen_ai_v2/next.config.mjs).
 - `vercel.json` is included for explicit Next.js detection.
 - Supabase currently expects Node 20+, so Vercel should use Node 20 or later.
+
+## Owner Admin Access
+
+To open the owner admin panel:
+
+1. Set `ADMIN_EMAIL` to your dedicated admin login email
+2. Sign up or log in on the normal client page with that same email and your chosen password
+3. Open the normal client login and that account will be sent into `/dashboard/admin`
+
+Use the dedicated admin account as a normal `client` login. The app will send that email directly into the admin panel after sign-in.
 
 ## Deploy Refresh
 

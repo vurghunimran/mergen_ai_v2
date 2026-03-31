@@ -189,7 +189,13 @@ function downloadTextFile(filename: string, content: string, mimeType: string) {
   URL.revokeObjectURL(objectUrl);
 }
 
-export default function ClientDashboard({ initialProfile }: { initialProfile: UserProfile }) {
+export default function ClientDashboard({
+  initialProfile,
+  adminHref
+}: {
+  initialProfile: UserProfile;
+  adminHref?: string | null;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createSupabaseClient();
@@ -895,6 +901,14 @@ export default function ClientDashboard({ initialProfile }: { initialProfile: Us
           </Link>
 
           <div className="flex items-center space-x-4">
+            {adminHref ? (
+              <Link
+                href={adminHref}
+                className="hidden rounded-full border border-[#ffd7bf] bg-[#fff5ea] px-4 py-2 text-sm font-semibold text-[#c25214] transition hover:border-[#ffc49d] hover:bg-[#fff1e2] sm:inline-flex"
+              >
+                Admin panel
+              </Link>
+            ) : null}
             <div className="relative flex items-center space-x-3 border-l border-gray-200 pl-4" data-profile-menu>
               <div className="flex flex-col text-right">
                 <span className="text-sm font-medium text-gray-900">{displayName}</span>

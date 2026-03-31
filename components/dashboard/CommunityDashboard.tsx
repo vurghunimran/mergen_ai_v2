@@ -59,6 +59,11 @@ import {
   buildAudienceForDistributionStage,
   normalizeSurveyDistributionStage
 } from "@/lib/survey-rollout";
+import {
+  REWARDS,
+  type RewardActivation,
+  type RewardCatalogItem
+} from "@/lib/reward-activations";
 
 const navigationItems = [
   { icon: Home, label: "Dashboard", section: "dashboard" },
@@ -92,15 +97,6 @@ type TelegramLinkStatus = {
   notificationsEnabled: boolean;
   telegramUsername: string | null;
   linkedAt: string | null;
-};
-
-type RewardItem = {
-  id: string;
-  company: string;
-  mark: string;
-  subtitle: string;
-  credits: number;
-  brandClassName: string;
 };
 
 function buildInitialSettings(profile: UserProfile): CommunitySettings {
@@ -164,65 +160,6 @@ function getSettingsErrorMessage(error: unknown) {
 
   return "Could not save your changes. Please try again.";
 }
-
-const REWARDS: RewardItem[] = [
-  {
-    id: "withdraw-cash",
-    company: "Withdraw cash",
-    mark: "$",
-    subtitle: "Bank transfer payout",
-    credits: 900,
-    brandClassName: "bg-[#14532d] text-white"
-  },
-  {
-    id: "amazon",
-    company: "Amazon",
-    mark: "a",
-    subtitle: "Gift card",
-    credits: 700,
-    brandClassName: "bg-[#111827] text-white"
-  },
-  {
-    id: "apple",
-    company: "Apple",
-    mark: "A",
-    subtitle: "Store balance",
-    credits: 680,
-    brandClassName: "bg-[#f3f4f6] text-[#111827]"
-  },
-  {
-    id: "netflix",
-    company: "Netflix",
-    mark: "N",
-    subtitle: "Subscription reward",
-    credits: 520,
-    brandClassName: "bg-[#e50914] text-white"
-  },
-  {
-    id: "spotify",
-    company: "Spotify",
-    mark: "S",
-    subtitle: "Music voucher",
-    credits: 460,
-    brandClassName: "bg-[#1ed760] text-[#111827]"
-  },
-  {
-    id: "uber",
-    company: "Uber",
-    mark: "U",
-    subtitle: "Ride credit",
-    credits: 240,
-    brandClassName: "bg-[#111827] text-white"
-  },
-  {
-    id: "starbucks",
-    company: "Starbucks",
-    mark: "S",
-    subtitle: "Coffee card",
-    credits: 180,
-    brandClassName: "bg-[#006241] text-white"
-  }
-];
 
 function estimateSurveyCredits(survey: ClientSurvey) {
   void survey;
@@ -358,7 +295,13 @@ function readLocalAvatarSettings(storageKey: string) {
   }
 }
 
-export default function CommunityDashboard({ initialProfile }: { initialProfile: UserProfile }) {
+export default function CommunityDashboard({
+  initialProfile,
+  adminHref
+}: {
+  initialProfile: UserProfile;
+  adminHref?: string | null;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createSupabaseClient();
@@ -382,12 +325,14 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
   const [isLoadingTelegramStatus, setIsLoadingTelegramStatus] = useState(true);
   const [isStartingTelegramLink, setIsStartingTelegramLink] = useState(false);
   const [isDisconnectingTelegram, setIsDisconnectingTelegram] = useState(false);
+  const [isActivatingRewardId, setIsActivatingRewardId] = useState<string | null>(null);
   const [telegramMessage, setTelegramMessage] = useState("");
   const [telegramError, setTelegramError] = useState("");
   const [trustScoreOpen, setTrustScoreOpen] = useState(false);
   const [activatedRewardId, setActivatedRewardId] = useState<string | null>(null);
   const [rewardNotice, setRewardNotice] = useState<string | null>(null);
   const [rewardError, setRewardError] = useState<string | null>(null);
+  const [rewardActivations, setRewardActivations] = useState<RewardActivation[]>([]);
   const [surveyNotice, setSurveyNotice] = useState<string | null>(null);
   const [surveyLoadError, setSurveyLoadError] = useState<string | null>(null);
   const [completedSurveys, setCompletedSurveys] = useState<CommunityCompletion[]>([]);
@@ -413,28 +358,42 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
           }
         }
 
-        const response = await fetch("/api/surveys/available", { cache: "no-store" });
-        const data = (await response.json().catch(() => ({}))) as {
+        const [surveyResponse, rewardResponse] = await Promise.all([
+          fetch("/api/surveys/available", { cache: "no-store" }),
+          fetch("/api/rewards/activations", { cache: "no-store" })
+        ]);
+        const surveyData = (await surveyResponse.json().catch(() => ({}))) as {
           surveys?: ClientSurvey[];
           completions?: CommunityCompletion[];
           error?: string;
         };
+        const rewardData = (await rewardResponse.json().catch(() => ({}))) as {
+          activations?: RewardActivation[];
+          error?: string;
+        };
 
-        if (!response.ok) {
-          throw new Error(data.error ?? "Could not load surveys.");
+        if (!surveyResponse.ok) {
+          throw new Error(surveyData.error ?? "Could not load surveys.");
         }
 
         if (!cancelled) {
           setSurveyLoadError(null);
-          setClientSurveys(Array.isArray(data.surveys) ? data.surveys : []);
+          setClientSurveys(Array.isArray(surveyData.surveys) ? surveyData.surveys : []);
 
-          if (Array.isArray(data.completions)) {
-            const normalizedCompletions = data.completions.map(normalizeCommunityCompletion);
+          if (Array.isArray(surveyData.completions)) {
+            const normalizedCompletions = surveyData.completions.map(normalizeCommunityCompletion);
             setCompletedSurveys(normalizedCompletions);
             window.localStorage.setItem(
               communityProgressStorageKey,
               JSON.stringify({ completions: normalizedCompletions } satisfies CommunityProgress)
             );
+          }
+
+          if (rewardResponse.ok && Array.isArray(rewardData.activations)) {
+            setRewardActivations(rewardData.activations);
+            setRewardError(null);
+          } else if (!rewardResponse.ok && rewardData.error) {
+            setRewardError(rewardData.error);
           }
         }
       } catch (error) {
@@ -540,7 +499,14 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
     [availableSurveys, selectedSurveyId]
   );
 
-  const totalCredits = completedSurveys.reduce((sum, completion) => sum + completion.earnedCredits, 0);
+  const totalEarnedCredits = completedSurveys.reduce(
+    (sum, completion) => sum + completion.earnedCredits,
+    0
+  );
+  const redeemedCredits = rewardActivations
+    .filter((activation) => activation.status !== "cancelled")
+    .reduce((sum, activation) => sum + activation.credits, 0);
+  const totalCredits = Math.max(0, totalEarnedCredits - redeemedCredits);
   const doneSurveyCount = completedSurveys.length;
   const trustScore =
     completedSurveys.length > 0
@@ -922,22 +888,52 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
     }
   }
 
-  function handleActivateReward(reward: RewardItem) {
+  async function handleActivateReward(reward: RewardCatalogItem) {
     setRewardError(null);
+    setRewardNotice(null);
 
     if (totalCredits < reward.credits) {
       setActivatedRewardId(null);
-      setRewardNotice(null);
       setRewardError(`Your credit is not enough for ${reward.company}.`);
       return;
     }
 
-    const message =
-      reward.id === "withdraw-cash"
-        ? `Cash withdrawal request has been sent to ${savedSettings.email}.`
-        : `${reward.company} reward has been sent to ${savedSettings.email}.`;
-    setActivatedRewardId(reward.id);
-    setRewardNotice(message);
+    try {
+      setIsActivatingRewardId(reward.id);
+
+      const response = await fetch("/api/rewards/activations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          rewardId: reward.id
+        })
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        activation?: RewardActivation;
+        message?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !data.activation) {
+        throw new Error(data.error ?? "Could not activate reward.");
+      }
+
+      setRewardActivations((currentActivations) => [data.activation as RewardActivation, ...currentActivations]);
+      setActivatedRewardId(reward.id);
+      setRewardNotice(
+        data.message ??
+          (reward.id === "withdraw-cash"
+            ? `Cash withdrawal request has been sent to ${savedSettings.email}.`
+            : `${reward.company} reward has been sent to ${savedSettings.email}.`)
+      );
+    } catch (error) {
+      setActivatedRewardId(null);
+      setRewardError(error instanceof Error ? error.message : "Could not activate reward.");
+    } finally {
+      setIsActivatingRewardId(null);
+    }
   }
 
   function handleOpenSurvey(survey: ClientSurvey) {
@@ -1313,6 +1309,14 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
           </Link>
 
           <div className="flex items-center space-x-4">
+            {adminHref ? (
+              <Link
+                href={adminHref}
+                className="hidden rounded-full border border-[#e4d6ff] bg-[#f5f0ff] px-4 py-2 text-sm font-semibold text-[#6d3fd1] transition hover:border-[#d7c3ff] hover:bg-[#efe7ff] sm:inline-flex"
+              >
+                Admin panel
+              </Link>
+            ) : null}
             <div className="relative flex items-center space-x-3 border-l border-gray-200 pl-4" data-profile-menu>
               <div className="flex flex-col text-right">
                 <span className="text-sm font-medium text-gray-900">{displayName}</span>
@@ -1712,9 +1716,12 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="rounded-[24px] border border-[#d9c7ff] bg-[#faf7ff] p-5 shadow-sm">
-                    <p className="text-sm font-medium text-[#8a94a6]">Total credit</p>
+                    <p className="text-sm font-medium text-[#8a94a6]">Available credit</p>
                     <p className="mt-2 text-[34px] font-bold tracking-[-0.03em] text-[#4f2a78]">{totalCredits}</p>
-                    <p className="mt-2 text-sm text-[#667085]">Use this balance to decide which rewards you can activate now.</p>
+                    <p className="mt-2 text-sm text-[#667085]">
+                      Earned {totalEarnedCredits}, redeemed {redeemedCredits}, remaining available for
+                      new rewards.
+                    </p>
                   </div>
 
                   <div className="rounded-[24px] border border-[#e9ddff] bg-white p-5 shadow-sm">
@@ -1731,7 +1738,7 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
                         <AlertCircle className="h-5 w-5 text-[#dc2626]" />
                       </div>
                       <div>
-                        <h2 className="text-[18px] font-semibold text-[#991b1b]">Not enough credits</h2>
+                        <h2 className="text-[18px] font-semibold text-[#991b1b]">Reward issue</h2>
                         <p className="mt-1 text-sm leading-7 text-[#7f1d1d]">{rewardError}</p>
                       </div>
                     </div>
@@ -1769,9 +1776,14 @@ export default function CommunityDashboard({ initialProfile }: { initialProfile:
                       <button
                         type="button"
                         onClick={() => handleActivateReward(reward)}
-                        className="mt-6 w-full rounded-full bg-[linear-gradient(135deg,#6d3fd1_0%,#8b5cf6_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(124,58,237,0.22)] transition hover:opacity-90"
+                        disabled={isActivatingRewardId === reward.id}
+                        className="mt-6 w-full rounded-full bg-[linear-gradient(135deg,#6d3fd1_0%,#8b5cf6_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(124,58,237,0.22)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {activatedRewardId === reward.id ? "Activated" : "Activate Reward"}
+                        {isActivatingRewardId === reward.id
+                          ? "Activating..."
+                          : activatedRewardId === reward.id
+                            ? "Activated"
+                            : "Activate Reward"}
                       </button>
                     </div>
                   ))}

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getPostLoginPath } from "@/lib/admin-access";
 import { requireAuthenticatedProfile } from "@/lib/supabase/profile-server";
 
 export const dynamic = "force-dynamic";
@@ -31,5 +32,10 @@ export default async function ClientDashboardRedirectPage({
   searchParams?: Record<string, string | string[] | undefined>;
 }) {
   const { profile } = await requireAuthenticatedProfile("client");
-  redirect(`/dashboard/client/${profile.id}${buildSearchString(searchParams)}`);
+  const destination = getPostLoginPath({
+    email: profile.email,
+    role: profile.role,
+    userId: profile.id
+  });
+  redirect(`${destination}${buildSearchString(searchParams)}`);
 }

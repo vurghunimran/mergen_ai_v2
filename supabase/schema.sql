@@ -202,6 +202,20 @@ create table if not exists public.survey_notifications (
   unique (survey_id, recipient_id)
 );
 
+create table if not exists public.reward_activations (
+  id uuid primary key default gen_random_uuid(),
+  member_id uuid not null references public.profiles (id) on delete cascade,
+  reward_id text not null,
+  reward_company text not null,
+  reward_subtitle text not null,
+  activation_email text not null,
+  credits integer not null check (credits > 0),
+  status text not null default 'activated' check (status in ('activated', 'fulfilled', 'cancelled')),
+  activated_at timestamptz not null default timezone('utc', now()),
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
 create table if not exists public.telegram_notification_subscriptions (
   user_id uuid primary key references public.profiles (id) on delete cascade,
   phone_number text not null,
@@ -288,6 +302,9 @@ $$;
 create index if not exists surveys_distribution_expires_at_idx on public.surveys (status, distribution_expires_at);
 create index if not exists survey_notifications_survey_id_idx on public.survey_notifications (survey_id);
 create index if not exists survey_notifications_recipient_id_idx on public.survey_notifications (recipient_id);
+create index if not exists reward_activations_member_id_idx on public.reward_activations (member_id);
+create index if not exists reward_activations_activated_at_idx on public.reward_activations (activated_at desc);
+create index if not exists reward_activations_status_idx on public.reward_activations (status);
 create unique index if not exists telegram_notification_subscriptions_chat_id_idx on public.telegram_notification_subscriptions (telegram_chat_id);
 create index if not exists telegram_link_tokens_user_id_idx on public.telegram_link_tokens (user_id);
 create index if not exists telegram_link_tokens_chat_id_idx on public.telegram_link_tokens (telegram_chat_id);
@@ -418,6 +435,12 @@ execute function public.set_updated_at();
 drop trigger if exists set_telegram_notification_subscriptions_updated_at on public.telegram_notification_subscriptions;
 create trigger set_telegram_notification_subscriptions_updated_at
 before update on public.telegram_notification_subscriptions
+for each row
+execute function public.set_updated_at();
+
+drop trigger if exists set_reward_activations_updated_at on public.reward_activations;
+create trigger set_reward_activations_updated_at
+before update on public.reward_activations
 for each row
 execute function public.set_updated_at();
 
@@ -581,6 +604,7 @@ alter table public.community_profiles enable row level security;
 alter table public.surveys enable row level security;
 alter table public.survey_responses enable row level security;
 alter table public.survey_notifications enable row level security;
+alter table public.reward_activations enable row level security;
 alter table public.telegram_notification_subscriptions enable row level security;
 alter table public.telegram_link_tokens enable row level security;
 
@@ -646,6 +670,25 @@ create policy "Users can view their own telegram subscription"
 on public.telegram_notification_subscriptions
 for select
 using (auth.uid() = user_id);
+
+drop policy if exists "Community members can view their own reward activations" on public.reward_activations;
+create policy "Community members can view their own reward activations"
+on public.reward_activations
+for select
+using (auth.uid() = member_id);
+
+drop policy if exists "Community members can create their own reward activations" on public.reward_activations;
+create policy "Community members can create their own reward activations"
+on public.reward_activations
+for insert
+with check (
+  member_id = auth.uid()
+  and exists (
+    select 1
+    from public.profiles
+    where id = auth.uid() and role = 'community'
+  )
+);
 
 drop policy if exists "Clients can view their own surveys" on public.surveys;
 create policy "Clients can view their own surveys"

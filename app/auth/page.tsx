@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getCurrentUserProfile, getDashboardPathForRole } from "@/lib/supabase/profile-server";
+import { getPostLoginPath } from "@/lib/admin-access";
+import { getCurrentUserProfile } from "@/lib/supabase/profile-server";
 import { getDetectedCountryFromHeaders } from "@/lib/request-country";
 import AuthClient from "./AuthClient";
 
@@ -14,7 +15,13 @@ export default async function AuthPage({
   const authenticatedProfile = await getCurrentUserProfile();
 
   if (authenticatedProfile) {
-    redirect(getDashboardPathForRole(authenticatedProfile.profile.role, authenticatedProfile.profile.id));
+    redirect(
+      getPostLoginPath({
+        email: authenticatedProfile.profile.email,
+        role: authenticatedProfile.profile.role,
+        userId: authenticatedProfile.profile.id
+      })
+    );
   }
 
   const requestHeaders = headers();
