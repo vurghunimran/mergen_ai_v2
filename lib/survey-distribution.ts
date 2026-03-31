@@ -67,6 +67,9 @@ type SurveyDistributionCandidate = {
   email: string;
   firstName: string;
   completionCount: number;
+  country: string;
+  ageSpan: string;
+  gender: string;
   memberProfile: CommunityAudienceProfile;
   telegramChatId: string | null;
 };
@@ -91,6 +94,23 @@ export type SurveyDistributionRunSummary = {
   processedSurveys: number;
   archivedSurveys: number;
   processedStageRuns: SurveyDistributionSummary[];
+};
+
+export type UpcomingSurveyDeliveryRecipient = {
+  id: string;
+  email: string;
+  firstName: string;
+  completionCount: number;
+  country: string;
+  ageSpan: string;
+  gender: string;
+};
+
+export type UpcomingSurveyDeliveryPreview = {
+  status: "ready" | "scheduled" | "completed";
+  stage: SurveyDistributionStage | null;
+  scheduledFor: string | null;
+  recipients: UpcomingSurveyDeliveryRecipient[];
 };
 
 function chunkArray<T>(items: T[], size: number) {
@@ -234,6 +254,9 @@ async function loadDistributionRecipientPool(
         email: normalizedEmail,
         firstName: baseRow.first_name?.trim() || "there",
         completionCount: completionCounts.get(baseRow.id) ?? 0,
+        country: communityRow.country ?? "",
+        ageSpan: communityRow.age_span ?? "",
+        gender: communityRow.gender ?? "",
         telegramChatId: hasVerifiedTelegramLink
           ? telegramSubscription?.telegram_chat_id ?? null
           : null,
@@ -250,6 +273,151 @@ async function loadDistributionRecipientPool(
       };
     })
     .filter((candidate): candidate is SurveyDistributionCandidate => candidate !== null);
+}
+
+function isValidDate(value: string | null | undefined) {
+  if (!value) {
+    return false;
+  }
+
+  return !Number.isNaN(new Date(value).getTime());
+}
+
+function addHours(date: Date, hours: number) {
+  return new Date(date.getTime() + hours * 60 * 60 * 1000);
+}
+
+function addDays(date: Date, days: number) {
+  return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
+}
+
+function getNextScheduledStage(params: {
+  survey: SurveyRow;
+  now: Date;
+}) {
+  const currentStage = normalizeSurveyDistributionStage(params.survey.distribution_stage);
+
+  if (currentStage <= 0) {
+    return {
+      status: "ready" as const,
+      stage: 1 as SurveyDistributionStage,
+      scheduledFor: params.now.toISOString()
+    };
+  }
+
+  const dueStage = getDueDistributionStage({
+    distributionStage: currentStage,
+    distributionStartedAt: params.survey.distribution_started_at,
+    distributionLastSentAt: params.survey.distribution_last_sent_at,
+    now: params.now
+  });
+
+  if (dueStage) {
+    return {
+      status: "ready" as const,
+      stage: dueStage,
+      scheduledFor: params.now.toISOString()
+    };
+  }
+
+  if (currentStage >= 4) {
+    return {
+      status: "completed" as const,
+      stage: null,
+      scheduledFor: params.survey.distribution_completed_at ?? null
+    };
+  }
+
+  const anchorDate = isValidDate(params.survey.distribution_last_sent_at)
+    ? new Date(params.survey.distribution_last_sent_at as string)
+    : isValidDate(params.survey.distribution_started_at)
+      ? new Date(params.survey.distribution_started_at as string)
+      : params.now;
+
+  if (currentStage === 1) {
+    return {
+      status: "scheduled" as const,
+      stage: 2 as SurveyDistributionStage,
+      scheduledFor: addHours(anchorDate, 5).toISOString()
+    };
+  }
+
+  return {
+    status: "scheduled" as const,
+    stage: (currentStage + 1) as SurveyDistributionStage,
+    scheduledFor: addDays(anchorDate, 1).toISOString()
+  };
+}
+
+export async function previewUpcomingSurveyDelivery(params: {
+  admin: SupabaseClient;
+  survey: SurveyRow;
+  now?: Date;
+  recipientPool?: SurveyDistributionCandidate[];
+  surveyResponseRows?: SurveyResponseReferenceRow[];
+  responseCount?: number;
+}) {
+  const now = params.now ?? new Date();
+  const surveyResponseRows =
+    params.surveyResponseRows ?? (await loadSurveyResponseReferences(params.admin));
+  const recipientPool =
+    params.recipientPool ?? (await loadDistributionRecipientPool(params.admin, surveyResponseRows));
+  const responseCount =
+    params.responseCount ??
+    buildSurveyResponseCountMap(surveyResponseRows).get(params.survey.id) ??
+    0;
+
+  if (
+    params.survey.status !== "published" ||
+    hasSurveyExpired(params.survey.distribution_expires_at, now) ||
+    responseCount >= params.survey.target_responses
+  ) {
+    return {
+      status: "completed" as const,
+      stage: null,
+      scheduledFor: null,
+      recipients: []
+    } satisfies UpcomingSurveyDeliveryPreview;
+  }
+
+  const nextStage = getNextScheduledStage({
+    survey: params.survey,
+    now
+  });
+
+  if (!nextStage.stage) {
+    return {
+      status: nextStage.status,
+      stage: null,
+      scheduledFor: nextStage.scheduledFor,
+      recipients: []
+    } satisfies UpcomingSurveyDeliveryPreview;
+  }
+
+  const alreadyNotifiedIds = await listSurveyNotifiedRecipientIds(params.admin, params.survey.id);
+  const { matchedRecipients } = selectRecipientsForStage({
+    survey: params.survey,
+    stage: nextStage.stage,
+    responseCount,
+    surveyResponseRows,
+    recipientPool,
+    alreadyNotifiedIds
+  });
+
+  return {
+    status: nextStage.status,
+    stage: nextStage.stage,
+    scheduledFor: nextStage.scheduledFor,
+    recipients: matchedRecipients.map((recipient) => ({
+      id: recipient.id,
+      email: recipient.email,
+      firstName: recipient.firstName,
+      completionCount: recipient.completionCount,
+      country: recipient.country,
+      ageSpan: recipient.ageSpan,
+      gender: recipient.gender
+    }))
+  } satisfies UpcomingSurveyDeliveryPreview;
 }
 
 async function listPublishedSurveyRows(admin: SupabaseClient) {

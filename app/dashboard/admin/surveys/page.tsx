@@ -1,4 +1,4 @@
-import { Activity, Clock3, FolderKanban, Users2 } from "lucide-react";
+import { Activity, Clock3, FolderKanban, Send, Users2 } from "lucide-react";
 import AdminSetupNotice from "@/components/admin/AdminSetupNotice";
 import { getAdminSurveyOverview } from "@/lib/admin-dashboard";
 
@@ -13,6 +13,22 @@ function formatDateTime(value: string | null) {
     dateStyle: "medium",
     timeStyle: "short"
   }).format(new Date(value));
+}
+
+function formatDistributionStage(stage: number) {
+  return `Stage ${stage}`;
+}
+
+function formatPlannedStatus(status: "ready" | "scheduled" | "completed") {
+  if (status === "ready") {
+    return "Ready now";
+  }
+
+  if (status === "scheduled") {
+    return "Scheduled";
+  }
+
+  return "Completed";
 }
 
 function MetricCard({
@@ -44,7 +60,7 @@ export default async function AdminSurveysPage() {
 
     return (
       <div className="space-y-6">
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <MetricCard
             label="Active surveys"
             value={overview.activeSurveyCount}
@@ -56,6 +72,12 @@ export default async function AdminSurveysPage() {
             value={overview.liveResponseCount}
             description="Responses already collected across active surveys."
             icon={Users2}
+          />
+          <MetricCard
+            label="Members sent to"
+            value={overview.totalNotificationsSent}
+            description="Members who already received survey delivery from the system."
+            icon={Send}
           />
           <MetricCard
             label="Active clients"
@@ -203,6 +225,164 @@ export default async function AdminSurveysPage() {
                         style={{ width: `${survey.completionRate}%` }}
                       />
                     </div>
+                  </div>
+
+                  <div className="mt-6 rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_26px_rgba(15,23,42,0.03)]">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#4153c4]">
+                          Delivery log
+                        </p>
+                        <h4 className="mt-2 text-[20px] font-bold tracking-[-0.03em] text-slate-900">
+                          Sent to members
+                        </h4>
+                        <p className="mt-2 text-sm leading-7 text-slate-500">
+                          Every member listed below has already received this survey from the
+                          rollout system.
+                        </p>
+                      </div>
+                      <div className="rounded-full bg-[#eef1ff] px-4 py-2 text-sm font-semibold text-[#202a6b]">
+                        {survey.notifiedMembersCount} member
+                        {survey.notifiedMembersCount === 1 ? "" : "s"} sent
+                      </div>
+                    </div>
+
+                    {survey.notifiedRecipients.length === 0 ? (
+                      <div className="mt-5 rounded-[22px] border border-dashed border-slate-200 bg-[#fafbfd] px-5 py-8 text-center text-sm text-slate-500">
+                        No members have been sent this survey yet.
+                      </div>
+                    ) : (
+                      <div className="mt-5 overflow-x-auto">
+                        <table className="min-w-full border-separate border-spacing-0">
+                          <thead>
+                            <tr className="text-left text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                              <th className="border-b border-slate-200 pb-4 pr-4">Member</th>
+                              <th className="border-b border-slate-200 pb-4 pr-4">Profile</th>
+                              <th className="border-b border-slate-200 pb-4 pr-4">Sent</th>
+                              <th className="border-b border-slate-200 pb-4">Stage</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {survey.notifiedRecipients.map((recipient) => (
+                              <tr key={`${survey.id}-${recipient.id}`}>
+                                <td className="border-b border-slate-100 py-5 pr-4 align-top">
+                                  <p className="font-semibold text-slate-900">{recipient.name}</p>
+                                  <p className="mt-1 text-sm text-slate-500">{recipient.email}</p>
+                                </td>
+                                <td className="border-b border-slate-100 py-5 pr-4 align-top text-sm text-slate-600">
+                                  <p>{recipient.country}</p>
+                                  <p className="mt-1 text-slate-400">
+                                    {recipient.ageSpan} • {recipient.gender}
+                                  </p>
+                                </td>
+                                <td className="border-b border-slate-100 py-5 pr-4 align-top text-sm text-slate-600">
+                                  {formatDateTime(recipient.sentAt)}
+                                </td>
+                                <td className="border-b border-slate-100 py-5 align-top">
+                                  <span className="rounded-full bg-[#eef1ff] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#4153c4]">
+                                    {formatDistributionStage(recipient.stage)}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-6 rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_26px_rgba(15,23,42,0.03)]">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#1d6e42]">
+                          Next rollout preview
+                        </p>
+                        <h4 className="mt-2 text-[20px] font-bold tracking-[-0.03em] text-slate-900">
+                          Members planned for the coming send
+                        </h4>
+                        <p className="mt-2 text-sm leading-7 text-slate-500">
+                          This is the current member list the system is planning to send in the next
+                          rollout window based on today&apos;s matching rules.
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="rounded-full bg-[#eaf7ef] px-4 py-2 text-sm font-semibold text-[#1d6e42]">
+                          {formatPlannedStatus(survey.plannedStatus)}
+                        </span>
+                        {survey.plannedStage ? (
+                          <span className="rounded-full bg-[#eef1ff] px-4 py-2 text-sm font-semibold text-[#202a6b]">
+                            {formatDistributionStage(survey.plannedStage)}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="mt-5 grid gap-4 md:grid-cols-3">
+                      <div className="rounded-[22px] bg-[#f8fafc] px-4 py-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+                          Planned send time
+                        </p>
+                        <p className="mt-2 text-sm font-semibold text-slate-900">
+                          {survey.plannedFor ? formatDateTime(survey.plannedFor) : "No more sends planned"}
+                        </p>
+                      </div>
+                      <div className="rounded-[22px] bg-[#f8fafc] px-4 py-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+                          Planned members
+                        </p>
+                        <p className="mt-2 text-sm font-semibold text-slate-900">
+                          {survey.plannedRecipients.length} member
+                          {survey.plannedRecipients.length === 1 ? "" : "s"}
+                        </p>
+                      </div>
+                      <div className="rounded-[22px] bg-[#f8fafc] px-4 py-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+                          Status
+                        </p>
+                        <p className="mt-2 text-sm font-semibold text-slate-900">
+                          {formatPlannedStatus(survey.plannedStatus)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {survey.plannedRecipients.length === 0 ? (
+                      <div className="mt-5 rounded-[22px] border border-dashed border-slate-200 bg-[#fafbfd] px-5 py-8 text-center text-sm text-slate-500">
+                        {survey.plannedStatus === "completed"
+                          ? "This survey does not have another planned send stage."
+                          : "No members currently qualify for the next planned send."}
+                      </div>
+                    ) : (
+                      <div className="mt-5 overflow-x-auto">
+                        <table className="min-w-full border-separate border-spacing-0">
+                          <thead>
+                            <tr className="text-left text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                              <th className="border-b border-slate-200 pb-4 pr-4">Member</th>
+                              <th className="border-b border-slate-200 pb-4 pr-4">Profile</th>
+                              <th className="border-b border-slate-200 pb-4">Completions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {survey.plannedRecipients.map((recipient) => (
+                              <tr key={`${survey.id}-planned-${recipient.id}`}>
+                                <td className="border-b border-slate-100 py-5 pr-4 align-top">
+                                  <p className="font-semibold text-slate-900">{recipient.name}</p>
+                                  <p className="mt-1 text-sm text-slate-500">{recipient.email}</p>
+                                </td>
+                                <td className="border-b border-slate-100 py-5 pr-4 align-top text-sm text-slate-600">
+                                  <p>{recipient.country}</p>
+                                  <p className="mt-1 text-slate-400">
+                                    {recipient.ageSpan} • {recipient.gender}
+                                  </p>
+                                </td>
+                                <td className="border-b border-slate-100 py-5 align-top text-sm text-slate-600">
+                                  {recipient.completionCount}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 </article>
               ))}
