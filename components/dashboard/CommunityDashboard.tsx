@@ -186,6 +186,10 @@ function getCompletionScoreLabel(completion: CommunityCompletion) {
 }
 
 function matchesSurveyToMember(survey: ClientSurvey, memberProfile: ReturnType<typeof buildMemberProfile>) {
+  if (survey.kind === "welcome") {
+    return true;
+  }
+
   const effectiveAudience = buildAudienceForDistributionStage(
     survey.audience,
     Math.max(1, normalizeSurveyDistributionStage(survey.distributionStage)) as 1 | 2 | 3 | 4
