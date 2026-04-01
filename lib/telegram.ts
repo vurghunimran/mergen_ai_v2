@@ -59,16 +59,44 @@ export function getTelegramBotUsername() {
   return rawValue ? normalizeTelegramUsername(rawValue) : "";
 }
 
+export function getTelegramWebhookSecret() {
+  return process.env.TELEGRAM_WEBHOOK_SECRET?.trim() || "";
+}
+
 export function isTelegramBotConfigured() {
   return Boolean(getTelegramBotToken());
 }
 
 export function isTelegramActivationConfigured() {
-  return Boolean(getTelegramBotToken() && getTelegramBotUsername());
+  return Boolean(
+    getTelegramBotToken() && getTelegramBotUsername() && getTelegramWebhookSecret()
+  );
+}
+
+export function getTelegramActivationConfigurationError() {
+  const missingVariables: string[] = [];
+
+  if (!getTelegramBotToken()) {
+    missingVariables.push("TELEGRAM_BOT_TOKEN");
+  }
+
+  if (!getTelegramBotUsername()) {
+    missingVariables.push("TELEGRAM_BOT_USERNAME");
+  }
+
+  if (!getTelegramWebhookSecret()) {
+    missingVariables.push("TELEGRAM_WEBHOOK_SECRET");
+  }
+
+  if (missingVariables.length === 0) {
+    return "";
+  }
+
+  return `Telegram activation requires ${missingVariables.join(", ")}.`;
 }
 
 export function isAuthorizedTelegramWebhookRequest(request: Request) {
-  const secretToken = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
+  const secretToken = getTelegramWebhookSecret();
 
   if (!secretToken) {
     return process.env.NODE_ENV !== "production";

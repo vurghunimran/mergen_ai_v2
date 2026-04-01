@@ -93,6 +93,7 @@ type TelegramLinkStatus = {
   phoneReady: boolean;
   phoneMismatch: boolean;
   botConfigured: boolean;
+  botConfigurationError: string | null;
   botUsername: string | null;
   notificationsEnabled: boolean;
   telegramUsername: string | null;
@@ -730,6 +731,10 @@ export default function CommunityDashboard({
         phoneReady: Boolean(data.phoneReady),
         phoneMismatch: Boolean(data.phoneMismatch),
         botConfigured: Boolean(data.botConfigured),
+        botConfigurationError:
+          typeof data.botConfigurationError === "string"
+            ? data.botConfigurationError
+            : null,
         botUsername: typeof data.botUsername === "string" ? data.botUsername : null,
         notificationsEnabled: Boolean(data.notificationsEnabled),
         telegramUsername:
@@ -2130,7 +2135,8 @@ export default function CommunityDashboard({
                           </p>
                         ) : telegramStatus?.botConfigured === false ? (
                           <p className={`text-sm ${settingsMutedTextClassName}`}>
-                            Telegram bot configuration is not finished in this deployment yet.
+                            {telegramStatus.botConfigurationError ??
+                              "Telegram bot configuration is not finished in this deployment yet."}
                           </p>
                         ) : (
                           <p className={`text-sm ${settingsMutedTextClassName}`}>

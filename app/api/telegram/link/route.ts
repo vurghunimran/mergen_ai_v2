@@ -4,6 +4,7 @@ import { getPhoneComparisonKey, isLikelyInternationalPhoneNumber } from "@/lib/p
 import { requireAuthorizedProfile } from "@/lib/survey-authorization";
 import {
   buildTelegramStartUrl,
+  getTelegramActivationConfigurationError,
   getTelegramBotUsername,
   isTelegramActivationConfigured
 } from "@/lib/telegram";
@@ -37,6 +38,7 @@ export async function GET() {
 
   try {
     const admin = createAdminClient();
+    const configurationError = getTelegramActivationConfigurationError();
     const { data, error } = await admin
       .from("telegram_notification_subscriptions")
       .select(
@@ -72,6 +74,7 @@ export async function GET() {
       phoneReady,
       phoneMismatch,
       botConfigured: isTelegramActivationConfigured(),
+      botConfigurationError: configurationError || null,
       botUsername: getTelegramBotUsername() || null,
       notificationsEnabled: Boolean(subscription?.notifications_enabled),
       telegramUsername: linked ? subscription?.telegram_username ?? null : null,
@@ -122,11 +125,14 @@ export async function POST() {
     );
   }
 
+  const configurationError = getTelegramActivationConfigurationError();
+
   if (!isTelegramActivationConfigured()) {
     return NextResponse.json(
       {
         error:
-          "Telegram bot configuration is missing. Add TELEGRAM_BOT_TOKEN and TELEGRAM_BOT_USERNAME first."
+          configurationError ||
+          "Telegram activation is not available on this deployment yet."
       },
       { status: 500 }
     );
