@@ -34,7 +34,7 @@ const PERSONALITY_PROFILES: Record<PersonalityKey, PersonalityProfile> = {
 };
 
 export const WELCOME_SURVEY_ID = 9_000_000_000_001;
-export const WELCOME_SURVEY_CREDITS = 30;
+export const WELCOME_SURVEY_CREDITS = 50;
 export const WELCOME_SURVEY_TITLE = "Discover Your Research Personality (and Earn Your First Credits 😎)";
 export const WELCOME_SURVEY_INTRO = [
   "Welcome to Mergen!",

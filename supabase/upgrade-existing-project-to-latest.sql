@@ -583,7 +583,7 @@ create table if not exists public.welcome_survey_completions (
   respondent_id uuid not null unique references public.profiles (id) on delete cascade,
   submitted_at timestamptz not null default timezone('utc', now()),
   completion_time_seconds integer not null check (completion_time_seconds > 0),
-  earned_credits integer not null default 30 check (earned_credits = 30),
+  earned_credits integer not null default 50 check (earned_credits = 50),
   summary text not null default '',
   answers jsonb not null default '[]'::jsonb
 );
@@ -594,18 +594,22 @@ alter table public.welcome_survey_completions add column if not exists earned_cr
 alter table public.welcome_survey_completions add column if not exists summary text default '';
 alter table public.welcome_survey_completions add column if not exists answers jsonb default '[]'::jsonb;
 
+alter table public.welcome_survey_completions drop constraint if exists welcome_survey_completions_earned_credits_check;
+
 update public.welcome_survey_completions
 set
-  earned_credits = coalesce(earned_credits, 30),
+  earned_credits = 50,
   summary = coalesce(summary, ''),
   answers = coalesce(answers, '[]'::jsonb),
   submitted_at = coalesce(submitted_at, timezone('utc', now()))
-where earned_credits is null or summary is null or answers is null or submitted_at is null;
+where earned_credits is distinct from 50 or summary is null or answers is null or submitted_at is null;
 
 alter table public.welcome_survey_completions alter column submitted_at set default timezone('utc', now());
-alter table public.welcome_survey_completions alter column earned_credits set default 30;
+alter table public.welcome_survey_completions alter column earned_credits set default 50;
 alter table public.welcome_survey_completions alter column summary set default '';
 alter table public.welcome_survey_completions alter column answers set default '[]'::jsonb;
+alter table public.welcome_survey_completions
+  add constraint welcome_survey_completions_earned_credits_check check (earned_credits = 50);
 
 create table if not exists public.survey_notifications (
   id uuid primary key default gen_random_uuid(),

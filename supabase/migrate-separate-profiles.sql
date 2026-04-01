@@ -191,7 +191,7 @@ create table if not exists public.welcome_survey_completions (
   respondent_id uuid not null unique references public.profiles (id) on delete cascade,
   submitted_at timestamptz not null default timezone('utc', now()),
   completion_time_seconds integer not null check (completion_time_seconds > 0),
-  earned_credits integer not null default 30 check (earned_credits = 30),
+  earned_credits integer not null default 50 check (earned_credits = 50),
   summary text not null default '',
   answers jsonb not null default '[]'::jsonb
 );
