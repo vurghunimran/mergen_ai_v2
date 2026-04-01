@@ -14,11 +14,12 @@ export function getSurveyStorageErrorMessage(error: unknown) {
     code === "PGRST205" ||
     code === "42P01" ||
     message.toLowerCase().includes("public.surveys") ||
+    message.toLowerCase().includes("welcome_survey_completions") ||
     message.toLowerCase().includes("public.survey_notifications") ||
     message.toLowerCase().includes("distribution_stage") ||
     message.toLowerCase().includes("distribution_expires_at")
   ) {
-    return "Supabase survey storage is not ready yet. Run the SQL in supabase/schema.sql and, for existing projects, supabase/migrate-survey-distribution.sql.";
+    return "Supabase survey storage is not ready yet. Run the SQL in supabase/schema.sql and, for existing projects, the latest survey migration files including supabase/migrate-welcome-survey.sql.";
   }
 
   if (message.toLowerCase().includes("first-stage community rollout")) {

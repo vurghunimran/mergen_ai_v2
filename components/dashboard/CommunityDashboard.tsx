@@ -62,6 +62,7 @@ import {
   type RewardActivation,
   type RewardCatalogItem
 } from "@/lib/reward-activations";
+import { WELCOME_SURVEY_CREDITS } from "@/lib/welcome-survey";
 
 const navigationItems = [
   { icon: Home, label: "Dashboard", section: "dashboard" },
@@ -161,8 +162,27 @@ function getSettingsErrorMessage(error: unknown) {
 }
 
 function estimateSurveyCredits(survey: ClientSurvey) {
-  void survey;
+  if (survey.kind === "welcome") {
+    return String(survey.fixedCredits ?? WELCOME_SURVEY_CREDITS);
+  }
+
   return `${MIN_TRUST_CREDITS}-${MAX_TRUST_CREDITS}`;
+}
+
+function getSurveyRewardNote(survey: ClientSurvey) {
+  if (survey.kind === "welcome") {
+    return "Guaranteed after you complete the welcome survey.";
+  }
+
+  return "Final credits depend on your trust score after submission.";
+}
+
+function getCompletionScoreLabel(completion: CommunityCompletion) {
+  if (completion.kind === "welcome" || completion.score === null) {
+    return "Welcome bonus";
+  }
+
+  return `${completion.score}/100`;
 }
 
 function matchesSurveyToMember(survey: ClientSurvey, memberProfile: ReturnType<typeof buildMemberProfile>) {
@@ -259,17 +279,31 @@ function formatDuration(seconds: number) {
 }
 
 function normalizeCommunityCompletion(completion: CommunityCompletion): CommunityCompletion {
+  const isWelcomeCompletion = completion.kind === "welcome";
+
   return {
     ...completion,
     summary:
       typeof completion.summary === "string" && completion.summary.trim().length > 0
         ? completion.summary
-        : "Survey completed before AI trust notes were enabled.",
+        : isWelcomeCompletion
+          ? "Welcome survey completed and your first credits were unlocked."
+          : "Survey completed before AI trust notes were enabled.",
+    score:
+      typeof completion.score === "number" && Number.isFinite(completion.score)
+        ? Math.max(0, Math.min(100, Math.round(completion.score)))
+        : null,
     durationSeconds:
       typeof completion.durationSeconds === "number" && completion.durationSeconds > 0
         ? completion.durationSeconds
         : 0,
-    source: completion.source === "gemini" ? "gemini" : "fallback"
+    source:
+      completion.source === "gemini"
+        ? "gemini"
+        : completion.source === "fixed"
+          ? "fixed"
+          : "fallback",
+    kind: isWelcomeCompletion ? "welcome" : "standard"
   };
 }
 
@@ -560,6 +594,15 @@ export default function CommunityDashboard({
     () => availableSurveys.find((survey) => survey.id === selectedSurveyId) ?? null,
     [availableSurveys, selectedSurveyId]
   );
+  const scoredCompletions = useMemo(
+    () =>
+      completedSurveys.filter(
+        (completion): completion is CommunityCompletion & { score: number } =>
+          typeof completion.score === "number"
+      ),
+    [completedSurveys]
+  );
+  const hasWelcomeCompletion = completedSurveys.some((completion) => completion.kind === "welcome");
 
   const totalEarnedCredits = completedSurveys.reduce(
     (sum, completion) => sum + completion.earnedCredits,
@@ -571,9 +614,10 @@ export default function CommunityDashboard({
   const totalCredits = Math.max(0, totalEarnedCredits - redeemedCredits);
   const doneSurveyCount = completedSurveys.length;
   const trustScore =
-    completedSurveys.length > 0
-      ? Math.round(completedSurveys.reduce((sum, completion) => sum + completion.score, 0) / completedSurveys.length)
-      : 0;
+    scoredCompletions.length > 0
+      ? Math.round(scoredCompletions.reduce((sum, completion) => sum + completion.score, 0) / scoredCompletions.length)
+      : null;
+  const trustScoreDisplay = trustScore === null ? (hasWelcomeCompletion ? "Pending" : "0%") : `${trustScore}%`;
   const creditsToday = completedSurveys
     .filter((completion) => new Date(completion.completedAt).toDateString() === new Date().toDateString())
     .reduce((sum, completion) => sum + completion.earnedCredits, 0);
@@ -602,7 +646,10 @@ export default function CommunityDashboard({
     if (availableSurveys[0]) {
       items.push({
         id: `survey-${availableSurveys[0].id}`,
-        title: `${availableSurveys[0].name} is available for your profile`,
+        title:
+          availableSurveys[0].kind === "welcome"
+            ? `${availableSurveys[0].name} is ready with a guaranteed ${estimateSurveyCredits(availableSurveys[0])} credits`
+            : `${availableSurveys[0].name} is available for your profile`,
         time: "Just now",
         icon: Sparkles,
         iconBg: "bg-[#f4efff]",
@@ -1105,77 +1152,137 @@ export default function CommunityDashboard({
         1,
         surveyStartedAt ? Math.round((Date.now() - surveyStartedAt) / 1000) : questions.length * 15
       );
-      const evaluationRequest: SurveyTrustEvaluationRequest = {
-        surveyTitle: selectedSurvey.name,
-        surveyDescription: selectedSurvey.description,
-        questions,
-        answers: buildSurveySubmissionAnswers(questions, surveyAnswers),
-        completionTimeSeconds
-      };
+      const submissionAnswers = buildSurveySubmissionAnswers(questions, surveyAnswers);
 
-      let evaluation: SurveyTrustEvaluationResponse;
+      let completion: CommunityCompletion;
+      let successMessage = "";
 
-      try {
-        const response = await fetch("/api/survey-trust-score", {
+      if (selectedSurvey.kind === "welcome") {
+        const submitResponse = await fetch(`/api/surveys/${selectedSurvey.id}/responses`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify(evaluationRequest)
+          body: JSON.stringify({
+            completionTimeSeconds,
+            answers: submissionAnswers
+          })
         });
 
-        const responseBody = (await response.json()) as Partial<SurveyTrustEvaluationResponse> & { error?: string };
+        const submitData = (await submitResponse.json().catch(() => ({}))) as {
+          submittedAt?: string;
+          earnedCredits?: number;
+          summary?: string;
+          source?: SurveyTrustEvaluationResponse["source"];
+          error?: string;
+        };
 
-        if (!response.ok || typeof responseBody.trustScore !== "number" || typeof responseBody.credits !== "number") {
-          throw new Error(responseBody.error ?? "AI trust scoring failed.");
+        if (!submitResponse.ok) {
+          throw new Error(submitData.error ?? "Welcome survey submission failed.");
         }
 
-        evaluation = {
-          trustScore: responseBody.trustScore,
-          credits: responseBody.credits,
-          summary: responseBody.summary ?? "AI reviewed the response quality and timing.",
-          strengths: Array.isArray(responseBody.strengths) ? responseBody.strengths : [],
-          risks: Array.isArray(responseBody.risks) ? responseBody.risks : [],
-          completionTimeSeconds: responseBody.completionTimeSeconds ?? completionTimeSeconds,
-          source: responseBody.source === "gemini" ? "gemini" : "fallback"
+        const earnedCredits =
+          typeof submitData.earnedCredits === "number"
+            ? submitData.earnedCredits
+            : selectedSurvey.fixedCredits ?? WELCOME_SURVEY_CREDITS;
+        const summary =
+          typeof submitData.summary === "string" && submitData.summary.trim().length > 0
+            ? submitData.summary
+            : "Congratulations! You've completed your first survey 🎉";
+
+        completion = {
+          surveyId: selectedSurvey.id,
+          surveyName: selectedSurvey.name,
+          earnedCredits,
+          score: null,
+          completedAt: submitData.submittedAt ?? new Date().toISOString(),
+          summary,
+          durationSeconds: completionTimeSeconds,
+          source: submitData.source === "fixed" ? "fixed" : "fallback",
+          kind: "welcome"
         };
-      } catch {
-        evaluation = buildFallbackTrustEvaluation(evaluationRequest);
-      }
+        successMessage = `${selectedSurvey.name} submitted successfully. ${earnedCredits} welcome credits added to your balance. ${summary}`;
+      } else {
+        const evaluationRequest: SurveyTrustEvaluationRequest = {
+          surveyTitle: selectedSurvey.name,
+          surveyDescription: selectedSurvey.description,
+          questions,
+          answers: submissionAnswers,
+          completionTimeSeconds
+        };
 
-      const submitResponse = await fetch(`/api/surveys/${selectedSurvey.id}/responses`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          completionTimeSeconds: evaluation.completionTimeSeconds,
-          trustScore: evaluation.trustScore,
+        let evaluation: SurveyTrustEvaluationResponse;
+
+        try {
+          const response = await fetch("/api/survey-trust-score", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(evaluationRequest)
+          });
+
+          const responseBody = (await response.json()) as Partial<SurveyTrustEvaluationResponse> & {
+            error?: string;
+          };
+
+          if (
+            !response.ok ||
+            typeof responseBody.trustScore !== "number" ||
+            typeof responseBody.credits !== "number"
+          ) {
+            throw new Error(responseBody.error ?? "AI trust scoring failed.");
+          }
+
+          evaluation = {
+            trustScore: responseBody.trustScore,
+            credits: responseBody.credits,
+            summary: responseBody.summary ?? "AI reviewed the response quality and timing.",
+            strengths: Array.isArray(responseBody.strengths) ? responseBody.strengths : [],
+            risks: Array.isArray(responseBody.risks) ? responseBody.risks : [],
+            completionTimeSeconds: responseBody.completionTimeSeconds ?? completionTimeSeconds,
+            source: responseBody.source === "gemini" ? "gemini" : "fallback"
+          };
+        } catch {
+          evaluation = buildFallbackTrustEvaluation(evaluationRequest);
+        }
+
+        const submitResponse = await fetch(`/api/surveys/${selectedSurvey.id}/responses`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            completionTimeSeconds: evaluation.completionTimeSeconds,
+            trustScore: evaluation.trustScore,
+            earnedCredits: evaluation.credits,
+            summary: evaluation.summary,
+            answers: evaluationRequest.answers
+          })
+        });
+
+        const submitData = (await submitResponse.json().catch(() => ({}))) as {
+          submittedAt?: string;
+          error?: string;
+        };
+
+        if (!submitResponse.ok) {
+          throw new Error(submitData.error ?? "Survey submission failed.");
+        }
+
+        completion = {
+          surveyId: selectedSurvey.id,
+          surveyName: selectedSurvey.name,
           earnedCredits: evaluation.credits,
+          score: evaluation.trustScore,
+          completedAt: submitData.submittedAt ?? new Date().toISOString(),
           summary: evaluation.summary,
-          answers: evaluationRequest.answers
-        })
-      });
-
-      const submitData = (await submitResponse.json().catch(() => ({}))) as {
-        submittedAt?: string;
-        error?: string;
-      };
-
-      if (!submitResponse.ok) {
-        throw new Error(submitData.error ?? "Survey submission failed.");
+          durationSeconds: evaluation.completionTimeSeconds,
+          source: evaluation.source,
+          kind: "standard"
+        };
+        successMessage = `${selectedSurvey.name} submitted successfully. ${evaluation.credits} credits added from your ${evaluation.trustScore}% trust score. ${evaluation.summary}`;
       }
-
-      const completion: CommunityCompletion = {
-        surveyId: selectedSurvey.id,
-        surveyName: selectedSurvey.name,
-        earnedCredits: evaluation.credits,
-        score: evaluation.trustScore,
-        completedAt: submitData.submittedAt ?? new Date().toISOString(),
-        summary: evaluation.summary,
-        durationSeconds: evaluation.completionTimeSeconds,
-        source: evaluation.source
-      };
 
       const nextCompletions = mergeCommunityCompletions(completedSurveys, [completion]);
       window.localStorage.setItem(
@@ -1195,9 +1302,7 @@ export default function CommunityDashboard({
         )
       );
 
-      setSurveyNotice(
-        `${selectedSurvey.name} submitted successfully. ${evaluation.credits} credits added from your ${evaluation.trustScore}% trust score. ${evaluation.summary}`
-      );
+      setSurveyNotice(successMessage);
       setSelectedSurveyId(null);
       setSurveyAnswers({});
       setSurveyError("");
@@ -1458,7 +1563,7 @@ export default function CommunityDashboard({
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="mb-1 text-sm text-gray-500">Trust Score</p>
-                        <p className="text-3xl font-bold text-gray-900">{trustScore}%</p>
+                        <p className="text-3xl font-bold text-gray-900">{trustScoreDisplay}</p>
                       </div>
                       <div className="rounded-lg bg-[#f4efff] p-3">
                         <Shield className="h-6 w-6 text-[#7c3aed]" />
@@ -1530,7 +1635,7 @@ export default function CommunityDashboard({
                                 <div className="mb-3 flex items-center space-x-3">
                                   <h3 className="font-semibold text-gray-900">{survey.name}</h3>
                                   <span className="rounded-full bg-[#efe7ff] px-2.5 py-0.5 text-xs font-medium text-[#6941c6]">
-                                    matched
+                                    {survey.kind === "welcome" ? "welcome bonus" : "matched"}
                                   </span>
                                 </div>
 
@@ -1564,7 +1669,7 @@ export default function CommunityDashboard({
                                   onClick={() => handleOpenSurvey(survey)}
                                   className="rounded-full bg-[linear-gradient(135deg,#6d3fd1_0%,#8b5cf6_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(124,58,237,0.22)] transition hover:opacity-90"
                                 >
-                                  Open Survey
+                                  {survey.kind === "welcome" ? "Start Welcome Survey" : "Open Survey"}
                                 </button>
                               </div>
                             </div>
@@ -1614,7 +1719,11 @@ export default function CommunityDashboard({
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <h1 className={sectionTitleClassName}>Take Survey</h1>
-                      <p className="mt-3 text-[16px] text-[#667085]">Answer the full survey and submit it to add credits to your balance.</p>
+                      <p className="mt-3 text-[16px] text-[#667085]">
+                        {selectedSurvey.kind === "welcome"
+                          ? `Complete your welcome survey to unlock ${estimateSurveyCredits(selectedSurvey)} guaranteed credits.`
+                          : "Answer the full survey and submit it to add credits to your balance."}
+                      </p>
                     </div>
                     <button
                       type="button"
@@ -1641,7 +1750,7 @@ export default function CommunityDashboard({
                       <div className="rounded-[20px] border border-[#dccbff] bg-[#faf7ff] px-4 py-3 text-right">
                         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b5cf6]">Reward</p>
                         <p className="mt-1 text-[22px] font-bold text-[#4f2a78]">{estimateSurveyCredits(selectedSurvey)} credits</p>
-                        <p className="mt-1 text-xs text-[#8a94a6]">Final credits depend on your trust score after submission.</p>
+                        <p className="mt-1 text-xs text-[#8a94a6]">{getSurveyRewardNote(selectedSurvey)}</p>
                       </div>
                     </div>
 
@@ -1692,7 +1801,13 @@ export default function CommunityDashboard({
                             disabled={isSubmittingSurvey}
                             className="rounded-full bg-[linear-gradient(135deg,#6d3fd1_0%,#8b5cf6_100%)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(124,58,237,0.22)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                           >
-                            {isSubmittingSurvey ? "AI Reviewing..." : "Submit Survey"}
+                            {isSubmittingSurvey
+                              ? selectedSurvey.kind === "welcome"
+                                ? "Submitting..."
+                                : "AI Reviewing..."
+                              : selectedSurvey.kind === "welcome"
+                                ? "Complete Welcome Survey"
+                                : "Submit Survey"}
                           </button>
                         </div>
                       </>
@@ -1773,7 +1888,7 @@ export default function CommunityDashboard({
                             <th className="border-b border-gray-200 pb-4 pr-6">Survey</th>
                             <th className="border-b border-gray-200 pb-4 pr-6">Completed</th>
                             <th className="border-b border-gray-200 pb-4 pr-6">Credits</th>
-                            <th className="border-b border-gray-200 pb-4">Score</th>
+                            <th className="border-b border-gray-200 pb-4">Score / Result</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1791,7 +1906,7 @@ export default function CommunityDashboard({
                                 {completion.earnedCredits}
                               </td>
                               <td className="border-b border-gray-100 py-6 align-top text-[15px] font-semibold text-[#374151]">
-                                {completion.score}/100
+                                {getCompletionScoreLabel(completion)}
                               </td>
                             </tr>
                           ))}
@@ -1827,8 +1942,12 @@ export default function CommunityDashboard({
 
                   <div className="rounded-[24px] border border-[#e9ddff] bg-white p-5 shadow-sm">
                     <p className="text-sm font-medium text-[#8a94a6]">Current trust score</p>
-                    <p className="mt-2 text-[34px] font-bold tracking-[-0.03em] text-[#4f2a78]">{trustScore}%</p>
-                    <p className="mt-2 text-sm text-[#667085]">Higher trust scores move your survey rewards closer to the top of the 20-70 credit range.</p>
+                    <p className="mt-2 text-[34px] font-bold tracking-[-0.03em] text-[#4f2a78]">{trustScoreDisplay}</p>
+                    <p className="mt-2 text-sm text-[#667085]">
+                      {trustScore === null && hasWelcomeCompletion
+                        ? "Your trust score starts after your first matched research survey."
+                        : "Higher trust scores move your survey rewards closer to the top of the 20-70 credit range."}
+                    </p>
                   </div>
                 </div>
 

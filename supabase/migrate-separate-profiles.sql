@@ -186,6 +186,16 @@ create table if not exists public.survey_responses (
   unique (survey_id, respondent_id)
 );
 
+create table if not exists public.welcome_survey_completions (
+  id uuid primary key default gen_random_uuid(),
+  respondent_id uuid not null unique references public.profiles (id) on delete cascade,
+  submitted_at timestamptz not null default timezone('utc', now()),
+  completion_time_seconds integer not null check (completion_time_seconds > 0),
+  earned_credits integer not null default 30 check (earned_credits = 30),
+  summary text not null default '',
+  answers jsonb not null default '[]'::jsonb
+);
+
 create table if not exists public.survey_notifications (
   id uuid primary key default gen_random_uuid(),
   survey_id bigint not null references public.surveys (id) on delete cascade,
@@ -625,6 +635,7 @@ alter table public.client_profiles enable row level security;
 alter table public.community_profiles enable row level security;
 alter table public.surveys enable row level security;
 alter table public.survey_responses enable row level security;
+alter table public.welcome_survey_completions enable row level security;
 alter table public.survey_notifications enable row level security;
 alter table public.telegram_notification_subscriptions enable row level security;
 alter table public.telegram_link_tokens enable row level security;
@@ -763,5 +774,24 @@ with check (
     select 1
     from public.surveys
     where id = survey_id and status = 'published'
+  )
+);
+
+drop policy if exists "Community members can view their own welcome survey completion" on public.welcome_survey_completions;
+create policy "Community members can view their own welcome survey completion"
+on public.welcome_survey_completions
+for select
+using (respondent_id = auth.uid());
+
+drop policy if exists "Community members can submit their own welcome survey completion" on public.welcome_survey_completions;
+create policy "Community members can submit their own welcome survey completion"
+on public.welcome_survey_completions
+for insert
+with check (
+  respondent_id = auth.uid()
+  and exists (
+    select 1
+    from public.profiles
+    where id = auth.uid() and role = 'community'
   )
 );

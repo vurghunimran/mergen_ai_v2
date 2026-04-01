@@ -15,6 +15,11 @@ import {
   hasSurveyExpired,
   normalizeSurveyDistributionStage
 } from "@/lib/survey-rollout";
+import {
+  buildWelcomeSurvey,
+  WELCOME_SURVEY_ID,
+  WELCOME_SURVEY_TITLE
+} from "@/lib/welcome-survey";
 
 type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
@@ -50,6 +55,16 @@ export type SurveyResponseRow = {
   submitted_at: string;
   completion_time_seconds: number;
   trust_score: number;
+  earned_credits: number;
+  summary: string;
+  answers: Json | null;
+};
+
+export type WelcomeSurveyCompletionRow = {
+  id: string;
+  respondent_id: string;
+  submitted_at: string;
+  completion_time_seconds: number;
   earned_credits: number;
   summary: string;
   answers: Json | null;
@@ -158,7 +173,7 @@ export function parseSurveyAudience(value: unknown): SurveyAudience | undefined 
   };
 }
 
-function parseSurveySubmissionAnswers(value: unknown): SurveySubmissionAnswer[] {
+export function parseSurveySubmissionAnswers(value: unknown): SurveySubmissionAnswer[] {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -223,7 +238,22 @@ function mapCommunityCompletionRow(row: CommunityCompletionRow): CommunityComple
     completedAt: row.submitted_at,
     summary: row.summary,
     durationSeconds: row.completion_time_seconds,
-    source: "fallback"
+    source: "fallback",
+    kind: "standard"
+  };
+}
+
+function mapWelcomeSurveyCompletionRow(row: WelcomeSurveyCompletionRow): CommunityCompletion {
+  return {
+    surveyId: WELCOME_SURVEY_ID,
+    surveyName: WELCOME_SURVEY_TITLE,
+    earnedCredits: row.earned_credits,
+    score: null,
+    completedAt: row.submitted_at,
+    summary: row.summary,
+    durationSeconds: row.completion_time_seconds,
+    source: "fixed",
+    kind: "welcome"
   };
 }
 
@@ -268,7 +298,8 @@ export function mapSurveyRowToClientSurvey(row: SurveyRow, responseRows: SurveyR
     researchScope: row.research_scope ?? "",
     hypothesis: row.hypothesis ?? "",
     includeDetailedAI: row.include_detailed_ai,
-    rawResponses
+    rawResponses,
+    kind: "standard"
   };
 }
 
@@ -314,6 +345,49 @@ async function listSurveyResponses(supabase: SupabaseClient, surveyIds: number[]
   }
 
   return (data ?? []) as SurveyResponseRow[];
+}
+
+export async function listWelcomeSurveyCompletionRows(
+  supabase: SupabaseClient,
+  respondentIds?: string[]
+) {
+  if (Array.isArray(respondentIds) && respondentIds.length === 0) {
+    return [] as WelcomeSurveyCompletionRow[];
+  }
+
+  let query = supabase
+    .from("welcome_survey_completions")
+    .select("id,respondent_id,submitted_at,completion_time_seconds,earned_credits,summary,answers")
+    .order("submitted_at", { ascending: false });
+
+  if (Array.isArray(respondentIds)) {
+    query = query.in("respondent_id", respondentIds);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as WelcomeSurveyCompletionRow[];
+}
+
+export async function getWelcomeSurveyCompletion(
+  supabase: SupabaseClient,
+  respondentId: string
+) {
+  const { data, error } = await supabase
+    .from("welcome_survey_completions")
+    .select("id,respondent_id,submitted_at,completion_time_seconds,earned_credits,summary,answers")
+    .eq("respondent_id", respondentId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return (data as WelcomeSurveyCompletionRow | null) ?? null;
 }
 
 function groupResponsesBySurveyId(responseRows: SurveyResponseRow[]) {
@@ -387,9 +461,10 @@ export async function listPublishedSurveys(supabase: SupabaseClient) {
 }
 
 export async function listPublishedSurveysForRespondent(supabase: SupabaseClient, respondentId: string) {
-  const [surveyRows, responseRows] = await Promise.all([
+  const [surveyRows, responseRows, welcomeCompletion] = await Promise.all([
     listPublishedSurveys(supabase),
-    supabase.from("survey_responses").select("survey_id").eq("respondent_id", respondentId)
+    supabase.from("survey_responses").select("survey_id").eq("respondent_id", respondentId),
+    getWelcomeSurveyCompletion(supabase, respondentId)
   ]);
 
   const { data, error } = responseRows;
@@ -399,20 +474,36 @@ export async function listPublishedSurveysForRespondent(supabase: SupabaseClient
   }
 
   const submittedSurveyIds = new Set((data ?? []).map((row) => row.survey_id as number));
+  const availableSurveys = surveyRows.filter((survey) => !submittedSurveyIds.has(survey.id));
 
-  return surveyRows.filter((survey) => !submittedSurveyIds.has(survey.id));
+  if (submittedSurveyIds.size === 0 && !welcomeCompletion) {
+    return [buildWelcomeSurvey(), ...availableSurveys];
+  }
+
+  return availableSurveys;
 }
 
 export async function listCommunityCompletions(supabase: SupabaseClient, respondentId: string) {
-  const { data, error } = await supabase
-    .from("survey_responses")
-    .select("survey_id,submitted_at,completion_time_seconds,trust_score,earned_credits,summary,surveys(name)")
-    .eq("respondent_id", respondentId)
-    .order("submitted_at", { ascending: false });
+  const [{ data, error }, welcomeCompletion] = await Promise.all([
+    supabase
+      .from("survey_responses")
+      .select("survey_id,submitted_at,completion_time_seconds,trust_score,earned_credits,summary,surveys(name)")
+      .eq("respondent_id", respondentId)
+      .order("submitted_at", { ascending: false }),
+    getWelcomeSurveyCompletion(supabase, respondentId)
+  ]);
 
   if (error) {
     throw error;
   }
 
-  return ((data ?? []) as CommunityCompletionRow[]).map(mapCommunityCompletionRow);
+  const completions = ((data ?? []) as CommunityCompletionRow[]).map(mapCommunityCompletionRow);
+
+  if (welcomeCompletion) {
+    completions.push(mapWelcomeSurveyCompletionRow(welcomeCompletion));
+  }
+
+  return completions.sort(
+    (left, right) => new Date(right.completedAt).getTime() - new Date(left.completedAt).getTime()
+  );
 }

@@ -17,6 +17,10 @@ type RewardBalanceRow = {
   earned_credits: number;
 };
 
+type WelcomeRewardBalanceRow = {
+  earned_credits: number;
+};
+
 type RewardSpendRow = {
   credits: number;
   status: "activated" | "fulfilled" | "cancelled";
@@ -115,9 +119,13 @@ export async function POST(request: Request) {
 
   try {
     const admin = createAdminClient();
-    const [earnedCreditsResult, redeemedCreditsResult] = await Promise.all([
+    const [earnedCreditsResult, welcomeCreditsResult, redeemedCreditsResult] = await Promise.all([
       admin
         .from("survey_responses")
+        .select("earned_credits")
+        .eq("respondent_id", authorized.profile.id),
+      admin
+        .from("welcome_survey_completions")
         .select("earned_credits")
         .eq("respondent_id", authorized.profile.id),
       admin.from("reward_activations").select("credits,status").eq("member_id", authorized.profile.id)
@@ -127,14 +135,23 @@ export async function POST(request: Request) {
       throw earnedCreditsResult.error;
     }
 
+    if (welcomeCreditsResult.error) {
+      throw welcomeCreditsResult.error;
+    }
+
     if (redeemedCreditsResult.error) {
       throw redeemedCreditsResult.error;
     }
 
-    const totalEarnedCredits = ((earnedCreditsResult.data ?? []) as RewardBalanceRow[]).reduce(
-      (sum, row) => sum + row.earned_credits,
-      0
-    );
+    const totalEarnedCredits =
+      ((earnedCreditsResult.data ?? []) as RewardBalanceRow[]).reduce(
+        (sum, row) => sum + row.earned_credits,
+        0
+      ) +
+      ((welcomeCreditsResult.data ?? []) as WelcomeRewardBalanceRow[]).reduce(
+        (sum, row) => sum + row.earned_credits,
+        0
+      );
     const totalRedeemedCredits = ((redeemedCreditsResult.data ?? []) as RewardSpendRow[])
       .filter((row) => row.status !== "cancelled")
       .reduce((sum, row) => sum + row.credits, 0);

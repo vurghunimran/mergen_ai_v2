@@ -1,7 +1,11 @@
 import "server-only";
 import { ageSpanOptions, genderOptions } from "@/lib/auth-options";
 import { getCommunityLaunchRegionByCountry, communityLaunchTotalMembers } from "@/lib/community-distribution";
-import { parseSurveyAudience, type SurveyRow } from "@/lib/survey-db";
+import {
+  parseSurveyAudience,
+  type SurveyRow,
+  type WelcomeSurveyCompletionRow
+} from "@/lib/survey-db";
 import { previewUpcomingSurveyDelivery } from "@/lib/survey-distribution";
 import {
   calculateSurveyDaysRemaining,
@@ -26,6 +30,13 @@ type SurveyResponseSummaryRow = {
   survey_id: number;
   respondent_id: string;
   trust_score: number;
+  earned_credits: number;
+  completion_time_seconds: number;
+  submitted_at: string;
+};
+
+type EarnedCreditsSummaryRow = {
+  respondent_id: string;
   earned_credits: number;
   completion_time_seconds: number;
   submitted_at: string;
@@ -177,7 +188,7 @@ function groupNotificationsBySurveyId(rows: SurveyNotificationRow[]) {
   }, {});
 }
 
-function buildMemberCreditsById(rows: SurveyResponseSummaryRow[]) {
+function buildMemberCreditsById(rows: EarnedCreditsSummaryRow[]) {
   const now = new Date();
   const todayStart = new Date(now);
   todayStart.setHours(0, 0, 0, 0);
@@ -498,6 +509,7 @@ export async function getAdminCommunityOverview(): Promise<AdminCommunityOvervie
     { data: profileData, error: profileError },
     { data: communityData, error: communityError },
     { data: responseData, error: responseError },
+    { data: welcomeData, error: welcomeError },
     { data: rewardData, error: rewardError }
   ] = await Promise.all([
     admin.from("profiles").select("id,role,email,first_name,last_name,created_at"),
@@ -509,6 +521,9 @@ export async function getAdminCommunityOverview(): Promise<AdminCommunityOvervie
     admin
       .from("survey_responses")
       .select("survey_id,respondent_id,trust_score,earned_credits,completion_time_seconds,submitted_at"),
+    admin
+      .from("welcome_survey_completions")
+      .select("id,respondent_id,submitted_at,completion_time_seconds,earned_credits,summary,answers"),
     admin
       .from("reward_activations")
       .select("id,member_id,reward_id,reward_company,reward_subtitle,activation_email,credits,status,activated_at")
@@ -527,6 +542,10 @@ export async function getAdminCommunityOverview(): Promise<AdminCommunityOvervie
     throw responseError;
   }
 
+  if (welcomeError) {
+    throw welcomeError;
+  }
+
   if (rewardError && !isMissingRewardActivationTableError(rewardError)) {
     throw rewardError;
   }
@@ -534,13 +553,15 @@ export async function getAdminCommunityOverview(): Promise<AdminCommunityOvervie
   const profileRows = (profileData ?? []) as AdminProfileRow[];
   const communityRows = (communityData ?? []) as CommunityProfileRow[];
   const responseRows = (responseData ?? []) as SurveyResponseSummaryRow[];
+  const welcomeRows = (welcomeData ?? []) as WelcomeSurveyCompletionRow[];
   const rewardRows = rewardError ? [] : ((rewardData ?? []) as RewardActivationRow[]);
+  const earnedCreditRows: EarnedCreditsSummaryRow[] = [...responseRows, ...welcomeRows];
 
   const communityProfilesById = new Map(communityRows.map((row) => [row.id, row]));
   const communityMembers = profileRows.filter(
     (row) => row.role === "community" && communityProfilesById.has(row.id)
   );
-  const memberProgressById = buildMemberCreditsById(responseRows);
+  const memberProgressById = buildMemberCreditsById(earnedCreditRows);
   const redeemedCreditsByMemberId = buildRedeemedCreditsByMemberId(rewardRows);
   const mappedRewardActivations = rewardRows.map(mapRewardActivationRow);
   const activeRewardActivations = mappedRewardActivations.filter(
@@ -633,7 +654,7 @@ export async function getAdminCommunityOverview(): Promise<AdminCommunityOvervie
   );
 
   const totalTrustScore = responseRows.reduce((sum, row) => sum + row.trust_score, 0);
-  const totalEarnedCredits = responseRows.reduce((sum, row) => sum + row.earned_credits, 0);
+  const totalEarnedCredits = earnedCreditRows.reduce((sum, row) => sum + row.earned_credits, 0);
   const totalRedeemedCredits = activeRewardActivations.reduce(
     (sum, activation) => sum + activation.credits,
     0
@@ -644,7 +665,7 @@ export async function getAdminCommunityOverview(): Promise<AdminCommunityOvervie
     totalMembers: communityMembers.length,
     totalClients: profileRows.filter((profile) => profile.role === "client").length,
     launchCapacity: communityLaunchTotalMembers,
-    surveyCompletionCount: responseRows.length,
+    surveyCompletionCount: responseRows.length + welcomeRows.length,
     averageTrustScore: responseRows.length > 0 ? Math.round(totalTrustScore / responseRows.length) : 0,
     totalEarnedCredits,
     totalRedeemedCredits,

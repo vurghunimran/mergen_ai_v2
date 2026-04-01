@@ -10,9 +10,11 @@ import {
   normalizeSurveyDistributionStage
 } from "@/lib/survey-rollout";
 import { buildForbiddenSurveyResponse, requireAuthorizedProfile } from "@/lib/survey-authorization";
-import { parseSurveyAudience, type SurveyRow } from "@/lib/survey-db";
+import { getSurveyStorageErrorMessage } from "@/lib/survey-storage-errors";
+import { parseSurveyAudience, parseSurveySubmissionAnswers, type SurveyRow } from "@/lib/survey-db";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { evaluateWelcomeSurvey, isWelcomeSurveyId, WELCOME_SURVEY_QUESTIONS } from "@/lib/welcome-survey";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +30,11 @@ type SurveyResponseRequestBody = {
   earnedCredits?: number;
   summary?: string;
   answers?: unknown[];
+};
+
+type WelcomeSurveyResponsePayload = {
+  completionTimeSeconds: number;
+  answers: ReturnType<typeof parseSurveySubmissionAnswers>;
 };
 
 function parseSurveyId(value: string) {
@@ -59,6 +66,27 @@ function parseResponseBody(body: SurveyResponseRequestBody | null) {
   };
 }
 
+function parseWelcomeSurveyResponseBody(body: SurveyResponseRequestBody | null): WelcomeSurveyResponsePayload | null {
+  if (!body || !Array.isArray(body.answers)) {
+    return null;
+  }
+
+  const completionTimeSeconds =
+    typeof body.completionTimeSeconds === "number" && body.completionTimeSeconds > 0
+      ? Math.round(body.completionTimeSeconds)
+      : 0;
+  const answers = parseSurveySubmissionAnswers(body.answers);
+
+  if (completionTimeSeconds <= 0 || answers.length !== WELCOME_SURVEY_QUESTIONS.length) {
+    return null;
+  }
+
+  return {
+    completionTimeSeconds,
+    answers
+  };
+}
+
 export async function POST(request: Request, context: RouteContext) {
   const authorized = await requireAuthorizedProfile("community");
 
@@ -72,7 +100,61 @@ export async function POST(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Invalid survey id." }, { status: 400 });
   }
 
-  const payload = parseResponseBody((await request.json().catch(() => null)) as SurveyResponseRequestBody | null);
+  const requestBody = (await request.json().catch(() => null)) as SurveyResponseRequestBody | null;
+
+  if (isWelcomeSurveyId(surveyId)) {
+    const welcomePayload = parseWelcomeSurveyResponseBody(requestBody);
+
+    if (!welcomePayload) {
+      return NextResponse.json({ error: "Invalid welcome survey response payload." }, { status: 400 });
+    }
+
+    try {
+      const supabase = createClient();
+      const evaluation = evaluateWelcomeSurvey(welcomePayload.answers);
+      const { data, error } = await supabase
+        .from("welcome_survey_completions")
+        .insert({
+          respondent_id: authorized.profile.id,
+          completion_time_seconds: welcomePayload.completionTimeSeconds,
+          earned_credits: evaluation.earnedCredits,
+          summary: evaluation.summary,
+          answers: welcomePayload.answers
+        })
+        .select("id,submitted_at,earned_credits,summary")
+        .single();
+
+      if (error) {
+        if (error.code === "23505") {
+          return NextResponse.json({ error: "You have already submitted this survey." }, { status: 409 });
+        }
+
+        throw error;
+      }
+
+      return NextResponse.json({
+        success: true,
+        responseId: data.id,
+        submittedAt: data.submitted_at,
+        earnedCredits: data.earned_credits,
+        summary: data.summary,
+        score: null,
+        source: "fixed"
+      });
+    } catch (error) {
+      console.error("Failed to submit welcome survey response.", error);
+      return NextResponse.json(
+        {
+          error:
+            getSurveyStorageErrorMessage(error) ??
+            "Could not submit the welcome survey."
+        },
+        { status: 500 }
+      );
+    }
+  }
+
+  const payload = parseResponseBody(requestBody);
 
   if (!payload) {
     return NextResponse.json({ error: "Invalid survey response payload." }, { status: 400 });
@@ -166,6 +248,11 @@ export async function POST(request: Request, context: RouteContext) {
     });
   } catch (error) {
     console.error("Failed to submit survey response.", error);
-    return NextResponse.json({ error: "Could not submit survey response." }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: getSurveyStorageErrorMessage(error) ?? "Could not submit survey response."
+      },
+      { status: 500 }
+    );
   }
 }

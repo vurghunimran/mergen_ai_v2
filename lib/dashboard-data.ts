@@ -70,8 +70,10 @@ export type SurveyTrustEvaluationResponse = {
   strengths: string[];
   risks: string[];
   completionTimeSeconds: number;
-  source: "gemini" | "fallback";
+  source: "gemini" | "fallback" | "fixed";
 };
+
+export type SurveyKind = "standard" | "welcome";
 
 export type SurveyAudience = {
   countries: string[];
@@ -102,11 +104,12 @@ export type CommunityCompletion = {
   surveyId: number;
   surveyName: string;
   earnedCredits: number;
-  score: number;
+  score: number | null;
   completedAt: string;
   summary: string;
   durationSeconds: number;
   source: SurveyTrustEvaluationResponse["source"];
+  kind?: SurveyKind;
 };
 
 export type CommunityProgress = {
@@ -134,6 +137,8 @@ export type ClientSurvey = {
   hypothesis?: string;
   includeDetailedAI?: boolean;
   rawResponses?: SurveyResponseRecord[];
+  kind?: SurveyKind;
+  fixedCredits?: number;
 };
 
 export type SurveyCheckoutPayload = {

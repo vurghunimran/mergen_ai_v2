@@ -578,6 +578,35 @@ alter table public.survey_responses alter column submitted_at set default timezo
 alter table public.survey_responses alter column summary set default '';
 alter table public.survey_responses alter column answers set default '[]'::jsonb;
 
+create table if not exists public.welcome_survey_completions (
+  id uuid primary key default gen_random_uuid(),
+  respondent_id uuid not null unique references public.profiles (id) on delete cascade,
+  submitted_at timestamptz not null default timezone('utc', now()),
+  completion_time_seconds integer not null check (completion_time_seconds > 0),
+  earned_credits integer not null default 30 check (earned_credits = 30),
+  summary text not null default '',
+  answers jsonb not null default '[]'::jsonb
+);
+
+alter table public.welcome_survey_completions add column if not exists submitted_at timestamptz default timezone('utc', now());
+alter table public.welcome_survey_completions add column if not exists completion_time_seconds integer;
+alter table public.welcome_survey_completions add column if not exists earned_credits integer;
+alter table public.welcome_survey_completions add column if not exists summary text default '';
+alter table public.welcome_survey_completions add column if not exists answers jsonb default '[]'::jsonb;
+
+update public.welcome_survey_completions
+set
+  earned_credits = coalesce(earned_credits, 30),
+  summary = coalesce(summary, ''),
+  answers = coalesce(answers, '[]'::jsonb),
+  submitted_at = coalesce(submitted_at, timezone('utc', now()))
+where earned_credits is null or summary is null or answers is null or submitted_at is null;
+
+alter table public.welcome_survey_completions alter column submitted_at set default timezone('utc', now());
+alter table public.welcome_survey_completions alter column earned_credits set default 30;
+alter table public.welcome_survey_completions alter column summary set default '';
+alter table public.welcome_survey_completions alter column answers set default '[]'::jsonb;
+
 create table if not exists public.survey_notifications (
   id uuid primary key default gen_random_uuid(),
   survey_id bigint not null references public.surveys (id) on delete cascade,
@@ -1106,6 +1135,7 @@ alter table public.client_profiles enable row level security;
 alter table public.community_profiles enable row level security;
 alter table public.surveys enable row level security;
 alter table public.survey_responses enable row level security;
+alter table public.welcome_survey_completions enable row level security;
 alter table public.survey_notifications enable row level security;
 alter table public.telegram_notification_subscriptions enable row level security;
 alter table public.telegram_link_tokens enable row level security;
@@ -1263,5 +1293,24 @@ with check (
     select 1
     from public.surveys
     where id = survey_id and status = 'published'
+  )
+);
+
+drop policy if exists "Community members can view their own welcome survey completion" on public.welcome_survey_completions;
+create policy "Community members can view their own welcome survey completion"
+on public.welcome_survey_completions
+for select
+using (respondent_id = auth.uid());
+
+drop policy if exists "Community members can submit their own welcome survey completion" on public.welcome_survey_completions;
+create policy "Community members can submit their own welcome survey completion"
+on public.welcome_survey_completions
+for insert
+with check (
+  respondent_id = auth.uid()
+  and exists (
+    select 1
+    from public.profiles
+    where id = auth.uid() and role = 'community'
   )
 );
