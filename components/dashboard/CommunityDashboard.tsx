@@ -23,7 +23,8 @@ import {
   Sparkles,
   TrendingUp,
   User,
-  Wallet
+  Wallet,
+  X
 } from "lucide-react";
 import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
 import ProfileAvatarPicker from "@/components/dashboard/ProfileAvatarPicker";
@@ -36,6 +37,7 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { buildPersistedProfilePayload, upsertProfileRecords } from "@/lib/supabase/profile-db";
 import type { UserProfile } from "@/lib/supabase/types";
 import {
+  getCommunityDashboardAnnouncementStorageKey,
   type CommunityCompletion,
   type CommunityProgress,
   getCommunityDashboardProgressStorageKey,
@@ -71,6 +73,9 @@ const navigationItems = [
   { icon: Gift, label: "Rewards", section: "rewards" },
   { icon: Settings, label: "Settings", section: "settings" }
 ] as const;
+
+const COMMUNITY_ONBOARDING_ANNOUNCEMENT =
+  "We're working on onboarding our community while we finalize our documentation. Client surveys will be visible starting June 1st. Stay tuned and be among the first to participate!";
 
 type DashboardSection = "dashboard" | "earnings" | "rewards" | "settings" | "take-survey";
 
@@ -414,6 +419,7 @@ export default function CommunityDashboard({
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createSupabaseClient();
+  const communityAnnouncementStorageKey = getCommunityDashboardAnnouncementStorageKey(initialProfile.id);
   const communitySettingsStorageKey = getCommunityDashboardSettingsStorageKey(initialProfile.id);
   const communityProgressStorageKey = getCommunityDashboardProgressStorageKey(initialProfile.id);
   const [profileSnapshot, setProfileSnapshot] = useState<UserProfile>(initialProfile);
@@ -451,6 +457,7 @@ export default function CommunityDashboard({
   const [hasStartedSelectedSurvey, setHasStartedSelectedSurvey] = useState(false);
   const [surveyStartedAt, setSurveyStartedAt] = useState<number | null>(null);
   const [isSubmittingSurvey, setIsSubmittingSurvey] = useState(false);
+  const [isCommunityAnnouncementVisible, setIsCommunityAnnouncementVisible] = useState(true);
   const memberProfile = useMemo(() => buildMemberProfile(profileSnapshot), [profileSnapshot]);
 
   useEffect(() => {
@@ -550,6 +557,15 @@ export default function CommunityDashboard({
       avatarCustomDataUrl: localAvatarSettings.avatarCustomDataUrl ?? currentProfile.avatarCustomDataUrl
     }));
   }, [communitySettingsStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const isDismissed = window.localStorage.getItem(communityAnnouncementStorageKey) === "dismissed";
+    setIsCommunityAnnouncementVisible(!isDismissed);
+  }, [communityAnnouncementStorageKey]);
 
   useEffect(() => {
     if (searchParams.get("error") === "access-denied") {
@@ -753,6 +769,14 @@ export default function CommunityDashboard({
     setIsProfileMenuOpen(false);
     router.push("/auth?type=community");
     router.refresh();
+  }
+
+  function handleDismissCommunityAnnouncement() {
+    setIsCommunityAnnouncementVisible(false);
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(communityAnnouncementStorageKey, "dismissed");
+    }
   }
 
   function handleSettingsChange<Key extends keyof CommunitySettings>(field: Key, value: CommunitySettings[Key]) {
@@ -1562,6 +1586,33 @@ export default function CommunityDashboard({
 
             {activeSection === "dashboard" ? (
               <>
+                {isCommunityAnnouncementVisible ? (
+                  <div className="relative overflow-hidden rounded-[28px] border border-[#dbc9ff] bg-[linear-gradient(135deg,#f6edff_0%,#efe2ff_100%)] p-6 shadow-[0_18px_44px_rgba(124,58,237,0.10)]">
+                    <button
+                      type="button"
+                      onClick={handleDismissCommunityAnnouncement}
+                      aria-label="Close announcement"
+                      className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#dfd0ff] bg-white/85 text-[#6d3fd1] transition hover:bg-white"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+
+                    <div className="flex max-w-4xl items-start gap-4 pr-12">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-white/70 text-[#7c3aed] shadow-sm">
+                        <Sparkles className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8b5cf6]">
+                          Community Update
+                        </p>
+                        <p className="mt-3 text-[16px] leading-8 text-[#5b3a86]">
+                          {COMMUNITY_ONBOARDING_ANNOUNCEMENT}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="relative mb-8 h-64 overflow-hidden rounded-2xl shadow-lg">
                   <div className="absolute inset-0 bg-[linear-gradient(115deg,#3f2462_0%,#5b2d91_22%,#7c3aed_52%,#6941c6_76%,#9b6bff_100%)]" />
                   <div className="absolute inset-0 opacity-70 [background-image:linear-gradient(102deg,transparent_0%,rgba(255,255,255,0.12)_11%,transparent_18%,transparent_31%,rgba(255,255,255,0.08)_39%,transparent_47%,transparent_58%,rgba(255,255,255,0.12)_67%,transparent_75%,transparent_86%,rgba(255,255,255,0.1)_95%,transparent_100%)]" />

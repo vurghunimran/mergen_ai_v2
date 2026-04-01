@@ -1,6 +1,7 @@
 const CLIENT_DASHBOARD_SETTINGS_STORAGE_KEY = "mergen-client-dashboard-settings";
 const COMMUNITY_DASHBOARD_SETTINGS_STORAGE_KEY = "mergen-community-dashboard-settings";
 const COMMUNITY_DASHBOARD_PROGRESS_STORAGE_KEY = "mergen-community-dashboard-progress";
+const COMMUNITY_DASHBOARD_ANNOUNCEMENT_STORAGE_KEY = "mergen-community-dashboard-announcement";
 const CREATE_SURVEY_DRAFT_STORAGE_KEY = "mergen-client-create-survey-draft";
 const CLIENT_PENDING_POLAR_CHECKOUT_STORAGE_KEY = "mergen-client-pending-polar-checkout";
 export const SURVEY_PREVIEW_STORAGE_KEY = "mergen-survey-preview";
@@ -19,6 +20,10 @@ export function getCommunityDashboardSettingsStorageKey(userId: string) {
 
 export function getCommunityDashboardProgressStorageKey(userId: string) {
   return buildUserScopedStorageKey(COMMUNITY_DASHBOARD_PROGRESS_STORAGE_KEY, userId);
+}
+
+export function getCommunityDashboardAnnouncementStorageKey(userId: string) {
+  return buildUserScopedStorageKey(COMMUNITY_DASHBOARD_ANNOUNCEMENT_STORAGE_KEY, userId);
 }
 
 export function getCreateSurveyDraftStorageKey(userId: string) {
