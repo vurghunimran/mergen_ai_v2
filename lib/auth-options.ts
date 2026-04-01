@@ -217,13 +217,11 @@ export const ageSpanOptions = ["18-24", "25-34", "35-44", "45-54", "55-64", "65+
 export const genderOptions = ["Female", "Male", "Non-binary", "Prefer not to say"];
 
 export const salaryRangeOptions = [
-  "Under $500",
-  "$500-$999",
-  "$1,000-$1,999",
-  "$2,000-$3,499",
-  "$3,500-$4,999",
-  "$5,000-$7,499",
-  "$7,500-$9,999",
+  "Up to $500",
+  "Up to $1,000",
+  "Up to $2,500",
+  "Up to $5,000",
+  "Up to $10,000",
   "$10,000+"
 ];
 
@@ -260,14 +258,12 @@ export const industryOptions = [
 ];
 
 export const educationLevelOptions = [
-  "Secondary School",
-  "High School Diploma",
-  "Vocational Training",
-  "Associate Degree",
+  "Uneducated",
+  "High School",
+  "Undergraduate",
   "Bachelor's Degree",
   "Master's Degree",
   "Doctorate",
-  "Other"
 ];
 
 export const fieldOfStudyOptions = [

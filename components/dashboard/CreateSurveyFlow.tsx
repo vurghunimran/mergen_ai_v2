@@ -42,6 +42,13 @@ import {
   type SurveyRegion
 } from "@/lib/country-regions";
 import {
+  educationLevelOptions as communityEducationLevelOptions,
+  familyStatusOptions as communityFamilyStatusOptions,
+  interestOptions as communityInterestOptions,
+  residenceOptions as communityResidenceOptions,
+  salaryRangeOptions as communitySalaryRangeOptions
+} from "@/lib/auth-options";
+import {
   questionOptionsForType,
   surveyQuestionTypes,
   type SurveyAssistantRequest,
@@ -58,8 +65,10 @@ type SurveyQuestion = StoredSurveyQuestion;
 
 type SurveyDraft = {
   surveyTitle: string;
+  surveyDescription: string;
   researchArea: string;
   targetRegion: string;
+  generalAudience: boolean;
   selectedCountries: string[];
   ageMin: number;
   ageMax: number;
@@ -103,39 +112,22 @@ const researchAreas = [
   "Communication Studies"
 ] as const;
 
-const financialRanges = [
-  "All salary ranges",
-  "Under $500 / month",
-  "$500 - $1,000 / month",
-  "$1,001 - $2,500 / month",
-  "$2,501 - $5,000 / month",
-  "$5,001 - $10,000 / month",
-  "$10,000+ / month"
-] as const;
+const financialRanges = ["All salary ranges", ...communitySalaryRangeOptions];
 
 const genderOptions = ["All genders", "Female", "Male", "Non-binary", "Prefer not to say"] as const;
-const educationOptions = [
-  "Any education level",
-  "High school",
-  "Undergraduate",
-  "Bachelor's degree",
-  "Master's degree",
-  "Doctorate"
-] as const;
-const residenceOptions = ["Any residence type", "Urban area", "Suburban area", "Town", "Village"] as const;
-const familyStatusOptions = ["Any family status", "Single", "Married", "Partnered", "Parent / guardian"] as const;
-const interestOptions = [
-  "Online learning",
-  "Career growth",
-  "Technology",
-  "Research",
-  "Health",
-  "Finance",
-  "Travel",
-  "Entertainment",
-  "Sustainability",
-  "Entrepreneurship"
-] as const;
+const educationOptions = ["Any education level", ...communityEducationLevelOptions];
+const residenceOptions = ["Any residence type", ...communityResidenceOptions];
+const familyStatusOptions = ["Any family status", ...communityFamilyStatusOptions];
+const interestOptions = communityInterestOptions;
+
+const legacyInterestMapping: Record<string, string> = {
+  "Online learning": "Education",
+  "Career growth": "Business",
+  Research: "Science",
+  Entertainment: "Media and Entertainment",
+  Sustainability: "Environment",
+  Entrepreneurship: "Business"
+};
 
 const questionTypeOptions: QuestionType[] = surveyQuestionTypes;
 
@@ -149,8 +141,10 @@ const stageItems: Array<{ id: CreateSurveyStage; label: string }> = [
 function buildInitialDraft(): SurveyDraft {
   return {
     surveyTitle: "",
+    surveyDescription: "",
     researchArea: "Education Science",
     targetRegion: "North America",
+    generalAudience: false,
     selectedCountries: ["United States", "Canada"],
     ageMin: 25,
     ageMax: 55,
@@ -159,7 +153,7 @@ function buildInitialDraft(): SurveyDraft {
     education: "Any education level",
     residence: "Any residence type",
     familyStatus: "Any family status",
-    interests: ["Online learning"],
+    interests: ["Education"],
     questionCount: 10,
     respondentCount: 250,
     assistantPrompt: "",
@@ -170,7 +164,84 @@ function buildInitialDraft(): SurveyDraft {
   };
 }
 
+function sanitizeDraftInterests(interests: string[] | undefined) {
+  const normalizedInterests = (interests ?? [])
+    .map((interest) => legacyInterestMapping[interest] ?? interest)
+    .filter((interest, index, values) => interestOptions.includes(interest) && values.indexOf(interest) === index)
+    .slice(0, 3);
+
+  return normalizedInterests.length > 0 ? normalizedInterests : ["Education"];
+}
+
+function sanitizeDraftFinancialSituation(value: string | undefined) {
+  const normalizedValue =
+    value === "Under $500 / month"
+      ? "Up to $500"
+      : value === "$500 - $1,000 / month"
+        ? "Up to $1,000"
+        : value === "$1,001 - $2,500 / month"
+          ? "Up to $2,500"
+          : value === "$2,501 - $5,000 / month"
+            ? "Up to $5,000"
+            : value === "$5,001 - $10,000 / month"
+              ? "Up to $10,000"
+              : value === "$10,000+ / month"
+                ? "$10,000+"
+                : value;
+
+  return financialRanges.includes(normalizedValue ?? "")
+    ? (normalizedValue as string)
+    : "All salary ranges";
+}
+
+function sanitizeDraftEducation(value: string | undefined) {
+  const normalizedValue =
+    value === "High school"
+      ? "High School"
+      : value === "Bachelor's degree"
+        ? "Bachelor's Degree"
+        : value === "Master's degree"
+          ? "Master's Degree"
+          : value;
+
+  return educationOptions.includes(normalizedValue ?? "")
+    ? (normalizedValue as string)
+    : "Any education level";
+}
+
+function sanitizeDraftResidence(value: string | undefined) {
+  const normalizedValue =
+    value === "Urban area"
+      ? "City (Urban area)"
+      : value === "Suburban area"
+        ? "Suburban area (City outskirts)"
+        : value === "Village"
+          ? "Village (Rural area)"
+          : value;
+
+  return residenceOptions.includes(normalizedValue ?? "")
+    ? (normalizedValue as string)
+    : "Any residence type";
+}
+
+function sanitizeDraftFamilyStatus(value: string | undefined) {
+  const normalizedValue =
+    value === "Partnered"
+      ? "In a relationship"
+      : value === "Parent / guardian"
+        ? "Any family status"
+        : value;
+
+  return familyStatusOptions.includes(normalizedValue ?? "")
+    ? (normalizedValue as string)
+    : "Any family status";
+}
+
 function buildTargetLabel(draft: SurveyDraft) {
+  if (draft.generalAudience) {
+    return "General Audience";
+  }
+
   if (draft.selectedCountries.length > 0) {
     return draft.selectedCountries.join(", ");
   }
@@ -178,12 +249,30 @@ function buildTargetLabel(draft: SurveyDraft) {
   return draft.targetRegion;
 }
 
+function buildCommunityMessage(draft: SurveyDraft) {
+  const trimmedDescription = draft.surveyDescription.trim();
+
+  if (trimmedDescription) {
+    return trimmedDescription;
+  }
+
+  return `${draft.researchArea} survey for ${draft.gender.toLowerCase()} respondents aged ${draft.ageMin}-${draft.ageMax} in ${buildTargetLabel(draft)}.`;
+}
+
+function buildInterestSummary(interests: string[]) {
+  if (interests.length === 0) {
+    return "without a specific interest filter";
+  }
+
+  return `with interest in ${interests.join(", ").toLowerCase()}`;
+}
+
 function buildDefaultPrompt(draft: SurveyDraft) {
   return `I want to research ${draft.surveyTitle || "audience preferences"} with respondents in ${buildTargetLabel(draft)} for ${draft.researchArea.toLowerCase()}.`;
 }
 
 function buildDefaultScope(draft: SurveyDraft) {
-  return `Target respondents aged ${draft.ageMin}-${draft.ageMax}, ${draft.gender.toLowerCase()}, ${draft.education.toLowerCase()}, living in ${draft.residence.toLowerCase()}, with interest in ${draft.interests.join(", ").toLowerCase()}.`;
+  return `Target respondents aged ${draft.ageMin}-${draft.ageMax}, ${draft.gender.toLowerCase()}, ${draft.education.toLowerCase()}, living in ${draft.residence.toLowerCase()}, ${buildInterestSummary(draft.interests)}.`;
 }
 
 function buildDefaultHypothesis(draft: SurveyDraft) {
@@ -262,9 +351,18 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
       const parsedDraft = JSON.parse(storedDraft) as SavedCreateSurveyDraft;
 
       if (parsedDraft?.draft && parsedDraft?.stage) {
-        setDraft({
+        const restoredDraft = {
           ...buildInitialDraft(),
-          ...parsedDraft.draft
+          ...parsedDraft.draft,
+          interests: sanitizeDraftInterests(parsedDraft.draft.interests),
+          financialSituation: sanitizeDraftFinancialSituation(parsedDraft.draft.financialSituation),
+          education: sanitizeDraftEducation(parsedDraft.draft.education),
+          residence: sanitizeDraftResidence(parsedDraft.draft.residence),
+          familyStatus: sanitizeDraftFamilyStatus(parsedDraft.draft.familyStatus)
+        };
+
+        setDraft({
+          ...restoredDraft
         });
         setStage(parsedDraft.stage);
         setDraftNotice(`Draft restored from ${parsedDraft.savedAt}.`);
@@ -344,6 +442,13 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
     }));
   }
 
+  function handleGeneralAudienceToggle() {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      generalAudience: !currentDraft.generalAudience
+    }));
+  }
+
   function handleCountryAdd(country: string) {
     if (!country) return;
 
@@ -394,7 +499,8 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
       surveyTitle: nextDraft.surveyTitle,
       researchArea: nextDraft.researchArea,
       targetRegion: nextDraft.targetRegion,
-      selectedCountries: nextDraft.selectedCountries,
+      generalAudience: nextDraft.generalAudience,
+      selectedCountries: nextDraft.generalAudience ? [] : nextDraft.selectedCountries,
       ageMin: nextDraft.ageMin,
       ageMax: nextDraft.ageMax,
       financialSituation: nextDraft.financialSituation,
@@ -594,6 +700,20 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
     setDraftNotice("Changes saved!");
   }
 
+  function handleRemoveSurveyDraft() {
+    if (!window.confirm("Remove this survey draft?")) {
+      return;
+    }
+
+    window.localStorage.removeItem(draftStorageKey);
+    window.localStorage.removeItem(SURVEY_PREVIEW_STORAGE_KEY);
+    setDraft(buildInitialDraft());
+    setStage("define");
+    setDraftNotice("");
+    setGenerationError("");
+    onBackToDashboard();
+  }
+
   function handleOpenPreview() {
     const previewPayload: SurveyPreviewPayload = {
       title: draft.surveyTitle || "Survey Preview",
@@ -627,12 +747,13 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
         title: draft.surveyTitle,
         targetResponses: draft.respondentCount,
         questionCount: draft.questions.length || draft.questionCount,
-        description: `${draft.researchArea} survey for ${draft.gender.toLowerCase()} respondents aged ${draft.ageMin}-${draft.ageMax} in ${buildTargetLabel(draft)}.`,
+        description: buildCommunityMessage(draft),
         researchDescription: draft.assistantPrompt || buildDefaultPrompt(draft),
         researchScope: draft.researchScope || buildDefaultScope(draft),
         hypothesis: draft.hypothesis || buildDefaultHypothesis(draft),
         audience: {
-          countries: draft.selectedCountries,
+          countries: draft.generalAudience ? [] : draft.selectedCountries,
+          generalAudience: draft.generalAudience,
           ageMin: draft.ageMin,
           ageMax: draft.ageMax,
           gender: draft.gender,
@@ -767,6 +888,20 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                 />
               </label>
 
+              <label className="block md:col-span-2">
+                <span className="mb-2 block text-sm font-medium text-[#4b5563]">Message for community members</span>
+                <textarea
+                  value={draft.surveyDescription}
+                  onChange={(event) => updateDraft("surveyDescription", event.target.value)}
+                  rows={4}
+                  placeholder="Tell community members what this survey is about, why their input matters, and what they should expect before they begin."
+                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-[16px] text-gray-900 outline-none transition focus:border-[#ff6a00]"
+                />
+                <p className="mt-2 text-xs text-[#98a2b3]">
+                  This message is shown to members before they start answering the survey.
+                </p>
+              </label>
+
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-[#4b5563]">Research area</span>
                 <select
@@ -791,12 +926,35 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                 </p>
               </div>
 
+              <div className="mb-5 rounded-[22px] border border-[#ffd8bf] bg-[#fff7f1] p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-[#7c3412]">General Audience</p>
+                    <p className="mt-1 text-sm text-[#8a5a3d]">
+                      Search across the whole community instead of specific countries. Other filters still apply, and lower-activity members are prioritized first.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleGeneralAudienceToggle}
+                    className={`inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      draft.generalAudience
+                        ? "bg-[linear-gradient(135deg,#ff7a00_0%,#ea5f2d_100%)] text-white shadow-[0_14px_30px_rgba(255,106,0,0.18)]"
+                        : "border border-[#ffd1ad] bg-white text-[#d85d1c] hover:bg-[#fff4ea]"
+                    }`}
+                  >
+                    {draft.generalAudience ? "Enabled" : "Use General Audience"}
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <label className="block">
                   <span className="mb-2 block text-sm font-medium text-[#4b5563]">Regional group</span>
                   <select
                     value={draft.targetRegion}
                     onChange={(event) => handleRegionChange(event.target.value)}
+                    disabled={draft.generalAudience}
                     className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-[16px] text-gray-900 outline-none transition focus:border-[#ff6a00]"
                   >
                     {surveyRegionGroups.map((region) => (
@@ -806,7 +964,9 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                     ))}
                   </select>
                   <p className="mt-2 text-xs text-[#98a2b3]">
-                    Planned panel size for {currentRegion}: {currentRegionTarget.toLocaleString()} members.
+                    {draft.generalAudience
+                      ? "General audience is active, so the survey can reach members across the full rollout."
+                      : `Planned panel size for ${currentRegion}: ${currentRegionTarget.toLocaleString()} members.`}
                   </p>
                 </label>
 
@@ -818,7 +978,11 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                       handleCountryAdd(event.target.value);
                       event.target.value = "";
                     }}
-                    disabled={availableCountries.length === 0 || draft.selectedCountries.length >= 7}
+                    disabled={
+                      draft.generalAudience ||
+                      availableCountries.length === 0 ||
+                      draft.selectedCountries.length >= 7
+                    }
                     className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 text-[16px] text-gray-900 outline-none transition focus:border-[#ff6a00] disabled:cursor-not-allowed disabled:bg-gray-50"
                   >
                     <option value="">Add a country from this region</option>
@@ -835,23 +999,31 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                 </label>
               </div>
 
-              <div className="mt-5 flex flex-wrap gap-3">
-                {draft.selectedCountries.map((country) => (
-                  <button
-                    key={country}
-                    type="button"
-                    onClick={() => handleCountryRemove(country)}
-                    className="inline-flex items-center gap-2 rounded-full border border-[#ffd1ad] bg-[#fff4ea] px-4 py-2 text-sm font-medium text-[#d85d1c]"
-                  >
-                    {country}
-                    <X className="h-4 w-4" />
-                  </button>
-                ))}
-              </div>
+              {draft.generalAudience ? (
+                <div className="mt-5 rounded-2xl border border-dashed border-[#ffd1ad] bg-white px-4 py-4 text-sm text-[#8a5a3d]">
+                  We will look across the full community instead of limiting this survey to selected countries.
+                </div>
+              ) : (
+                <>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    {draft.selectedCountries.map((country) => (
+                      <button
+                        key={country}
+                        type="button"
+                        onClick={() => handleCountryRemove(country)}
+                        className="inline-flex items-center gap-2 rounded-full border border-[#ffd1ad] bg-[#fff4ea] px-4 py-2 text-sm font-medium text-[#d85d1c]"
+                      >
+                        {country}
+                        <X className="h-4 w-4" />
+                      </button>
+                    ))}
+                  </div>
 
-              <p className="mt-3 text-xs text-[#98a2b3]">
-                {draft.selectedCountries.length} / 7 countries selected. You can switch regions without losing the countries already added.
-              </p>
+                  <p className="mt-3 text-xs text-[#98a2b3]">
+                    {draft.selectedCountries.length} / 7 countries selected. You can switch regions without losing the countries already added.
+                  </p>
+                </>
+              )}
             </div>
 
             <div className="mt-6 rounded-[24px] border border-gray-200 bg-[#fcfcfd] p-5">
@@ -1058,7 +1230,11 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
               <button
                 type="button"
                 onClick={handleGenerateFromDefine}
-                disabled={!draft.surveyTitle.trim() || draft.selectedCountries.length === 0 || isGeneratingQuestions}
+                disabled={
+                  !draft.surveyTitle.trim() ||
+                  (!draft.generalAudience && draft.selectedCountries.length === 0) ||
+                  isGeneratingQuestions
+                }
                 className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff7a00_0%,#ea5f2d_100%)] px-7 py-3.5 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(255,106,0,0.22)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Wand2 className="h-4 w-4" />
@@ -1143,6 +1319,14 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                 ) : null}
                 <button
                   type="button"
+                  onClick={() => setStage("define")}
+                  className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2.5 text-sm font-semibold text-[#4b5563] transition hover:border-[#ffd1ad] hover:text-[#d85d1c]"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Go Back
+                </button>
+                <button
+                  type="button"
                   onClick={handleOpenPreview}
                   className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2.5 text-sm font-semibold text-[#4b5563] transition hover:border-[#ffd1ad] hover:text-[#d85d1c]"
                 >
@@ -1156,6 +1340,14 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                 >
                   <Save className="h-4 w-4" />
                   Save Changes
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveSurveyDraft}
+                  className="inline-flex items-center gap-2 rounded-full border border-[#f1c8d6] bg-[#fff5f8] px-4 py-2.5 text-sm font-semibold text-[#ad2a62] transition hover:border-[#e89bbc]"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Remove Survey
                 </button>
               </div>
             </div>
@@ -1289,7 +1481,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                 <p className="mt-2 text-[20px] font-semibold text-[#111827]">{draft.surveyTitle}</p>
               </div>
               <div className="rounded-[24px] border border-gray-200 bg-[#fcfcfd] p-5">
-                <p className="text-sm font-medium text-[#98a2b3]">Target countries</p>
+                <p className="text-sm font-medium text-[#98a2b3]">Audience</p>
                 <p className="mt-2 text-[20px] font-semibold text-[#111827]">{buildTargetLabel(draft)}</p>
               </div>
               <div className="rounded-[24px] border border-gray-200 bg-[#fcfcfd] p-5">
@@ -1445,7 +1637,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                 </div>
               </div>
               <p className="text-[15px] leading-7 text-[#667085]">
-                {draft.researchArea} study for {draft.gender.toLowerCase()} respondents aged {draft.ageMin}-{draft.ageMax} in {buildTargetLabel(draft)}, focused on {draft.interests.join(", ").toLowerCase()}.
+                {draft.researchArea} study for {draft.gender.toLowerCase()} respondents aged {draft.ageMin}-{draft.ageMax} in {buildTargetLabel(draft)}, {buildInterestSummary(draft.interests)}.
               </p>
               {launchMatchedRecipients > 0 ? (
                 <p className="text-sm text-[#7c3412]">

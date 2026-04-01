@@ -14,7 +14,6 @@ import {
   Lock,
   LogOut,
   Mail,
-  Moon,
   Phone,
   RefreshCw,
   Send,
@@ -22,7 +21,6 @@ import {
   Settings,
   Shield,
   Sparkles,
-  Sun,
   TrendingUp,
   User,
   Wallet
@@ -201,6 +199,14 @@ function buildFallbackQuestions(survey: ClientSurvey): StoredSurveyQuestion[] {
 
 function getSurveyQuestions(survey: ClientSurvey) {
   return survey.questions?.length ? survey.questions : buildFallbackQuestions(survey);
+}
+
+function getSurveyAudienceLabel(survey: ClientSurvey) {
+  if (survey.audience?.generalAudience || !survey.audience?.countries?.length) {
+    return "General Audience";
+  }
+
+  return survey.audience.countries.join(", ");
 }
 
 function buildInitialAnswers(questions: StoredSurveyQuestion[]) {
@@ -395,6 +401,7 @@ export default function CommunityDashboard({
   const [selectedSurveyId, setSelectedSurveyId] = useState<number | null>(null);
   const [surveyAnswers, setSurveyAnswers] = useState<SurveyAnswerMap>({});
   const [surveyError, setSurveyError] = useState("");
+  const [hasStartedSelectedSurvey, setHasStartedSelectedSurvey] = useState(false);
   const [surveyStartedAt, setSurveyStartedAt] = useState<number | null>(null);
   const [isSubmittingSurvey, setIsSubmittingSurvey] = useState(false);
   const memberProfile = useMemo(() => buildMemberProfile(profileSnapshot), [profileSnapshot]);
@@ -1000,8 +1007,15 @@ export default function CommunityDashboard({
     setSelectedSurveyId(survey.id);
     setSurveyAnswers(buildInitialAnswers(questions));
     setSurveyError("");
-    setSurveyStartedAt(Date.now());
+    setHasStartedSelectedSurvey(false);
+    setSurveyStartedAt(null);
     setActiveSection("take-survey");
+  }
+
+  function handleStartSelectedSurvey() {
+    setSurveyError("");
+    setHasStartedSelectedSurvey(true);
+    setSurveyStartedAt(Date.now());
   }
 
   function handleSingleAnswerChange(questionId: string, value: string) {
@@ -1187,6 +1201,7 @@ export default function CommunityDashboard({
       setSelectedSurveyId(null);
       setSurveyAnswers({});
       setSurveyError("");
+      setHasStartedSelectedSurvey(false);
       setSurveyStartedAt(null);
       setActiveSection("earnings");
     } catch (error) {
@@ -1195,6 +1210,7 @@ export default function CommunityDashboard({
           await refreshSurveyStateFromServer();
           setSelectedSurveyId(null);
           setSurveyAnswers({});
+          setHasStartedSelectedSurvey(false);
           setSurveyStartedAt(null);
           setActiveSection("earnings");
           setSurveyNotice("This survey was already submitted earlier. Your saved credits and completion history have been restored.");
@@ -1524,7 +1540,7 @@ export default function CommunityDashboard({
                                   <div>
                                     <p className="text-xs text-gray-500">Region / countries</p>
                                     <p className="font-semibold text-gray-900">
-                                      {survey.audience?.countries?.length ? survey.audience.countries.join(", ") : "Open audience"}
+                                      {getSurveyAudienceLabel(survey)}
                                     </p>
                                   </div>
                                   <div>
@@ -1606,6 +1622,7 @@ export default function CommunityDashboard({
                         setActiveSection("dashboard");
                         setSelectedSurveyId(null);
                         setSurveyError("");
+                        setHasStartedSelectedSurvey(false);
                         setSurveyStartedAt(null);
                       }}
                       className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#4b5563] transition hover:border-[#d9c7ff] hover:text-[#6d3fd1]"
@@ -1628,32 +1645,58 @@ export default function CommunityDashboard({
                       </div>
                     </div>
 
-                    <div className="mt-8 space-y-5">
-                      {getSurveyQuestions(selectedSurvey).map((question, index) => (
-                        <div key={question.id} className="rounded-[24px] border border-gray-200 bg-[#fcfcff] p-5">
-                          <div className="mb-4 flex items-center gap-3">
-                            <div className="rounded-full bg-[#f1ebff] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#7c3aed]">
-                              Q{index + 1}
-                            </div>
-                            <div className="text-sm text-[#98a2b3]">{question.type}</div>
-                          </div>
-                          <h3 className="text-[18px] font-semibold leading-7 text-[#1f2937]">{question.text}</h3>
-                          <div className="mt-4">{renderSurveyInput(question)}</div>
+                    {!hasStartedSelectedSurvey ? (
+                      <div className="mt-8 rounded-[24px] border border-[#dccbff] bg-[#faf7ff] p-6">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#7c3aed]">
+                          Before You Start
+                        </p>
+                        <p className="mt-4 text-[16px] leading-8 text-[#4f2a78]">
+                          {selectedSurvey.description ||
+                            "Review this survey introduction, then start when you are ready."}
+                        </p>
+                        <div className="mt-6 flex flex-wrap items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={handleStartSelectedSurvey}
+                            className="rounded-full bg-[linear-gradient(135deg,#6d3fd1_0%,#8b5cf6_100%)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(124,58,237,0.22)] transition hover:opacity-90"
+                          >
+                            Start Survey
+                          </button>
+                          <p className="text-sm text-[#8a94a6]">
+                            Questions will open after you confirm you are ready to begin.
+                          </p>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mt-8 space-y-5">
+                          {getSurveyQuestions(selectedSurvey).map((question, index) => (
+                            <div key={question.id} className="rounded-[24px] border border-gray-200 bg-[#fcfcff] p-5">
+                              <div className="mb-4 flex items-center gap-3">
+                                <div className="rounded-full bg-[#f1ebff] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#7c3aed]">
+                                  Q{index + 1}
+                                </div>
+                                <div className="text-sm text-[#98a2b3]">{question.type}</div>
+                              </div>
+                              <h3 className="text-[18px] font-semibold leading-7 text-[#1f2937]">{question.text}</h3>
+                              <div className="mt-4">{renderSurveyInput(question)}</div>
+                            </div>
+                          ))}
+                        </div>
 
-                    <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 pt-6">
-                      <div>{surveyError ? <p className="text-sm font-medium text-red-500">{surveyError}</p> : null}</div>
-                      <button
-                        type="button"
-                        onClick={() => void handleSubmitSurvey()}
-                        disabled={isSubmittingSurvey}
-                        className="rounded-full bg-[linear-gradient(135deg,#6d3fd1_0%,#8b5cf6_100%)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(124,58,237,0.22)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {isSubmittingSurvey ? "AI Reviewing..." : "Submit Survey"}
-                      </button>
-                    </div>
+                        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 pt-6">
+                          <div>{surveyError ? <p className="text-sm font-medium text-red-500">{surveyError}</p> : null}</div>
+                          <button
+                            type="button"
+                            onClick={() => void handleSubmitSurvey()}
+                            disabled={isSubmittingSurvey}
+                            className="rounded-full bg-[linear-gradient(135deg,#6d3fd1_0%,#8b5cf6_100%)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(124,58,237,0.22)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {isSubmittingSurvey ? "AI Reviewing..." : "Submit Survey"}
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </section>
               ) : (
@@ -1852,7 +1895,7 @@ export default function CommunityDashboard({
                 <div>
                   <h1 className={sectionTitleClassName}>Account Settings</h1>
                   <p className={`mt-3 text-[17px] ${settingsBodyTextClassName}`}>
-                    Manage your community profile, app preferences, and account security.
+                    Manage your community profile and account security.
                   </p>
                 </div>
 
@@ -1934,57 +1977,7 @@ export default function CommunityDashboard({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                      <div className={settingsCardClassName}>
-                        <div className="flex items-start gap-3">
-                          <div
-                            className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
-                              isSettingsDark ? "bg-[#302345]" : "bg-[#f1ebff]"
-                            }`}
-                          >
-                            <Sun className="h-5 w-5 text-[#7c3aed]" />
-                          </div>
-                          <div>
-                            <h3 className={`text-[20px] font-semibold ${isSettingsDark ? "text-white" : "text-[#111827]"}`}>
-                              App Preferences
-                            </h3>
-                            <p className={`mt-1 text-[15px] ${settingsBodyTextClassName}`}>Appearance</p>
-                            <p className={`mt-1 text-[15px] ${settingsMutedTextClassName}`}>Switch between light and dark themes</p>
-                          </div>
-                        </div>
-
-                        <div className="mt-6 grid grid-cols-2 gap-3">
-                          <button
-                            type="button"
-                            onClick={() => handleSettingsChange("appearance", "light")}
-                            className={`flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                              settingsForm.appearance === "light"
-                                ? "border-[#cbb4ff] bg-white text-[#6d3fd1] shadow-[0_10px_24px_rgba(124,58,237,0.08)]"
-                                : isSettingsDark
-                                  ? "border-[#433154] bg-[#160f1f] text-[#d5cbc3] hover:border-[#8b5cf6]"
-                                  : "border-gray-200 bg-white text-[#6b7280] hover:border-[#d9c7ff]"
-                            }`}
-                          >
-                            <Sun className="h-4 w-4" />
-                            Light
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleSettingsChange("appearance", "dark")}
-                            className={`flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                              settingsForm.appearance === "dark"
-                                ? "border-[#8b5cf6] bg-[#160f1f] text-white shadow-[0_10px_24px_rgba(124,58,237,0.15)]"
-                                : isSettingsDark
-                                  ? "border-[#433154] bg-[#160f1f] text-[#d5cbc3] hover:border-[#8b5cf6]"
-                                  : "border-gray-200 bg-white text-[#6b7280] hover:border-[#d9c7ff]"
-                            }`}
-                          >
-                            <Moon className="h-4 w-4" />
-                            Dark
-                          </button>
-                        </div>
-                      </div>
-
+                    <div className="grid grid-cols-1 gap-6">
                       <div className={settingsSecurityCardClassName}>
                         <div className="flex items-start gap-3">
                           <div
@@ -2028,26 +2021,6 @@ export default function CommunityDashboard({
                               buttonClassName={isSettingsDark ? "text-[#9d8bb2] hover:text-white" : "text-slate-400 hover:text-slate-600"}
                             />
                           </label>
-
-                          <div className="flex items-center justify-between rounded-2xl border border-dashed border-[#d9c7ff] px-4 py-3">
-                            <div>
-                              <p className={`text-sm font-semibold ${isSettingsDark ? "text-white" : "text-[#111827]"}`}>Two-factor Authentication</p>
-                              <p className={`mt-1 text-sm ${settingsMutedTextClassName}`}>Keep your account extra secure.</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleSettingsChange("twoFactorEnabled", !settingsForm.twoFactorEnabled)}
-                              className={`relative inline-flex h-7 w-12 items-center rounded-full transition ${
-                                settingsForm.twoFactorEnabled ? "bg-[#7c3aed]" : "bg-gray-300"
-                              }`}
-                            >
-                              <span
-                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
-                                  settingsForm.twoFactorEnabled ? "translate-x-6" : "translate-x-1"
-                                }`}
-                              />
-                            </button>
-                          </div>
                         </div>
                       </div>
                     </div>

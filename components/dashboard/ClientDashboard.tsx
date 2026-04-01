@@ -15,7 +15,6 @@ import {
   Loader2,
   LogOut,
   Mail,
-  Moon,
   MoreVertical,
   Phone,
   Plus,
@@ -24,7 +23,6 @@ import {
   Settings,
   Shield,
   Sparkles,
-  Sun,
   Trash2,
   TrendingUp,
   User,
@@ -390,9 +388,6 @@ export default function ClientDashboard({
   const settingsFormClassName = isSettingsDark
     ? "rounded-[28px] border border-[#312922] bg-[linear-gradient(180deg,#231d19_0%,#1a1512_100%)] p-8 text-white shadow-[0_22px_55px_rgba(15,23,42,0.18)]"
     : "rounded-[28px] border border-gray-200 bg-white p-8 shadow-[0_18px_44px_rgba(15,23,42,0.04)]";
-  const settingsCardClassName = isSettingsDark
-    ? "rounded-[24px] border border-[#352d27] bg-[#241d19] p-6"
-    : "rounded-[24px] border border-gray-200 bg-[#fffaf5] p-6";
   const settingsSecurityCardClassName = isSettingsDark
     ? "rounded-[24px] border border-[#352d27] bg-[#201916] p-6"
     : "rounded-[24px] border border-gray-200 bg-[#fcfcfc] p-6";
@@ -710,15 +705,6 @@ export default function ClientDashboard({
     setSettingsForm((currentSettings) => ({
       ...currentSettings,
       [field]: value
-    }));
-  }
-
-  function handleTwoFactorChange(value: boolean) {
-    setSettingsSaved(false);
-    setSettingsError("");
-    setSettingsForm((currentSettings) => ({
-      ...currentSettings,
-      twoFactorEnabled: value
     }));
   }
 
@@ -1884,7 +1870,7 @@ export default function ClientDashboard({
                 <div>
                   <h1 className={sectionTitleClassName}>Account Settings</h1>
                   <p className={`mt-3 text-[17px] ${settingsBodyTextClassName}`}>
-                    Manage your profile, app preferences, and account security.
+                    Manage your profile and account security.
                   </p>
                 </div>
 
@@ -1980,57 +1966,7 @@ export default function ClientDashboard({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                      <div className={settingsCardClassName}>
-                        <div className="flex items-start gap-3">
-                          <div
-                            className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
-                              isSettingsDark ? "bg-[#30241e]" : "bg-[#fff0e2]"
-                            }`}
-                          >
-                            <Sun className="h-5 w-5 text-[#f35b04]" />
-                          </div>
-                          <div>
-                            <h3 className={`text-[20px] font-semibold ${isSettingsDark ? "text-white" : "text-[#111827]"}`}>
-                              App Preferences
-                            </h3>
-                            <p className={`mt-1 text-[15px] ${settingsBodyTextClassName}`}>Appearance</p>
-                            <p className={`mt-1 text-[15px] ${settingsMutedTextClassName}`}>Switch between light and dark themes</p>
-                          </div>
-                        </div>
-
-                        <div className="mt-6 grid grid-cols-2 gap-3">
-                          <button
-                            type="button"
-                            onClick={() => handleSettingsChange("appearance", "light")}
-                            className={`flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                              settingsForm.appearance === "light"
-                                ? "border-[#ffb57a] bg-white text-[#f35b04] shadow-[0_10px_24px_rgba(243,91,4,0.08)]"
-                                : isSettingsDark
-                                  ? "border-[#43372f] bg-[#181311] text-[#d5cbc3] hover:border-[#ff8a33]"
-                                  : "border-gray-200 bg-white text-[#6b7280] hover:border-[#ffd1ad]"
-                            }`}
-                          >
-                            <Sun className="h-4 w-4" />
-                            Light
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleSettingsChange("appearance", "dark")}
-                            className={`flex items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                              settingsForm.appearance === "dark"
-                                ? "border-[#ffb57a] bg-[#2a211c] text-white shadow-[0_10px_24px_rgba(42,33,28,0.18)]"
-                                : isSettingsDark
-                                  ? "border-[#43372f] bg-[#181311] text-[#d5cbc3] hover:border-[#ff8a33]"
-                                  : "border-gray-200 bg-white text-[#6b7280] hover:border-[#ffd1ad]"
-                            }`}
-                          >
-                            <Moon className="h-4 w-4" />
-                            Dark
-                          </button>
-                        </div>
-                      </div>
-
+                    <div className="grid grid-cols-1 gap-6">
                       <div className={settingsSecurityCardClassName}>
                         <div className="flex items-start gap-3">
                           <div
@@ -2072,33 +2008,6 @@ export default function ClientDashboard({
                               buttonClassName={isSettingsDark ? "text-[#8f837a] hover:text-white" : "text-slate-400 hover:text-slate-600"}
                             />
                           </label>
-
-                          <div
-                            className={`flex items-center justify-between rounded-2xl border px-4 py-4 ${
-                              isSettingsDark ? "border-[#43372f] bg-[#181311]" : "border-gray-200 bg-white"
-                            }`}
-                          >
-                            <div>
-                              <p className={`text-sm font-medium ${isSettingsDark ? "text-[#e8ddd4]" : "text-[#4b5563]"}`}>
-                                Two-factor Authentication
-                              </p>
-                              <p className={`mt-1 text-sm ${settingsMutedTextClassName}`}>Keep your account extra secure.</p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleTwoFactorChange(!settingsForm.twoFactorEnabled)}
-                              aria-pressed={settingsForm.twoFactorEnabled}
-                              className={`relative inline-flex h-7 w-12 items-center rounded-full transition ${
-                                settingsForm.twoFactorEnabled ? "bg-[#f35b04]" : "bg-gray-300"
-                              }`}
-                            >
-                              <span
-                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
-                                  settingsForm.twoFactorEnabled ? "translate-x-6" : "translate-x-1"
-                                }`}
-                              />
-                            </button>
-                          </div>
                         </div>
                       </div>
                     </div>

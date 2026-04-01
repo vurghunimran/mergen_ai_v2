@@ -773,13 +773,6 @@ export default function AuthClient({
               </button>
             </div>
 
-            {isClient ? (
-              <div className={messageClassName}>
-                Use your dedicated admin email on this same client login form and the app will open
-                the admin panel automatically after sign-in.
-              </div>
-            ) : null}
-
             {activeTab === "signup" ? (
               <form
                 className="mt-6 space-y-6"

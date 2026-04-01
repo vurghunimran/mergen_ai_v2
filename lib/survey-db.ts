@@ -138,8 +138,14 @@ export function parseSurveyAudience(value: unknown): SurveyAudience | undefined 
     return undefined;
   }
 
+  const countries = getStringArray(value.countries);
+
   return {
-    countries: getStringArray(value.countries),
+    countries,
+    generalAudience:
+      typeof value.generalAudience === "boolean"
+        ? value.generalAudience
+        : countries.length === 0,
     ageMin: getNumber(value.ageMin),
     ageMax: getNumber(value.ageMax),
     gender: getString(value.gender),

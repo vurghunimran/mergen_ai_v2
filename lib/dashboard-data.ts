@@ -75,6 +75,7 @@ export type SurveyTrustEvaluationResponse = {
 
 export type SurveyAudience = {
   countries: string[];
+  generalAudience?: boolean;
   ageMin: number;
   ageMax: number;
   gender: string;

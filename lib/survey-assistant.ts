@@ -14,6 +14,7 @@ export type SurveyAssistantRequest = {
   surveyTitle: string;
   researchArea: string;
   targetRegion: string;
+  generalAudience: boolean;
   selectedCountries: string[];
   ageMin: number;
   ageMax: number;

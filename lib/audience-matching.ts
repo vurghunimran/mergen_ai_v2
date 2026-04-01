@@ -49,42 +49,81 @@ function extractNumbers(value: string) {
   return (value.match(/\d[\d,]*/g) ?? []).map((item) => Number(item.replace(/,/g, "")));
 }
 
-function normalizeEducation(value: string) {
+const orderedEducationBuckets = [
+  "uneducated",
+  "high_school",
+  "undergraduate",
+  "bachelors",
+  "masters",
+  "doctorate"
+] as const;
+
+type EducationBucket = (typeof orderedEducationBuckets)[number];
+
+const orderedSalaryBuckets = [
+  "up_to_500",
+  "up_to_1000",
+  "up_to_2500",
+  "up_to_5000",
+  "up_to_10000",
+  "10000_plus"
+] as const;
+
+type SalaryBucket = (typeof orderedSalaryBuckets)[number];
+
+function getEducationBucket(value: string): EducationBucket | "any" | null {
   const normalizedValue = normalizeText(value);
 
   if (!normalizedValue || normalizedValue === "any education level") {
     return "any";
   }
 
-  if (normalizedValue === "high school" || normalizedValue === "high school diploma" || normalizedValue === "secondary school") {
+  if (normalizedValue === "uneducated" || normalizedValue === "no formal education") {
+    return "uneducated";
+  }
+
+  if (
+    normalizedValue === "high school" ||
+    normalizedValue === "high school diploma" ||
+    normalizedValue === "secondary school"
+  ) {
     return "high_school";
   }
 
-  if (normalizedValue === "undergraduate") {
+  if (
+    normalizedValue === "undergraduate" ||
+    normalizedValue === "associate degree" ||
+    normalizedValue === "vocational training"
+  ) {
     return "undergraduate";
   }
 
-  if (normalizedValue === "associate degree") {
-    return "associate";
-  }
-
-  if (normalizedValue === "vocational training") {
-    return "vocational";
-  }
-
-  if (normalizedValue === "bachelor's degree") {
+  if (
+    normalizedValue === "bachelor's degree" ||
+    normalizedValue === "bachelors degree" ||
+    normalizedValue === "bachelor degree"
+  ) {
     return "bachelors";
   }
 
-  if (normalizedValue === "master's degree") {
+  if (
+    normalizedValue === "master's degree" ||
+    normalizedValue === "masters degree" ||
+    normalizedValue === "master degree"
+  ) {
     return "masters";
   }
 
-  if (normalizedValue === "doctorate") {
+  if (
+    normalizedValue === "doctorate" ||
+    normalizedValue === "doctoral degree" ||
+    normalizedValue === "phd" ||
+    normalizedValue === "ph.d"
+  ) {
     return "doctorate";
   }
 
-  return normalizedValue;
+  return null;
 }
 
 function normalizeGender(value: string) {
@@ -136,35 +175,63 @@ function normalizeFamilyStatus(value: string) {
   return normalizedValue;
 }
 
-function normalizeSalaryRange(value: string) {
+function getSalaryBucket(value: string): SalaryBucket | "any" | null {
   const normalizedValue = normalizeText(value);
 
   if (!normalizedValue || normalizedValue === "all salary ranges") {
     return "any";
   }
 
-  if (normalizedValue.includes("+")) {
+  if (normalizedValue === "$10,000+" || normalizedValue === "10000+" || normalizedValue.includes("+")) {
     return "10000_plus";
   }
 
-  const values = extractNumbers(value);
+  if (normalizedValue === "up to $500") {
+    return "up_to_500";
+  }
+
+  if (normalizedValue === "up to $1,000") {
+    return "up_to_1000";
+  }
+
+  if (normalizedValue === "up to $2,500") {
+    return "up_to_2500";
+  }
+
+  if (normalizedValue === "up to $5,000") {
+    return "up_to_5000";
+  }
+
+  if (normalizedValue === "up to $10,000") {
+    return "up_to_10000";
+  }
+
+  const values = extractNumbers(normalizedValue);
 
   if (values.length === 0) {
-    return normalizedValue;
+    return null;
   }
 
-  const midpoint = values.length === 1 ? values[0] : (values[0] + values[1]) / 2;
+  const upperBound = Math.max(...values);
 
-  if (midpoint < 1000) {
-    return "under_1000";
+  if (upperBound <= 500) {
+    return "up_to_500";
   }
 
-  if (midpoint < 5000) {
-    return "1000_5000";
+  if (upperBound <= 1000) {
+    return "up_to_1000";
   }
 
-  if (midpoint < 10000) {
-    return "5000_10000";
+  if (upperBound <= 2500) {
+    return "up_to_2500";
+  }
+
+  if (upperBound <= 5000) {
+    return "up_to_5000";
+  }
+
+  if (upperBound <= 10000) {
+    return "up_to_10000";
   }
 
   return "10000_plus";
@@ -185,27 +252,48 @@ function normalizeInterest(value: string) {
       return "media_and_entertainment";
     case "sustainability":
       return "environment";
+    case "art & design":
+      return "art_and_design";
     case "media and entertainment":
       return "media_and_entertainment";
+    case "politics & society":
+      return "politics_and_society";
     default:
-      return normalizedValue.replace(/\s+/g, "_");
+      return normalizedValue
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "");
   }
 }
 
 function matchesEducation(audienceValue: string, memberValue: string) {
-  const normalizedAudience = normalizeEducation(audienceValue);
+  const audienceBucket = getEducationBucket(audienceValue);
 
-  if (normalizedAudience === "any") {
+  if (audienceBucket === "any") {
     return true;
   }
 
-  const normalizedMember = normalizeEducation(memberValue);
+  const memberBucket = getEducationBucket(memberValue);
 
-  if (normalizedAudience === "undergraduate") {
-    return ["undergraduate", "associate", "vocational", "bachelors"].includes(normalizedMember);
+  if (!audienceBucket || !memberBucket) {
+    return normalizeText(audienceValue) === normalizeText(memberValue);
   }
 
-  return normalizedAudience === normalizedMember;
+  if (audienceBucket === "uneducated") {
+    return memberBucket === "uneducated";
+  }
+
+  if (memberBucket === "any") {
+    return false;
+  }
+
+  if (memberBucket === "uneducated") {
+    return false;
+  }
+
+  return (
+    orderedEducationBuckets.indexOf(memberBucket) <=
+    orderedEducationBuckets.indexOf(audienceBucket)
+  );
 }
 
 function matchesFamilyStatus(audienceValue: string, memberValue: string) {
@@ -232,6 +320,37 @@ function matchesInterest(audienceInterests: string[], memberInterests: string[])
   );
 
   return audienceInterests.some((interest) => normalizedMemberInterests.has(normalizeInterest(interest)));
+}
+
+function matchesSalaryRange(audienceValue: string, memberValue: string) {
+  const audienceBucket = getSalaryBucket(audienceValue);
+
+  if (audienceBucket === "any") {
+    return true;
+  }
+
+  const memberBucket = getSalaryBucket(memberValue);
+
+  if (!audienceBucket || !memberBucket) {
+    return normalizeText(audienceValue) === normalizeText(memberValue);
+  }
+
+  if (audienceBucket === "10000_plus") {
+    return memberBucket === "10000_plus";
+  }
+
+  if (memberBucket === "any") {
+    return false;
+  }
+
+  if (memberBucket === "10000_plus") {
+    return false;
+  }
+
+  return (
+    orderedSalaryBuckets.indexOf(memberBucket) <=
+    orderedSalaryBuckets.indexOf(audienceBucket)
+  );
 }
 
 export function parseAgeSpanMidpoint(ageSpan: string) {
@@ -317,9 +436,10 @@ export function evaluateSurveyAudienceMatch(
     normalizeGender(audience.gender) === normalizeGender(memberProfile.gender);
   const matchesEducationValue = matchesEducation(audience.education, memberProfile.education);
   const matchesInterestValue = matchesInterest(audience.interests, memberProfile.interests);
-  const matchesSalary =
-    normalizeSalaryRange(audience.salaryRange ?? "") === "any" ||
-    normalizeSalaryRange(audience.salaryRange ?? "") === normalizeSalaryRange(memberProfile.salaryRange);
+  const matchesSalary = matchesSalaryRange(
+    audience.salaryRange ?? "",
+    memberProfile.salaryRange
+  );
   const matchesResidenceValue =
     normalizeResidence(audience.residence ?? "") === "any" ||
     normalizeResidence(audience.residence ?? "") === normalizeResidence(memberProfile.residence);
@@ -447,7 +567,12 @@ export function buildAudienceCriteriaEntries(audience: SurveyAudience) {
     }
   ];
 
-  if (audience.countries.length > 0) {
+  if (audience.generalAudience || audience.countries.length === 0) {
+    entries.push({
+      label: "Audience",
+      value: "General Audience"
+    });
+  } else if (audience.countries.length > 0) {
     entries.push({
       label: "Countries",
       value: audience.countries.join(", ")

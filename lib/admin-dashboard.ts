@@ -299,7 +299,9 @@ function buildAudienceSummary(survey: SurveyRow) {
   }
 
   const parts = [
-    audience.countries.length > 0 ? `${audience.countries.length} country target` : "",
+    audience.generalAudience || audience.countries.length === 0
+      ? "General audience"
+      : `${audience.countries.length} country target`,
     audience.gender ? audience.gender : "",
     audience.ageMin > 0 || audience.ageMax > 0
       ? `Ages ${audience.ageMin || 18}-${audience.ageMax || 99}`

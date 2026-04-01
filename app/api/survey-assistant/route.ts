@@ -95,7 +95,8 @@ function buildUserPrompt(payload: SurveyAssistantRequest) {
     {
       survey_title: payload.surveyTitle,
       research_area: payload.researchArea,
-      target_region: payload.targetRegion,
+      target_region: payload.generalAudience ? "General Audience" : payload.targetRegion,
+      general_audience: payload.generalAudience,
       selected_countries: payload.selectedCountries,
       age_range: [payload.ageMin, payload.ageMax],
       financial_situation: payload.financialSituation,
@@ -156,6 +157,7 @@ export async function POST(request: Request) {
       surveyTitle: (requestBody.surveyTitle ?? "").trim(),
       researchArea: (requestBody.researchArea ?? "").trim() || "Education Science",
       targetRegion: (requestBody.targetRegion ?? "").trim() || "North America",
+      generalAudience: Boolean(requestBody.generalAudience),
       selectedCountries: Array.isArray(requestBody.selectedCountries) ? requestBody.selectedCountries.filter(Boolean) : [],
       ageMin: Number(requestBody.ageMin ?? 18),
       ageMax: Number(requestBody.ageMax ?? 80),
