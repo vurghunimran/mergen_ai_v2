@@ -158,6 +158,17 @@ function readLocalAvatarSettings(storageKey: string) {
   }
 }
 
+function getSurveyProgressPercent(survey: ClientSurvey) {
+  const targetResponses = Number(survey.targetResponses);
+  const responses = Number(survey.responses);
+
+  if (!Number.isFinite(targetResponses) || targetResponses <= 0 || !Number.isFinite(responses) || responses <= 0) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, (responses / targetResponses) * 100));
+}
+
 function buildChartPoints(values: number[], width: number, height: number, padding: number) {
   const safeMax = Math.max(...values, 1);
   const stepX = values.length > 1 ? (width - padding * 2) / (values.length - 1) : 0;
@@ -1061,8 +1072,12 @@ export default function ClientDashboard({
                       </div>
                     ) : (
                       <div className="divide-y divide-gray-100">
-                        {surveys.map((survey) => (
-                          <div key={survey.id} className="p-6 transition-colors duration-200 hover:bg-gray-50">
+                        {surveys.map((survey) => {
+                          const surveyProgressPercent = getSurveyProgressPercent(survey);
+                          const surveyProgressLabel = Math.round(surveyProgressPercent);
+
+                          return (
+                            <div key={survey.id} className="p-6 transition-colors duration-200 hover:bg-gray-50">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <div className="mb-3 flex items-center space-x-3">
@@ -1091,9 +1106,7 @@ export default function ClientDashboard({
                                     </div>
                                     <div>
                                       <p className="text-xs text-gray-500">Completion</p>
-                                      <p className="font-semibold text-gray-900">
-                                        {Math.round((survey.responses / survey.targetResponses) * 100)}%
-                                      </p>
+                                      <p className="font-semibold text-gray-900">{surveyProgressLabel}%</p>
                                     </div>
                                   </div>
 
@@ -1116,12 +1129,15 @@ export default function ClientDashboard({
                                 <div className="mt-4">
                                   <div className="mb-1 flex items-center justify-between text-xs text-gray-500">
                                     <span>Progress</span>
-                                    <span>{Math.round((survey.responses / survey.targetResponses) * 100)}%</span>
+                                    <span>{surveyProgressLabel}%</span>
                                   </div>
-                                  <div className="h-2 w-full rounded-full bg-gray-200">
+                                  <div className="h-3 w-full overflow-hidden rounded-full bg-[#eceff4] shadow-inner">
                                     <div
-                                      className="h-2 rounded-full bg-gradient-to-r from-orange-600 to-orange-500 transition-all duration-300"
-                                      style={{ width: `${(survey.responses / survey.targetResponses) * 100}%` }}
+                                      className="h-full rounded-full bg-[linear-gradient(90deg,#ffb066_0%,#fb923c_40%,#f97316_70%,#ea580c_100%)] shadow-[0_0_18px_rgba(249,115,22,0.28)] transition-[width] duration-700 ease-out"
+                                      style={{
+                                        width: `${surveyProgressPercent}%`,
+                                        minWidth: surveyProgressPercent > 0 ? "14px" : "0px"
+                                      }}
                                     />
                                   </div>
                                 </div>
@@ -1163,8 +1179,9 @@ export default function ClientDashboard({
                                 ) : null}
                               </div>
                             </div>
-                          </div>
-                        ))}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
