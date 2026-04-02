@@ -24,10 +24,12 @@ export default function PromoVideo() {
             <video
               controls
               preload="metadata"
-              poster="/vision-goals-2026-poster.jpg"
               className="aspect-video w-full bg-black object-cover"
-              src="/vision-goals-2026.mp4"
-            />
+              playsInline
+            >
+              <source src="/mergen-introduction.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
           </div>
         </div>
       </div>
