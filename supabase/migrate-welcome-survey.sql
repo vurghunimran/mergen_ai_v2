@@ -1,3 +1,5 @@
+create extension if not exists pgcrypto;
+
 create table if not exists public.welcome_survey_completions (
   id uuid primary key default gen_random_uuid(),
   respondent_id uuid not null unique references public.profiles (id) on delete cascade,
@@ -8,13 +10,26 @@ create table if not exists public.welcome_survey_completions (
   answers jsonb not null default '[]'::jsonb
 );
 
+alter table public.welcome_survey_completions add column if not exists submitted_at timestamptz default timezone('utc', now());
+alter table public.welcome_survey_completions add column if not exists completion_time_seconds integer;
+alter table public.welcome_survey_completions add column if not exists earned_credits integer;
+alter table public.welcome_survey_completions add column if not exists summary text default '';
+alter table public.welcome_survey_completions add column if not exists answers jsonb default '[]'::jsonb;
+
 alter table public.welcome_survey_completions drop constraint if exists welcome_survey_completions_earned_credits_check;
 
 update public.welcome_survey_completions
-set earned_credits = 50
-where earned_credits is distinct from 50;
+set
+  earned_credits = 50,
+  summary = coalesce(summary, ''),
+  answers = coalesce(answers, '[]'::jsonb),
+  submitted_at = coalesce(submitted_at, timezone('utc', now()))
+where earned_credits is distinct from 50 or summary is null or answers is null or submitted_at is null;
 
+alter table public.welcome_survey_completions alter column submitted_at set default timezone('utc', now());
 alter table public.welcome_survey_completions alter column earned_credits set default 50;
+alter table public.welcome_survey_completions alter column summary set default '';
+alter table public.welcome_survey_completions alter column answers set default '[]'::jsonb;
 alter table public.welcome_survey_completions
   add constraint welcome_survey_completions_earned_credits_check check (earned_credits = 50);
 

@@ -58,6 +58,7 @@ cp .env.local.example .env.local
 Use:
 
 - [supabase/schema.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/schema.sql) for a fresh Supabase setup
+- [supabase/upgrade-existing-project-to-latest.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/upgrade-existing-project-to-latest.sql) for any existing project that already has older data or SQL applied
 - [supabase/migrate-separate-profiles.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-separate-profiles.sql) if you already created the older mixed profile structure
 - [supabase/migrate-telegram-notifications.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-telegram-notifications.sql) if you want to add Telegram notifications onto an already updated project without re-running the larger upgrade scripts
 - [supabase/migrate-admin-reward-activations.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-admin-reward-activations.sql) if you already have a live database and want reward ledger + owner admin analytics support
@@ -176,6 +177,7 @@ The app now uses:
 ### Notes
 
 - The Supabase schema is in [supabase/schema.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/schema.sql).
+- The one-shot existing-project upgrade is in [supabase/upgrade-existing-project-to-latest.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/upgrade-existing-project-to-latest.sql).
 - The migration for existing mixed-profile setups is in [supabase/migrate-separate-profiles.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-separate-profiles.sql).
 - The incremental rollout migration for existing survey tables is in [supabase/migrate-survey-distribution.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-survey-distribution.sql).
 - The Telegram notification migration is in [supabase/migrate-telegram-notifications.sql](/Users/vurghun1903/Desktop/mergen_ai_v2/supabase/migrate-telegram-notifications.sql).

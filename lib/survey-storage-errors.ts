@@ -10,9 +10,11 @@ export function getSurveyStorageErrorMessage(error: unknown) {
   const code = typeof error.code === "string" ? error.code : "";
   const message = typeof error.message === "string" ? error.message : "";
   const normalizedMessage = message.toLowerCase();
+  const setupHint =
+    "For a fresh Supabase project, run supabase/schema.sql. For an existing project, run supabase/upgrade-existing-project-to-latest.sql or at minimum the latest survey migrations, including supabase/migrate-welcome-survey.sql.";
 
   if (code === "42P01" && normalizedMessage.includes("welcome_survey_completions")) {
-    return "Welcome survey storage is not ready yet. Run the SQL in supabase/migrate-welcome-survey.sql in your Supabase SQL editor.";
+    return `Welcome survey storage is not ready yet. ${setupHint}`;
   }
 
   if (
@@ -24,7 +26,7 @@ export function getSurveyStorageErrorMessage(error: unknown) {
     normalizedMessage.includes("distribution_stage") ||
     normalizedMessage.includes("distribution_expires_at")
   ) {
-    return "Supabase survey storage is not ready yet. Run the SQL in supabase/schema.sql and, for existing projects, the latest survey migration files including supabase/migrate-welcome-survey.sql.";
+    return `Supabase survey storage is not ready yet. ${setupHint}`;
   }
 
   if (normalizedMessage.includes("first-stage community rollout")) {
