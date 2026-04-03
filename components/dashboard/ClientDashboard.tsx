@@ -36,6 +36,7 @@ import ProfileAvatarPicker from "@/components/dashboard/ProfileAvatarPicker";
 import SiteLogo from "@/components/SiteLogo";
 import PasswordInput from "@/components/ui/password-input";
 import { AVATAR_METADATA_KEYS, getDefaultAvatarSrc, resolveAvatarSrc } from "@/lib/profile-avatars";
+import { assertClientUniversityEmail } from "@/lib/client-university-email";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 import { buildPersistedProfilePayload, upsertProfileRecords } from "@/lib/supabase/profile-db";
 import type { UserProfile } from "@/lib/supabase/types";
@@ -121,6 +122,10 @@ function getSettingsErrorMessage(error: unknown) {
 
     if (normalizedMessage.includes("email not confirmed")) {
       return "Check your email inbox to confirm the email change.";
+    }
+
+    if (normalizedMessage.includes("university email")) {
+      return error.message;
     }
 
     return error.message;
@@ -761,6 +766,17 @@ export default function ClientDashboard({
     };
 
     try {
+      const emailChanged =
+        nextSettings.email !== savedSettings.email.trim().toLowerCase();
+
+      if (emailChanged) {
+        await assertClientUniversityEmail({
+          email: nextSettings.email,
+          country: profileSnapshot.country,
+          institution: profileSnapshot.educationalInstitution,
+        });
+      }
+
       const authUpdatePayload: {
         email?: string;
         password?: string;
@@ -782,7 +798,7 @@ export default function ClientDashboard({
         }
       };
 
-      if (nextSettings.email !== savedSettings.email.trim().toLowerCase()) {
+      if (emailChanged) {
         authUpdatePayload.email = nextSettings.email;
       }
 
@@ -1939,7 +1955,7 @@ export default function ClientDashboard({
                           <label className="block">
                             <span className={settingsLabelClassName}>
                               <Mail className="h-4 w-4 text-[#f35b04]" />
-                              Email
+                              University email
                             </span>
                             <input
                               type="email"
@@ -1947,6 +1963,9 @@ export default function ClientDashboard({
                               onChange={(event) => handleSettingsChange("email", event.target.value)}
                               className={settingsInputClassName}
                             />
+                            <span className="mt-2 block text-sm text-[#8a94a6]">
+                              Client accounts must use an email address issued by the university.
+                            </span>
                           </label>
 
                           <label className="block">

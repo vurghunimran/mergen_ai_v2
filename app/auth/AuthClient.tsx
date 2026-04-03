@@ -38,6 +38,7 @@ import { normalizeCommunityLaunchCountry } from "@/lib/community-distribution";
 import SiteLogo from "@/components/SiteLogo";
 import { PRIVACY_POLICY_VERSION, TERMS_VERSION } from "@/lib/legal";
 import PasswordInput from "@/components/ui/password-input";
+import { assertClientUniversityEmail } from "@/lib/client-university-email";
 import {
   upsertProfileRecords,
   type PersistedProfilePayload,
@@ -521,6 +522,14 @@ export default function AuthClient({
         verifiedCommunityCountry = verificationPayload.verifiedCountry;
       }
 
+      if (role === "client") {
+        await assertClientUniversityEmail({
+          email: values.universityEmail,
+          country: values.country,
+          institution: normalizedInstitution,
+        });
+      }
+
       const profilePayload = buildProfilePayload(
         role,
         verifiedCommunityCountry
@@ -850,6 +859,11 @@ export default function AuthClient({
                           })}
                           className={inputClassName}
                         />
+                        <p className="mt-2 text-sm text-slate-500">
+                          Use the email address issued by your university.
+                          Personal email providers are not accepted for client
+                          accounts.
+                        </p>
                         {errors.universityEmail ? (
                           <p className={errorTextClassName}>
                             {errors.universityEmail.message}
