@@ -101,7 +101,11 @@ export default async function HomePage() {
                       Start a survey
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
-                    <TutorialLink href="/tutorials?role=client" label="Watch client tutorial" />
+                    <TutorialLink
+                      href="https://youtu.be/MH75YLhUUq0"
+                      label="Watch client tutorial"
+                      className="min-w-[220px]"
+                    />
                   </div>
 
                   <div className="flex flex-col items-center gap-3">
@@ -112,13 +116,17 @@ export default async function HomePage() {
                       Answer surveys
                       <ChevronRight className="ml-2 h-4 w-4" />
                     </Link>
-                    <TutorialLink href="/tutorials?role=community" label="Watch community tutorial" />
+                    <TutorialLink
+                      href="https://youtu.be/o_Ixg_PLclE"
+                      label="Watch community tutorial"
+                      className="min-w-[220px]"
+                    />
                   </div>
                 </div>
 
                 <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-600">
-                  Prefer to see the screens first? Open the guided tutorials and follow the exact signup flow for your
-                  role.
+                  Prefer to see the screens first? Open the YouTube walkthrough that matches your role before signing
+                  up.
                 </p>
               </div>
             </div>

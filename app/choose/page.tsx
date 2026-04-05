@@ -38,14 +38,20 @@ export default function ChoosePage() {
               </div>
               <h2 className="mt-6 text-2xl font-extrabold tracking-[-0.04em] text-slate-900">Client / Researcher</h2>
               <p className="mt-3 text-sm leading-7 text-slate-600">Set up surveys, define the audience, and turn responses into usable insight.</p>
-              <Link
-                href="/auth?type=client"
-                className="mt-7 inline-flex items-center rounded-full bg-[#d85a2f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#bf4c25]"
-              >
-                Start survey setup
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-              <TutorialLink href="/tutorials?role=client" label="Watch client tutorial" className="mt-3" />
+              <div className="mt-7 flex flex-col items-center gap-3">
+                <Link
+                  href="/auth?type=client"
+                  className="inline-flex items-center rounded-full bg-[#d85a2f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#bf4c25]"
+                >
+                  Start survey setup
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+                <TutorialLink
+                  href="https://youtu.be/MH75YLhUUq0"
+                  label="Watch client tutorial"
+                  className="min-w-[220px]"
+                />
+              </div>
             </article>
 
             <article className="rounded-[32px] border border-white/70 bg-white/80 p-8 text-left shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl">
@@ -54,14 +60,20 @@ export default function ChoosePage() {
               </div>
               <h2 className="mt-6 text-2xl font-extrabold tracking-[-0.04em] text-slate-900">Community Member</h2>
               <p className="mt-3 text-sm leading-7 text-slate-600">Build your profile, join relevant studies, and answer surveys that fit your background.</p>
-              <Link
-                href="/auth?type=community"
-                className="mt-7 inline-flex items-center rounded-full bg-[#d85a2f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#bf4c25]"
-              >
-                Join community
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-              <TutorialLink href="/tutorials?role=community" label="Watch community tutorial" className="mt-3" />
+              <div className="mt-7 flex flex-col items-center gap-3">
+                <Link
+                  href="/auth?type=community"
+                  className="inline-flex items-center rounded-full bg-[#d85a2f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#bf4c25]"
+                >
+                  Join community
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+                <TutorialLink
+                  href="https://youtu.be/o_Ixg_PLclE"
+                  label="Watch community tutorial"
+                  className="min-w-[220px]"
+                />
+              </div>
             </article>
           </div>
         </div>
