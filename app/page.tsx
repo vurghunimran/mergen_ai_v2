@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import HowItWorks from "@/components/HowItWorks";
 import PromoVideo from "@/components/PromoVideo";
 import SiteLogo from "@/components/SiteLogo";
+import TutorialLink from "@/components/TutorialLink";
 import WhoCanUseMergen from "@/components/WhoCanUseMergen";
 import { getCommunityMapData } from "@/lib/community-map-data";
 
@@ -91,22 +92,34 @@ export default async function HomePage() {
                   without slowing your team down.
                 </p>
 
-                <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                  <Link
-                    href="/auth?type=client"
-                    className="inline-flex items-center justify-center rounded-2xl bg-[#d85a2f] px-6 py-4 text-base font-bold text-white shadow-[0_20px_40px_rgba(216,90,47,0.22)] transition hover:-translate-y-0.5 hover:bg-[#bf4c25]"
-                  >
-                    Start a survey
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                  <Link
-                    href="/auth?type=community"
-                    className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-4 text-base font-bold text-slate-700 shadow-[0_16px_30px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:border-[#d85a2f]/30 hover:text-[#d85a2f]"
-                  >
-                    Answer surveys
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Link>
+                <div className="mt-8 grid w-full max-w-2xl gap-4 sm:grid-cols-2">
+                  <div className="flex flex-col items-center gap-3">
+                    <Link
+                      href="/auth?type=client"
+                      className="inline-flex w-full items-center justify-center rounded-2xl bg-[#d85a2f] px-6 py-4 text-base font-bold text-white shadow-[0_20px_40px_rgba(216,90,47,0.22)] transition hover:-translate-y-0.5 hover:bg-[#bf4c25]"
+                    >
+                      Start a survey
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                    <TutorialLink href="/tutorials?role=client" label="Watch client tutorial" />
+                  </div>
+
+                  <div className="flex flex-col items-center gap-3">
+                    <Link
+                      href="/auth?type=community"
+                      className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-4 text-base font-bold text-slate-700 shadow-[0_16px_30px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:border-[#d85a2f]/30 hover:text-[#d85a2f]"
+                    >
+                      Answer surveys
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Link>
+                    <TutorialLink href="/tutorials?role=community" label="Watch community tutorial" />
+                  </div>
                 </div>
+
+                <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-600">
+                  Prefer to see the screens first? Open the guided tutorials and follow the exact signup flow for your
+                  role.
+                </p>
               </div>
             </div>
           </div>

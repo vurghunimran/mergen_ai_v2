@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, BarChart3, Users } from "lucide-react";
 import SiteLogo from "@/components/SiteLogo";
+import TutorialLink from "@/components/TutorialLink";
 
 export default function ChoosePage() {
   return (
@@ -44,6 +45,7 @@ export default function ChoosePage() {
                 Start survey setup
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
+              <TutorialLink href="/tutorials?role=client" label="Watch client tutorial" className="mt-3" />
             </article>
 
             <article className="rounded-[32px] border border-white/70 bg-white/80 p-8 text-left shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl">
@@ -59,6 +61,7 @@ export default function ChoosePage() {
                 Join community
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
+              <TutorialLink href="/tutorials?role=community" label="Watch community tutorial" className="mt-3" />
             </article>
           </div>
         </div>
