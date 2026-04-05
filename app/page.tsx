@@ -93,7 +93,7 @@ export default async function HomePage() {
                 </p>
 
                 <div className="mt-8 grid w-full max-w-2xl gap-4 sm:grid-cols-2">
-                  <div className="flex flex-col items-center gap-3">
+                  <div className="flex flex-col items-center">
                     <Link
                       href="/auth?type=client"
                       className="inline-flex w-full items-center justify-center rounded-2xl bg-[#d85a2f] px-6 py-4 text-base font-bold text-white shadow-[0_20px_40px_rgba(216,90,47,0.22)] transition hover:-translate-y-0.5 hover:bg-[#bf4c25]"
@@ -101,14 +101,9 @@ export default async function HomePage() {
                       Start a survey
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
-                    <TutorialLink
-                      href="https://youtu.be/MH75YLhUUq0"
-                      label="Watch client tutorial"
-                      className="min-w-[220px]"
-                    />
                   </div>
 
-                  <div className="flex flex-col items-center gap-3">
+                  <div className="flex flex-col items-center">
                     <Link
                       href="/auth?type=community"
                       className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 py-4 text-base font-bold text-slate-700 shadow-[0_16px_30px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:border-[#d85a2f]/30 hover:text-[#d85a2f]"
@@ -116,18 +111,21 @@ export default async function HomePage() {
                       Answer surveys
                       <ChevronRight className="ml-2 h-4 w-4" />
                     </Link>
-                    <TutorialLink
-                      href="https://youtu.be/o_Ixg_PLclE"
-                      label="Watch community tutorial"
-                      className="min-w-[220px]"
-                    />
                   </div>
                 </div>
 
-                <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-600">
-                  Prefer to see the screens first? Open the YouTube walkthrough that matches your role before signing
-                  up.
-                </p>
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                  <TutorialLink
+                    href="https://youtu.be/MH75YLhUUq0"
+                    label="Watch client tutorial"
+                    className="min-w-[220px]"
+                  />
+                  <TutorialLink
+                    href="https://youtu.be/o_Ixg_PLclE"
+                    label="Watch community tutorial"
+                    className="min-w-[220px]"
+                  />
+                </div>
               </div>
             </div>
           </div>
