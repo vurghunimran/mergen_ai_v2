@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Merriweather, Plus_Jakarta_Sans } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -31,7 +32,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${plusJakartaSans.variable} ${merriweather.variable}`}>
-      <body className="bg-cream font-body text-black antialiased">{children}</body>
+      <body className="bg-cream font-body text-black antialiased">
+        {children}
+        <Script
+          src="https://cloud.umami.is/script.js"
+          data-website-id="7c0ae8e4-16ea-4e15-8c5f-8151019ae5e4"
+          strategy="afterInteractive"
+        />
+      </body>
     </html>
   );
 }

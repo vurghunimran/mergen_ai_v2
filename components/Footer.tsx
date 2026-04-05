@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Instagram, Linkedin, Twitter } from "lucide-react";
+import { Instagram, Linkedin, Twitter, Youtube } from "lucide-react";
 import SiteLogo from "@/components/SiteLogo";
 
 const socialLinks = [
@@ -17,6 +17,11 @@ const socialLinks = [
     name: "Twitter/X",
     href: "https://x.com/MergenAI1",
     icon: Twitter
+  },
+  {
+    name: "YouTube",
+    href: "https://youtube.com/@mergenai-y9h?si=9dkG9MyOy-stTB4Y",
+    icon: Youtube
   }
 ];
 

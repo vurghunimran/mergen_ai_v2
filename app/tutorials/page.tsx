@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Clock3,
   MonitorPlay,
+  PlayCircle,
   Sparkles,
   Users,
   type LucideIcon
@@ -23,7 +24,8 @@ type TutorialCard = {
   eyebrow: string;
   description: string;
   duration: string;
-  videoSrc?: string;
+  youtubeUrl: string;
+  youtubeEmbedUrl: string;
   signupHref: string;
   actionLabel: string;
   summary: string;
@@ -31,16 +33,8 @@ type TutorialCard = {
   iconClassName: string;
   accentClassName: string;
   bullets: string[];
+  selectorLabel: string;
 };
-
-const tutorialVideoSources: Record<TutorialRole, string> = {
-  client: process.env.NEXT_PUBLIC_CLIENT_TUTORIAL_URL?.trim() ?? "",
-  community: process.env.NEXT_PUBLIC_COMMUNITY_TUTORIAL_URL?.trim() ?? ""
-};
-
-function isDirectVideoFile(url: string) {
-  return /\.(mp4|webm|ogg)(?:[?#].*)?$/i.test(url);
-}
 
 const tutorials: TutorialCard[] = [
   {
@@ -50,7 +44,8 @@ const tutorials: TutorialCard[] = [
     description:
       "A guided walkthrough for clients who want to create an account, get into the dashboard, and start the survey setup flow with confidence.",
     duration: "1 min 42 sec",
-    videoSrc: tutorialVideoSources.client || undefined,
+    youtubeUrl: "https://youtu.be/MH75YLhUUq0",
+    youtubeEmbedUrl: "https://www.youtube.com/embed/MH75YLhUUq0",
     signupHref: "/auth?type=client",
     actionLabel: "Start as a client",
     summary: "Best if you plan to create surveys, define audiences, and review insights.",
@@ -61,7 +56,8 @@ const tutorials: TutorialCard[] = [
       "See which signup path to choose and what details to prepare first.",
       "Follow the exact client onboarding steps from account creation to dashboard entry.",
       "Get a quick visual reference before you begin your first survey setup."
-    ]
+    ],
+    selectorLabel: "Client tutorial"
   },
   {
     role: "community",
@@ -70,7 +66,8 @@ const tutorials: TutorialCard[] = [
     description:
       "A clear video guide for community members who want to sign up, complete their profile, and start joining relevant studies on the platform.",
     duration: "2 min 12 sec",
-    videoSrc: tutorialVideoSources.community || undefined,
+    youtubeUrl: "https://youtu.be/o_Ixg_PLclE",
+    youtubeEmbedUrl: "https://www.youtube.com/embed/o_Ixg_PLclE",
     signupHref: "/auth?type=community",
     actionLabel: "Join the community",
     summary: "Best if you want to create your profile and start answering matched surveys.",
@@ -81,7 +78,8 @@ const tutorials: TutorialCard[] = [
       "Watch the full community signup path before filling in your details.",
       "See how the profile flow is presented and what information matters most.",
       "Understand how to reach the part of the platform where surveys become available."
-    ]
+    ],
+    selectorLabel: "Community tutorial"
   }
 ];
 
@@ -156,19 +154,51 @@ export default function TutorialsPage({
                 MERGEN experience with fewer surprises.
               </p>
 
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-8 grid gap-3 sm:grid-cols-2">
                 {tutorials.map((tutorial) => (
                   <Link
                     key={tutorial.role}
                     href={`/tutorials?role=${tutorial.role}`}
                     className={cn(
-                      "inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition",
+                      "group rounded-[24px] border bg-white/90 p-5 text-left transition hover:-translate-y-0.5",
                       selectedRole === tutorial.role
-                        ? "border-transparent bg-slate-900 text-white shadow-[0_18px_36px_rgba(15,23,42,0.14)]"
-                        : "border-[#e7d7cb] bg-white text-slate-700 hover:border-[#d85a2f]/35 hover:text-[#d85a2f]"
+                        ? "border-transparent bg-slate-900 text-white shadow-[0_22px_48px_rgba(15,23,42,0.16)]"
+                        : "border-[#e7d7cb] text-slate-700 shadow-[0_18px_40px_rgba(15,23,42,0.06)] hover:border-[#d85a2f]/35"
                     )}
                   >
-                    {tutorial.role === "client" ? "Client tutorial" : "Community tutorial"}
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p
+                          className={cn(
+                            "text-xs font-semibold uppercase tracking-[0.2em]",
+                            selectedRole === tutorial.role ? "text-white/65" : "text-slate-500"
+                          )}
+                        >
+                          {tutorial.eyebrow}
+                        </p>
+                        <h2 className="mt-3 text-xl font-extrabold tracking-[-0.04em]">{tutorial.selectorLabel}</h2>
+                        <p
+                          className={cn(
+                            "mt-2 text-sm leading-7",
+                            selectedRole === tutorial.role ? "text-white/80" : "text-slate-600"
+                          )}
+                        >
+                          {tutorial.role === "client"
+                            ? "For researchers and teams launching surveys."
+                            : "For people joining the platform to answer surveys."}
+                        </p>
+                      </div>
+                      <div
+                        className={cn(
+                          "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition",
+                          selectedRole === tutorial.role
+                            ? "bg-white/14 text-white"
+                            : `${tutorial.iconClassName} group-hover:scale-105`
+                        )}
+                      >
+                        <tutorial.icon className="h-6 w-6" />
+                      </div>
+                    </div>
                   </Link>
                 ))}
               </div>
@@ -277,6 +307,15 @@ export default function TutorialsPage({
                       >
                         Go to sign up choices
                       </Link>
+                      <Link
+                        href={tutorial.youtubeUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center rounded-full border border-[#ead9cc] bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-[#d85a2f]/35 hover:text-[#d85a2f]"
+                      >
+                        Watch on YouTube
+                        <PlayCircle className="ml-2 h-4 w-4" />
+                      </Link>
                     </div>
                   </div>
 
@@ -293,39 +332,14 @@ export default function TutorialsPage({
                     </div>
 
                     <div className="overflow-hidden rounded-[24px] border border-white/10 bg-black">
-                      {tutorial.videoSrc ? (
-                        isDirectVideoFile(tutorial.videoSrc) ? (
-                          <video controls preload="metadata" className="aspect-video w-full bg-black object-contain" playsInline>
-                            <source src={tutorial.videoSrc} type="video/mp4" />
-                            Your browser does not support the video tag.
-                          </video>
-                        ) : (
-                          <div className="flex aspect-video flex-col items-center justify-center bg-[radial-gradient(circle_at_top,rgba(216,90,47,0.18),transparent_35%),linear-gradient(180deg,#151515_0%,#101010_100%)] px-6 text-center">
-                            <MonitorPlay className="h-10 w-10 text-white/80" />
-                            <h3 className="mt-4 text-2xl font-extrabold tracking-[-0.04em] text-white">Hosted tutorial</h3>
-                            <p className="mt-3 max-w-md text-sm leading-7 text-white/70">
-                              This tutorial is hosted externally to keep the repository lightweight.
-                            </p>
-                            <Link
-                              href={tutorial.videoSrc}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="mt-6 inline-flex items-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-[#fff1e7]"
-                            >
-                              Open tutorial video
-                              <ArrowRight className="ml-2 h-4 w-4" />
-                            </Link>
-                          </div>
-                        )
-                      ) : (
-                        <div className="flex aspect-video flex-col items-center justify-center bg-[radial-gradient(circle_at_top,rgba(216,90,47,0.18),transparent_35%),linear-gradient(180deg,#151515_0%,#101010_100%)] px-6 text-center">
-                          <MonitorPlay className="h-10 w-10 text-white/80" />
-                          <h3 className="mt-4 text-2xl font-extrabold tracking-[-0.04em] text-white">Tutorial video placeholder</h3>
-                          <p className="mt-3 max-w-md text-sm leading-7 text-white/70">
-                            Add a hosted URL through <code className="rounded bg-white/10 px-2 py-1 text-white">NEXT_PUBLIC_CLIENT_TUTORIAL_URL</code> or <code className="rounded bg-white/10 px-2 py-1 text-white">NEXT_PUBLIC_COMMUNITY_TUTORIAL_URL</code> to show the video here without storing large files in Git.
-                          </p>
-                        </div>
-                      )}
+                      <iframe
+                        src={tutorial.youtubeEmbedUrl}
+                        title={tutorial.title}
+                        className="aspect-video w-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerPolicy="strict-origin-when-cross-origin"
+                        allowFullScreen
+                      />
                     </div>
                   </div>
                 </div>
