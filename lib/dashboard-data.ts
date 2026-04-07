@@ -164,6 +164,7 @@ export type SurveyCheckoutPayload = {
 };
 
 export type PendingPolarCheckout = {
+  checkoutId: string;
   payload: SurveyCheckoutPayload;
   createdAt: string;
 };

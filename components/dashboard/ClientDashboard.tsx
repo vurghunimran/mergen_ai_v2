@@ -189,6 +189,131 @@ function buildLaunchNotificationSummary(sentEmails: number, sentTelegramMessages
   return summaryParts.join(" and ");
 }
 
+function isPendingPolarCheckout(value: unknown): value is PendingPolarCheckout {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as PendingPolarCheckout).checkoutId === "string" &&
+    typeof (value as PendingPolarCheckout).createdAt === "string" &&
+    typeof (value as PendingPolarCheckout).payload === "object" &&
+    (value as PendingPolarCheckout).payload !== null
+  );
+}
+
+function isLegacyPendingPolarCheckout(
+  value: unknown
+): value is Omit<PendingPolarCheckout, "checkoutId"> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as Omit<PendingPolarCheckout, "checkoutId">).createdAt === "string" &&
+    typeof (value as Omit<PendingPolarCheckout, "checkoutId">).payload === "object" &&
+    (value as Omit<PendingPolarCheckout, "checkoutId">).payload !== null
+  );
+}
+
+function readPendingPolarCheckoutRecord(
+  storageKey: string,
+  checkoutId: string
+): PendingPolarCheckout | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(storageKey);
+
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsedValue = JSON.parse(rawValue) as unknown;
+
+    if (isPendingPolarCheckout(parsedValue)) {
+      return parsedValue.checkoutId === checkoutId ? parsedValue : null;
+    }
+
+    if (isLegacyPendingPolarCheckout(parsedValue)) {
+      return {
+        checkoutId,
+        createdAt: parsedValue.createdAt,
+        payload: parsedValue.payload
+      };
+    }
+
+    if (typeof parsedValue !== "object" || parsedValue === null) {
+      return null;
+    }
+
+    const matchedValue = (parsedValue as Record<string, unknown>)[checkoutId];
+    return isPendingPolarCheckout(matchedValue) ? matchedValue : null;
+  } catch {
+    return null;
+  }
+}
+
+function savePendingPolarCheckoutRecord(storageKey: string, checkout: PendingPolarCheckout) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(storageKey);
+    const parsedValue = rawValue ? (JSON.parse(rawValue) as unknown) : null;
+    const nextValue =
+      typeof parsedValue === "object" && parsedValue !== null && !isPendingPolarCheckout(parsedValue)
+        ? {
+            ...(parsedValue as Record<string, unknown>),
+            [checkout.checkoutId]: checkout
+          }
+        : {
+            [checkout.checkoutId]: checkout
+          };
+
+    window.localStorage.setItem(storageKey, JSON.stringify(nextValue));
+  } catch {
+    throw new Error("The survey draft could not be stored for checkout recovery. Please try again.");
+  }
+}
+
+function removePendingPolarCheckoutRecord(storageKey: string, checkoutId: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(storageKey);
+
+    if (!rawValue) {
+      return;
+    }
+
+    const parsedValue = JSON.parse(rawValue) as unknown;
+
+    if (isPendingPolarCheckout(parsedValue)) {
+      window.localStorage.removeItem(storageKey);
+      return;
+    }
+
+    if (typeof parsedValue !== "object" || parsedValue === null) {
+      window.localStorage.removeItem(storageKey);
+      return;
+    }
+
+    const nextValue = { ...(parsedValue as Record<string, unknown>) };
+    delete nextValue[checkoutId];
+
+    if (Object.keys(nextValue).length === 0) {
+      window.localStorage.removeItem(storageKey);
+      return;
+    }
+
+    window.localStorage.setItem(storageKey, JSON.stringify(nextValue));
+  } catch {
+    window.localStorage.removeItem(storageKey);
+  }
+}
+
 async function fetchWithTimeout(
   input: RequestInfo | URL,
   init: RequestInit,
@@ -256,6 +381,7 @@ export default function ClientDashboard({
   const createSurveyDraftStorageKey = getCreateSurveyDraftStorageKey(initialProfile.id);
   const pendingPolarCheckoutStorageKey = getClientPendingPolarCheckoutStorageKey(initialProfile.id);
   const lastHandledPolarCheckoutIdRef = useRef<string | null>(null);
+  const isConfirmingPolarCheckoutRef = useRef(false);
   const [profileSnapshot, setProfileSnapshot] = useState<UserProfile>(initialProfile);
   const [surveys, setSurveys] = useState<ClientSurvey[]>([]);
   const [savedSettings, setSavedSettings] = useState<DashboardSettings>(() => buildInitialSettings(initialProfile));
@@ -642,22 +768,6 @@ export default function ClientDashboard({
     setPaymentNotice("");
     setPaymentError("");
 
-    try {
-      const payloadForStorage = hasSurveyAttachments(payload.attachments)
-        ? { ...payload, attachments: undefined }
-        : payload;
-
-      window.localStorage.setItem(
-        pendingPolarCheckoutStorageKey,
-        JSON.stringify({
-          payload: payloadForStorage,
-          createdAt: new Date().toISOString()
-        } satisfies PendingPolarCheckout)
-      );
-    } catch {
-      throw new Error("The survey attachments are too large to keep during checkout. Reduce the uploaded images or file and try again.");
-    }
-
     const response = await fetchWithTimeout(
       "/api/polar/checkout",
       {
@@ -677,13 +787,31 @@ export default function ClientDashboard({
     );
 
     const data = (await response.json()) as {
+      checkoutId?: string;
       checkoutUrl?: string;
       error?: string;
     };
 
-    if (!response.ok || !data.checkoutUrl) {
-      window.localStorage.removeItem(pendingPolarCheckoutStorageKey);
+    if (!response.ok || !data.checkoutUrl || !data.checkoutId) {
       throw new Error(data.error ?? "Polar checkout could not be created.");
+    }
+
+    try {
+      const payloadForStorage = hasSurveyAttachments(payload.attachments)
+        ? { ...payload, attachments: undefined }
+        : payload;
+
+      savePendingPolarCheckoutRecord(pendingPolarCheckoutStorageKey, {
+        checkoutId: data.checkoutId,
+        payload: payloadForStorage,
+        createdAt: new Date().toISOString()
+      });
+    } catch (error) {
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "The survey attachments are too large to keep during checkout. Reduce the uploaded images or file and try again."
+      );
     }
 
     return {
@@ -691,13 +819,13 @@ export default function ClientDashboard({
     };
   }
 
+  const paymentStatus = searchParams.get("payment");
+  const polarCheckoutId = searchParams.get("polar_checkout_id");
+
   useEffect(() => {
-    if (!hasHydratedData || isConfirmingPolarCheckout) {
+    if (!hasHydratedData || isConfirmingPolarCheckoutRef.current) {
       return;
     }
-
-    const paymentStatus = searchParams.get("payment");
-    const polarCheckoutId = searchParams.get("polar_checkout_id");
 
     if (!polarCheckoutId) {
       lastHandledPolarCheckoutIdRef.current = null;
@@ -713,22 +841,26 @@ export default function ClientDashboard({
       return;
     }
 
+    const currentPolarCheckoutId = polarCheckoutId;
     let cancelled = false;
 
     async function finalizePolarCheckout() {
-      lastHandledPolarCheckoutIdRef.current = polarCheckoutId;
+      lastHandledPolarCheckoutIdRef.current = currentPolarCheckoutId;
+      isConfirmingPolarCheckoutRef.current = true;
       setIsConfirmingPolarCheckout(true);
       setPaymentError("");
       setPaymentNotice("");
 
       try {
-        const pendingCheckoutRaw = window.localStorage.getItem(pendingPolarCheckoutStorageKey);
+        const pendingCheckout = readPendingPolarCheckoutRecord(
+          pendingPolarCheckoutStorageKey,
+          currentPolarCheckoutId
+        );
 
-        if (!pendingCheckoutRaw) {
+        if (!pendingCheckout) {
           throw new Error("Payment returned from Polar, but no pending survey draft was found on this device.");
         }
 
-        const pendingCheckout = JSON.parse(pendingCheckoutRaw) as PendingPolarCheckout;
         const draftPayloadRaw = window.localStorage.getItem(createSurveyDraftStorageKey);
         const draftPayload = draftPayloadRaw ? (JSON.parse(draftPayloadRaw) as { draft?: { attachments?: unknown } }) : null;
         const restoredAttachments = parseSurveyAttachments(draftPayload?.draft?.attachments);
@@ -740,7 +872,7 @@ export default function ClientDashboard({
           : pendingCheckout.payload;
 
         const verificationResponse = await fetchWithTimeout(
-          `/api/polar/checkout/${polarCheckoutId}`,
+          `/api/polar/checkout/${currentPolarCheckoutId}`,
           {},
           20000,
           "Polar payment verification is taking too long. Please refresh the dashboard in a moment."
@@ -769,7 +901,7 @@ export default function ClientDashboard({
           return;
         }
 
-        window.localStorage.removeItem(pendingPolarCheckoutStorageKey);
+        removePendingPolarCheckoutRecord(pendingPolarCheckoutStorageKey, currentPolarCheckoutId);
         window.localStorage.removeItem(createSurveyDraftStorageKey);
         setActiveSection("active-surveys");
         setPaymentNotice(
@@ -788,6 +920,8 @@ export default function ClientDashboard({
         setPaymentError(error instanceof Error ? error.message : "Polar payment verification failed.");
         router.replace(dashboardPath);
       } finally {
+        isConfirmingPolarCheckoutRef.current = false;
+
         if (!cancelled) {
           setIsConfirmingPolarCheckout(false);
         }
@@ -799,7 +933,15 @@ export default function ClientDashboard({
     return () => {
       cancelled = true;
     };
-  }, [createSurveyDraftStorageKey, dashboardPath, hasHydratedData, isConfirmingPolarCheckout, pendingPolarCheckoutStorageKey, router, searchParams]);
+  }, [
+    createSurveyDraftStorageKey,
+    dashboardPath,
+    hasHydratedData,
+    paymentStatus,
+    pendingPolarCheckoutStorageKey,
+    polarCheckoutId,
+    router
+  ]);
 
   function handleSettingsChange<Key extends keyof DashboardSettings>(field: Key, value: DashboardSettings[Key]) {
     setSettingsSaved(false);
