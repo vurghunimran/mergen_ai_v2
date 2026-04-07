@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -189,6 +189,29 @@ function buildLaunchNotificationSummary(sentEmails: number, sentTelegramMessages
   return summaryParts.join(" and ");
 }
 
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  timeoutMs: number,
+  timeoutMessage: string
+) {
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: AbortSignal.timeout(timeoutMs)
+    });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      (error.name === "TimeoutError" || error.name === "AbortError")
+    ) {
+      throw new Error(timeoutMessage);
+    }
+
+    throw error;
+  }
+}
+
 function buildChartPoints(values: number[], width: number, height: number, padding: number) {
   const safeMax = Math.max(...values, 1);
   const stepX = values.length > 1 ? (width - padding * 2) / (values.length - 1) : 0;
@@ -232,6 +255,7 @@ export default function ClientDashboard({
   const clientSettingsStorageKey = getClientDashboardSettingsStorageKey(initialProfile.id);
   const createSurveyDraftStorageKey = getCreateSurveyDraftStorageKey(initialProfile.id);
   const pendingPolarCheckoutStorageKey = getClientPendingPolarCheckoutStorageKey(initialProfile.id);
+  const lastHandledPolarCheckoutIdRef = useRef<string | null>(null);
   const [profileSnapshot, setProfileSnapshot] = useState<UserProfile>(initialProfile);
   const [surveys, setSurveys] = useState<ClientSurvey[]>([]);
   const [savedSettings, setSavedSettings] = useState<DashboardSettings>(() => buildInitialSettings(initialProfile));
@@ -473,13 +497,18 @@ export default function ClientDashboard({
   async function publishSurvey(payload: SurveyCheckoutPayload) {
     setPaymentNotice("");
     setPaymentError("");
-    const createResponse = await fetch("/api/surveys", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
+    const createResponse = await fetchWithTimeout(
+      "/api/surveys",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
       },
-      body: JSON.stringify(payload)
-    });
+      25000,
+      "Publishing the survey is taking too long. Please refresh the dashboard and check whether it was created."
+    );
 
     const createData = (await createResponse.json().catch(() => ({}))) as {
       survey?: ClientSurvey;
@@ -493,15 +522,20 @@ export default function ClientDashboard({
     setSurveys((currentSurveys) => [createData.survey as ClientSurvey, ...currentSurveys]);
 
     try {
-      const response = await fetch("/api/surveys/notify-community", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
+      const response = await fetchWithTimeout(
+        "/api/surveys/notify-community",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            surveyId: createData.survey.id
+          })
         },
-        body: JSON.stringify({
-          surveyId: createData.survey.id
-        })
-      });
+        15000,
+        "Survey published, but community notifications are taking too long. Check the dashboard again in a moment."
+      );
 
       const data = (await response.json()) as {
         stage?: number;
@@ -526,12 +560,15 @@ export default function ClientDashboard({
         sentTelegramMessages: data.sentTelegramMessages ?? 0,
         notificationError: ""
       };
-    } catch {
+    } catch (error) {
       return {
         matchedRecipients: 0,
         sentEmails: 0,
         sentTelegramMessages: 0,
-        notificationError: "Survey published, but community emails could not be sent."
+        notificationError:
+          error instanceof Error
+            ? error.message
+            : "Survey published, but community notifications could not be completed."
       };
     }
   }
@@ -621,18 +658,23 @@ export default function ClientDashboard({
       throw new Error("The survey attachments are too large to keep during checkout. Reduce the uploaded images or file and try again.");
     }
 
-    const response = await fetch("/api/polar/checkout", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
+    const response = await fetchWithTimeout(
+      "/api/polar/checkout",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          surveyTitle: payload.title,
+          questionCount: payload.questionCount,
+          respondentCount: payload.targetResponses,
+          includeDetailedAI: payload.includeDetailedAI
+        })
       },
-      body: JSON.stringify({
-        surveyTitle: payload.title,
-        questionCount: payload.questionCount,
-        respondentCount: payload.targetResponses,
-        includeDetailedAI: payload.includeDetailedAI
-      })
-    });
+      20000,
+      "Polar checkout creation is taking too long. Please try again."
+    );
 
     const data = (await response.json()) as {
       checkoutUrl?: string;
@@ -658,16 +700,23 @@ export default function ClientDashboard({
     const polarCheckoutId = searchParams.get("polar_checkout_id");
 
     if (!polarCheckoutId) {
+      lastHandledPolarCheckoutIdRef.current = null;
+
       if (paymentStatus === "cancelled") {
         setPaymentNotice("Polar checkout was cancelled. Your survey draft is still saved.");
-        window.history.replaceState(null, "", dashboardPath);
+        router.replace(dashboardPath);
       }
+      return;
+    }
+
+    if (lastHandledPolarCheckoutIdRef.current === polarCheckoutId) {
       return;
     }
 
     let cancelled = false;
 
     async function finalizePolarCheckout() {
+      lastHandledPolarCheckoutIdRef.current = polarCheckoutId;
       setIsConfirmingPolarCheckout(true);
       setPaymentError("");
       setPaymentNotice("");
@@ -690,7 +739,12 @@ export default function ClientDashboard({
             }
           : pendingCheckout.payload;
 
-        const verificationResponse = await fetch(`/api/polar/checkout/${polarCheckoutId}`);
+        const verificationResponse = await fetchWithTimeout(
+          `/api/polar/checkout/${polarCheckoutId}`,
+          {},
+          20000,
+          "Polar payment verification is taking too long. Please refresh the dashboard in a moment."
+        );
         const verificationData = (await verificationResponse.json()) as {
           isPaid?: boolean;
           status?: string;
@@ -725,14 +779,14 @@ export default function ClientDashboard({
               ? `Payment confirmed and survey published. ${buildLaunchNotificationSummary(launchResult.sentEmails, launchResult.sentTelegramMessages)}.`
               : "Payment confirmed and survey published."
         );
-        window.history.replaceState(null, "", dashboardPath);
+        router.replace(dashboardPath);
       } catch (error) {
         if (cancelled) {
           return;
         }
 
         setPaymentError(error instanceof Error ? error.message : "Polar payment verification failed.");
-        window.history.replaceState(null, "", dashboardPath);
+        router.replace(dashboardPath);
       } finally {
         if (!cancelled) {
           setIsConfirmingPolarCheckout(false);
@@ -745,7 +799,7 @@ export default function ClientDashboard({
     return () => {
       cancelled = true;
     };
-  }, [createSurveyDraftStorageKey, dashboardPath, hasHydratedData, isConfirmingPolarCheckout, pendingPolarCheckoutStorageKey, searchParams]);
+  }, [createSurveyDraftStorageKey, dashboardPath, hasHydratedData, isConfirmingPolarCheckout, pendingPolarCheckoutStorageKey, router, searchParams]);
 
   function handleSettingsChange<Key extends keyof DashboardSettings>(field: Key, value: DashboardSettings[Key]) {
     setSettingsSaved(false);
