@@ -20,6 +20,7 @@ import {
   WELCOME_SURVEY_ID,
   WELCOME_SURVEY_TITLE
 } from "@/lib/welcome-survey";
+import { hasSurveyAttachments, parseSurveyAttachments } from "@/lib/survey-attachments";
 
 type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
@@ -38,6 +39,7 @@ export type SurveyRow = {
   research_scope: string | null;
   hypothesis: string | null;
   include_detailed_ai: boolean;
+  attachments: Json | null;
   distribution_stage?: number | null;
   distribution_started_at?: string | null;
   distribution_last_sent_at?: string | null;
@@ -298,6 +300,7 @@ export function mapSurveyRowToClientSurvey(row: SurveyRow, responseRows: SurveyR
     researchScope: row.research_scope ?? "",
     hypothesis: row.hypothesis ?? "",
     includeDetailedAI: row.include_detailed_ai,
+    attachments: parseSurveyAttachments(row.attachments),
     rawResponses,
     kind: "standard"
   };
@@ -320,6 +323,7 @@ export function buildSurveyInsertPayload(payload: SurveyCheckoutPayload, userId:
     research_scope: payload.researchScope.trim(),
     hypothesis: payload.hypothesis.trim(),
     include_detailed_ai: Boolean(payload.includeDetailedAI),
+    attachments: hasSurveyAttachments(payload.attachments) ? payload.attachments : null,
     distribution_stage: 0,
     distribution_started_at: rolloutWindow.startedAt,
     distribution_last_sent_at: null,

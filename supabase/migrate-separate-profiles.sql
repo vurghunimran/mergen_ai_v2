@@ -163,6 +163,7 @@ create table if not exists public.surveys (
   research_scope text,
   hypothesis text,
   include_detailed_ai boolean not null default false,
+  attachments jsonb,
   distribution_stage integer not null default 0 check (distribution_stage between 0 and 4),
   distribution_started_at timestamptz not null default timezone('utc', now()),
   distribution_last_sent_at timestamptz,

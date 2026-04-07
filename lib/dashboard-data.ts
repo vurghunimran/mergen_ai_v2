@@ -1,3 +1,5 @@
+import type { SurveyAttachments } from "@/lib/survey-attachments";
+
 const CLIENT_DASHBOARD_SETTINGS_STORAGE_KEY = "mergen-client-dashboard-settings";
 const COMMUNITY_DASHBOARD_SETTINGS_STORAGE_KEY = "mergen-community-dashboard-settings";
 const COMMUNITY_DASHBOARD_PROGRESS_STORAGE_KEY = "mergen-community-dashboard-progress";
@@ -141,6 +143,7 @@ export type ClientSurvey = {
   researchScope?: string;
   hypothesis?: string;
   includeDetailedAI?: boolean;
+  attachments?: SurveyAttachments;
   rawResponses?: SurveyResponseRecord[];
   kind?: SurveyKind;
   fixedCredits?: number;
@@ -157,6 +160,7 @@ export type SurveyCheckoutPayload = {
   audience: SurveyAudience;
   questions: StoredSurveyQuestion[];
   includeDetailedAI: boolean;
+  attachments?: SurveyAttachments;
 };
 
 export type PendingPolarCheckout = {
@@ -169,6 +173,8 @@ export type SurveyPreviewPayload = {
   subtitle: string;
   questions: StoredSurveyQuestion[];
   createdAt: string;
+  attachments?: SurveyAttachments;
+  draftStorageKey?: string;
 };
 
 export type SurveyReportRequest = {

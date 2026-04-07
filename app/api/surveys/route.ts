@@ -5,6 +5,7 @@ import {
   normalizeCommunityLaunchCountries
 } from "@/lib/community-distribution";
 import { buildSurveyInsertPayload, listClientSurveysForUser, mapSurveyRowToClientSurvey, type SurveyRow } from "@/lib/survey-db";
+import { validateSurveyAttachmentsInput } from "@/lib/survey-attachments";
 import { buildForbiddenSurveyResponse, requireAuthorizedProfile } from "@/lib/survey-authorization";
 import { getSurveyStorageErrorMessage } from "@/lib/survey-storage-errors";
 import { createClient } from "@/lib/supabase/server";
@@ -15,9 +16,15 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function parseCreateSurveyPayload(body: unknown): SurveyCheckoutPayload | null {
+function parseCreateSurveyPayload(body: unknown): {
+  payload: SurveyCheckoutPayload | null;
+  error?: string;
+} {
   if (!isObject(body)) {
-    return null;
+    return {
+      payload: null,
+      error: "Invalid survey payload."
+    };
   }
 
   const title = typeof body.title === "string" ? body.title.trim() : "";
@@ -29,22 +36,36 @@ function parseCreateSurveyPayload(body: unknown): SurveyCheckoutPayload | null {
   const questionCount = typeof body.questionCount === "number" ? body.questionCount : 0;
   const audience = isObject(body.audience) ? body.audience : null;
   const questions = Array.isArray(body.questions) ? body.questions : null;
+  const { attachments, error: attachmentError } = validateSurveyAttachmentsInput(body.attachments);
+
+  if (attachmentError) {
+    return {
+      payload: null,
+      error: attachmentError
+    };
+  }
 
   if (!title || !description || !researchDescription || targetResponses <= 0 || questionCount <= 0 || !audience || !questions) {
-    return null;
+    return {
+      payload: null,
+      error: "Invalid survey payload."
+    };
   }
 
   return {
-    title,
-    targetResponses,
-    questionCount,
-    description,
-    researchDescription,
-    researchScope,
-    hypothesis,
-    audience: audience as SurveyCheckoutPayload["audience"],
-    questions: questions as SurveyCheckoutPayload["questions"],
-    includeDetailedAI: Boolean(body.includeDetailedAI)
+    payload: {
+      title,
+      targetResponses,
+      questionCount,
+      description,
+      researchDescription,
+      researchScope,
+      hypothesis,
+      audience: audience as SurveyCheckoutPayload["audience"],
+      questions: questions as SurveyCheckoutPayload["questions"],
+      includeDetailedAI: Boolean(body.includeDetailedAI),
+      attachments
+    }
   };
 }
 
@@ -72,10 +93,10 @@ export async function POST(request: Request) {
     return authorized.response;
   }
 
-  const payload = parseCreateSurveyPayload(await request.json().catch(() => null));
+  const { payload, error: payloadError } = parseCreateSurveyPayload(await request.json().catch(() => null));
 
   if (!payload) {
-    return NextResponse.json({ error: "Invalid survey payload." }, { status: 400 });
+    return NextResponse.json({ error: payloadError ?? "Invalid survey payload." }, { status: 400 });
   }
 
   const unsupportedCountries = getUnsupportedCommunityLaunchCountries(payload.audience.countries);

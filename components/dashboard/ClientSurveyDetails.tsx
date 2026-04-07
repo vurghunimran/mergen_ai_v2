@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, Clock3, FileText, Shield, Users } from "lucide-react";
+import SurveyAttachmentShowcase from "@/components/dashboard/SurveyAttachmentShowcase";
 import type { ClientSurvey } from "@/lib/dashboard-data";
 import {
   buildSignalHighlights,
@@ -94,6 +95,13 @@ export default function ClientSurveyDetails({
           </div>
 
           <div className="space-y-6">
+            <SurveyAttachmentShowcase
+              attachments={survey.attachments}
+              title="Attached materials"
+              description="These optional materials are shown to respondents before they begin the survey."
+              tone="orange"
+            />
+
             <section className="rounded-[28px] border border-gray-200 bg-white p-7 shadow-[0_18px_44px_rgba(15,23,42,0.04)]">
               <h2 className="text-2xl font-bold tracking-[-0.03em] text-[#7c3412]">Research brief</h2>
               <div className="mt-6 space-y-5 text-sm leading-7 text-[#4b5563]">

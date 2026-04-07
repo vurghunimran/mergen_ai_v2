@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
+import SurveyAttachmentShowcase from "@/components/dashboard/SurveyAttachmentShowcase";
 import SiteLogo from "@/components/SiteLogo";
 import {
   SURVEY_PREVIEW_STORAGE_KEY,
   type StoredSurveyQuestion,
   type SurveyPreviewPayload
 } from "@/lib/dashboard-data";
+import { parseSurveyAttachments } from "@/lib/survey-attachments";
 
 function renderQuestionOptions(question: StoredSurveyQuestion) {
   if (question.type === "Open question") {
@@ -90,7 +92,17 @@ export default function SurveyPreviewPage() {
         const parsedPreview = JSON.parse(rawPreview) as SurveyPreviewPayload;
 
         if (parsedPreview && Array.isArray(parsedPreview.questions)) {
-          setPreview(parsedPreview);
+          const draftAttachments =
+            parsedPreview.draftStorageKey && typeof window !== "undefined"
+              ? parseSurveyAttachments(
+                  JSON.parse(window.localStorage.getItem(parsedPreview.draftStorageKey) ?? "null")?.draft?.attachments
+                )
+              : undefined;
+
+          setPreview({
+            ...parsedPreview,
+            attachments: parsedPreview.attachments ?? draftAttachments
+          });
         }
       }
     } catch {
@@ -148,6 +160,14 @@ export default function SurveyPreviewPage() {
           <h1 className="mt-8 text-[40px] font-bold tracking-[-0.04em] text-[#7c3412]">{preview.title}</h1>
           <p className="mt-3 max-w-3xl text-[16px] leading-7 text-[#667085]">{preview.subtitle}</p>
         </div>
+
+        <SurveyAttachmentShowcase
+          attachments={preview.attachments}
+          title="Preview attached materials"
+          description="These optional attachments will be visible to community members before they start the survey."
+          tone="orange"
+          className="mb-6"
+        />
 
         <div className="grid gap-5">
           {preview.questions.map((question, index) => (

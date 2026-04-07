@@ -49,6 +49,7 @@ import {
   type SurveyCheckoutPayload
 } from "@/lib/dashboard-data";
 import type { SurveyReportResponse } from "@/lib/dashboard-data";
+import { hasSurveyAttachments, parseSurveyAttachments } from "@/lib/survey-attachments";
 import {
   buildQuestionCharts,
   buildRawDataCsv,
@@ -590,13 +591,21 @@ export default function ClientDashboard({
     setPaymentNotice("");
     setPaymentError("");
 
-    window.localStorage.setItem(
-      pendingPolarCheckoutStorageKey,
-      JSON.stringify({
-        payload,
-        createdAt: new Date().toISOString()
-      } satisfies PendingPolarCheckout)
-    );
+    try {
+      const payloadForStorage = hasSurveyAttachments(payload.attachments)
+        ? { ...payload, attachments: undefined }
+        : payload;
+
+      window.localStorage.setItem(
+        pendingPolarCheckoutStorageKey,
+        JSON.stringify({
+          payload: payloadForStorage,
+          createdAt: new Date().toISOString()
+        } satisfies PendingPolarCheckout)
+      );
+    } catch {
+      throw new Error("The survey attachments are too large to keep during checkout. Reduce the uploaded images or file and try again.");
+    }
 
     const response = await fetch("/api/polar/checkout", {
       method: "POST",
@@ -657,6 +666,15 @@ export default function ClientDashboard({
         }
 
         const pendingCheckout = JSON.parse(pendingCheckoutRaw) as PendingPolarCheckout;
+        const draftPayloadRaw = window.localStorage.getItem(createSurveyDraftStorageKey);
+        const draftPayload = draftPayloadRaw ? (JSON.parse(draftPayloadRaw) as { draft?: { attachments?: unknown } }) : null;
+        const restoredAttachments = parseSurveyAttachments(draftPayload?.draft?.attachments);
+        const publishPayload = hasSurveyAttachments(restoredAttachments)
+          ? {
+              ...pendingCheckout.payload,
+              attachments: restoredAttachments
+            }
+          : pendingCheckout.payload;
 
         const verificationResponse = await fetch(`/api/polar/checkout/${polarCheckoutId}`);
         const verificationData = (await verificationResponse.json()) as {
@@ -677,7 +695,7 @@ export default function ClientDashboard({
           );
         }
 
-        const launchResult = await publishSurvey(pendingCheckout.payload);
+        const launchResult = await publishSurvey(publishPayload);
 
         if (cancelled) {
           return;

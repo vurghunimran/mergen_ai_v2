@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
 import ProfileAvatarPicker from "@/components/dashboard/ProfileAvatarPicker";
+import SurveyAttachmentShowcase from "@/components/dashboard/SurveyAttachmentShowcase";
 import SiteLogo from "@/components/SiteLogo";
 import PasswordInput from "@/components/ui/password-input";
 import { buildCommunityAudienceProfile, matchesSurveyAudience } from "@/lib/audience-matching";
@@ -65,6 +66,7 @@ import {
   type RewardActivation,
   type RewardCatalogItem
 } from "@/lib/reward-activations";
+import { hasSurveyAttachments } from "@/lib/survey-attachments";
 import { WELCOME_SURVEY_CREDITS } from "@/lib/welcome-survey";
 
 const navigationItems = [
@@ -1712,6 +1714,11 @@ export default function CommunityDashboard({
                                 </div>
 
                                 <p className="max-w-3xl text-[15px] leading-6 text-[#667085]">{survey.description}</p>
+                                {hasSurveyAttachments(survey.attachments) ? (
+                                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#7c3aed]">
+                                    Includes optional images or a supporting file
+                                  </p>
+                                ) : null}
 
                                 <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:gap-6">
                                   <div>
@@ -1825,6 +1832,14 @@ export default function CommunityDashboard({
                         <p className="mt-1 text-xs text-[#8a94a6]">{getSurveyRewardNote(selectedSurvey)}</p>
                       </div>
                     </div>
+
+                    <SurveyAttachmentShowcase
+                      attachments={selectedSurvey.attachments}
+                      title="Helpful materials from the client"
+                      description="Review these optional images or files if you want more context before answering the survey."
+                      tone="purple"
+                      className="mt-6"
+                    />
 
                     {!hasStartedSelectedSurvey ? (
                       <div className="mt-8 rounded-[24px] border border-[#dccbff] bg-[#faf7ff] p-6">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   Bot,
@@ -9,6 +9,8 @@ import {
   CircleCheckBig,
   CreditCard,
   Eye,
+  ImagePlus,
+  Paperclip,
   Plus,
   Rocket,
   Save,
@@ -18,6 +20,7 @@ import {
   Wand2,
   X
 } from "lucide-react";
+import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
 import {
   getCreateSurveyDraftStorageKey,
   SURVEY_PREVIEW_STORAGE_KEY,
@@ -55,6 +58,19 @@ import {
   type SurveyAssistantResponse
 } from "@/lib/survey-assistant";
 import { getSurveyActiveWindowDays } from "@/lib/survey-rollout";
+import {
+  createSurveyImageAttachment,
+  createSurveySupportingFileAttachment
+} from "@/lib/survey-attachment-browser";
+import {
+  MAX_SURVEY_IMAGES,
+  buildEmptySurveyAttachments,
+  formatAttachmentSize,
+  hasSurveyAttachments,
+  parseSurveyAttachments,
+  type SurveyAttachments,
+  type SurveyImageAttachment
+} from "@/lib/survey-attachments";
 
 const STEP_TITLE_CLASS_NAME = "text-[34px] font-bold tracking-[-0.04em] text-[#7c3412]";
 
@@ -66,6 +82,7 @@ type SurveyQuestion = StoredSurveyQuestion;
 type SurveyDraft = {
   surveyTitle: string;
   surveyDescription: string;
+  attachments: SurveyAttachments;
   researchArea: string;
   targetRegion: string;
   generalAudience: boolean;
@@ -142,6 +159,7 @@ function buildInitialDraft(): SurveyDraft {
   return {
     surveyTitle: "",
     surveyDescription: "",
+    attachments: buildEmptySurveyAttachments(),
     researchArea: "Education Science",
     targetRegion: "North America",
     generalAudience: false,
@@ -330,9 +348,12 @@ function formatDraftSavedAt() {
 
 export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartCheckout }: Props) {
   const draftStorageKey = getCreateSurveyDraftStorageKey(userId);
+  const surveyImagesInputRef = useRef<HTMLInputElement | null>(null);
+  const surveyFileInputRef = useRef<HTMLInputElement | null>(null);
   const [stage, setStage] = useState<CreateSurveyStage>("define");
   const [draft, setDraft] = useState<SurveyDraft>(buildInitialDraft);
   const [draftNotice, setDraftNotice] = useState("");
+  const [attachmentError, setAttachmentError] = useState("");
   const [generationError, setGenerationError] = useState("");
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const [isCompletingPayment, setIsCompletingPayment] = useState(false);
@@ -354,6 +375,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
         const restoredDraft = {
           ...buildInitialDraft(),
           ...parsedDraft.draft,
+          attachments: parseSurveyAttachments(parsedDraft.draft.attachments) ?? buildEmptySurveyAttachments(),
           interests: sanitizeDraftInterests(parsedDraft.draft.interests),
           financialSituation: sanitizeDraftFinancialSituation(parsedDraft.draft.financialSituation),
           education: sanitizeDraftEducation(parsedDraft.draft.education),
@@ -410,6 +432,141 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
     setDraft((currentDraft) => ({
       ...currentDraft,
       [field]: value
+    }));
+  }
+
+  function buildCheckoutPayload() {
+    return {
+      title: draft.surveyTitle,
+      targetResponses: draft.respondentCount,
+      questionCount: draft.questions.length || draft.questionCount,
+      description: buildCommunityMessage(draft),
+      researchDescription: draft.assistantPrompt || buildDefaultPrompt(draft),
+      researchScope: draft.researchScope || buildDefaultScope(draft),
+      hypothesis: draft.hypothesis || buildDefaultHypothesis(draft),
+      audience: {
+        countries: draft.generalAudience ? [] : draft.selectedCountries,
+        generalAudience: draft.generalAudience,
+        ageMin: draft.ageMin,
+        ageMax: draft.ageMax,
+        gender: draft.gender,
+        education: draft.education,
+        interests: draft.interests,
+        salaryRange: draft.financialSituation,
+        residence: draft.residence,
+        familyStatus: draft.familyStatus,
+        researchArea: draft.researchArea
+      },
+      questions: draft.questions,
+      includeDetailedAI: draft.includeDetailedAI,
+      attachments: hasSurveyAttachments(draft.attachments) ? draft.attachments : undefined
+    } satisfies SurveyCheckoutPayload;
+  }
+
+  function saveDraftToLocalStorage(nextStage: CreateSurveyStage, nextDraft: SurveyDraft) {
+    window.localStorage.setItem(
+      draftStorageKey,
+      JSON.stringify({
+        stage: nextStage,
+        draft: nextDraft,
+        savedAt: formatDraftSavedAt()
+      } satisfies SavedCreateSurveyDraft)
+    );
+  }
+
+  async function handleSurveyImagesChange(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+
+    if (files.length === 0) {
+      return;
+    }
+
+    setAttachmentError("");
+
+    const remainingSlots = MAX_SURVEY_IMAGES - draft.attachments.images.length;
+
+    if (remainingSlots <= 0) {
+      setAttachmentError(`You can upload up to ${MAX_SURVEY_IMAGES} images for a survey.`);
+      return;
+    }
+
+    const nextImages: SurveyImageAttachment[] = [];
+    const filesToProcess = files.slice(0, remainingSlots);
+    let nextError = "";
+
+    for (const file of filesToProcess) {
+      try {
+        nextImages.push(await createSurveyImageAttachment(file));
+      } catch (error) {
+        nextError = error instanceof Error ? error.message : "Could not process one of the selected images.";
+        break;
+      }
+    }
+
+    if (nextImages.length > 0) {
+      setDraft((currentDraft) => ({
+        ...currentDraft,
+        attachments: {
+          ...currentDraft.attachments,
+          images: [...currentDraft.attachments.images, ...nextImages]
+        }
+      }));
+    }
+
+    if (!nextError && files.length > remainingSlots) {
+      nextError = `Only ${remainingSlots} more image${remainingSlots === 1 ? "" : "s"} can be added. Surveys are limited to ${MAX_SURVEY_IMAGES} images.`;
+    }
+
+    if (nextError) {
+      setAttachmentError(nextError);
+    }
+  }
+
+  async function handleSupportingFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    setAttachmentError("");
+
+    try {
+      const supportingFile = await createSurveySupportingFileAttachment(file);
+
+      setDraft((currentDraft) => ({
+        ...currentDraft,
+        attachments: {
+          ...currentDraft.attachments,
+          supportingFile
+        }
+      }));
+    } catch (error) {
+      setAttachmentError(error instanceof Error ? error.message : "Could not process the selected file.");
+    }
+  }
+
+  function handleRemoveSurveyImage(imageId: string) {
+    setAttachmentError("");
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      attachments: {
+        ...currentDraft.attachments,
+        images: currentDraft.attachments.images.filter((image) => image.id !== imageId)
+      }
+    }));
+  }
+
+  function handleRemoveSupportingFile() {
+    setAttachmentError("");
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      attachments: {
+        ...currentDraft.attachments,
+        supportingFile: undefined
+      }
     }));
   }
 
@@ -690,14 +847,14 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
   }
 
   function handleSaveDraft() {
-    const payload: SavedCreateSurveyDraft = {
-      stage,
-      draft,
-      savedAt: formatDraftSavedAt()
-    };
-
-    window.localStorage.setItem(draftStorageKey, JSON.stringify(payload));
-    setDraftNotice("Changes saved!");
+    try {
+      saveDraftToLocalStorage(stage, draft);
+      setAttachmentError("");
+      setDraftNotice("Changes saved!");
+    } catch {
+      setDraftNotice("");
+      setAttachmentError("This draft is too large to save locally. Remove some uploaded images or files and try again.");
+    }
   }
 
   function handleRemoveSurveyDraft() {
@@ -710,6 +867,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
     setDraft(buildInitialDraft());
     setStage("define");
     setDraftNotice("");
+    setAttachmentError("");
     setGenerationError("");
     onBackToDashboard();
   }
@@ -719,19 +877,18 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
       title: draft.surveyTitle || "Survey Preview",
       subtitle: `${draft.researchArea} survey for respondents in ${buildTargetLabel(draft)} aged ${draft.ageMin}-${draft.ageMax}.`,
       questions: syncQuestionsToCount(draft.questions.length ? draft.questions : generateQuestions(draft), draft),
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      draftStorageKey
     };
 
-    window.localStorage.setItem(
-      draftStorageKey,
-      JSON.stringify({
-        stage,
-        draft,
-        savedAt: formatDraftSavedAt()
-      } satisfies SavedCreateSurveyDraft)
-    );
-    window.localStorage.setItem(SURVEY_PREVIEW_STORAGE_KEY, JSON.stringify(previewPayload));
-    window.location.assign("/survey-preview?section=create-survey");
+    try {
+      saveDraftToLocalStorage(stage, draft);
+      window.localStorage.setItem(SURVEY_PREVIEW_STORAGE_KEY, JSON.stringify(previewPayload));
+      setAttachmentError("");
+      window.location.assign("/survey-preview?section=create-survey");
+    } catch {
+      setAttachmentError("Preview could not be prepared locally. Remove some uploaded images or files and try again.");
+    }
   }
 
   async function handleCompletePayment() {
@@ -743,30 +900,13 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
     setCheckoutError("");
 
     try {
-      const { checkoutUrl } = await onStartCheckout({
-        title: draft.surveyTitle,
-        targetResponses: draft.respondentCount,
-        questionCount: draft.questions.length || draft.questionCount,
-        description: buildCommunityMessage(draft),
-        researchDescription: draft.assistantPrompt || buildDefaultPrompt(draft),
-        researchScope: draft.researchScope || buildDefaultScope(draft),
-        hypothesis: draft.hypothesis || buildDefaultHypothesis(draft),
-        audience: {
-          countries: draft.generalAudience ? [] : draft.selectedCountries,
-          generalAudience: draft.generalAudience,
-          ageMin: draft.ageMin,
-          ageMax: draft.ageMax,
-          gender: draft.gender,
-          education: draft.education,
-          interests: draft.interests,
-          salaryRange: draft.financialSituation,
-          residence: draft.residence,
-          familyStatus: draft.familyStatus,
-          researchArea: draft.researchArea
-        },
-        questions: draft.questions,
-        includeDetailedAI: draft.includeDetailedAI
-      });
+      try {
+        saveDraftToLocalStorage(stage, draft);
+      } catch {
+        throw new Error("The survey attachments are too large to keep during checkout. Reduce the uploaded images or file and try again.");
+      }
+
+      const { checkoutUrl } = await onStartCheckout(buildCheckoutPayload());
 
       window.location.assign(checkoutUrl);
       return;
@@ -785,6 +925,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
     setStage("define");
     setDraft(buildInitialDraft());
     setDraftNotice("");
+    setAttachmentError("");
     setGenerationError("");
     setLaunchComplete(false);
     setLaunchTimestamp("");
@@ -901,6 +1042,119 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                   This message is shown to members before they start answering the survey.
                 </p>
               </label>
+
+              <div className="rounded-[24px] border border-dashed border-[#ffd1ad] bg-[#fffaf5] p-5 md:col-span-2">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="max-w-3xl">
+                    <p className="text-sm font-semibold text-[#7c3412]">Optional visual context</p>
+                    <p className="mt-2 text-sm leading-7 text-[#8a5a3d]">
+                      Add up to 3 images and 1 supporting file if you want respondents to see your product visually or review statistical data before they answer.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <input
+                      ref={surveyImagesInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleSurveyImagesChange}
+                      className="hidden"
+                    />
+                    <input
+                      ref={surveyFileInputRef}
+                      type="file"
+                      accept=".csv,.doc,.docx,.json,.pdf,.ppt,.pptx,.txt,.xls,.xlsx"
+                      onChange={handleSupportingFileChange}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => surveyImagesInputRef.current?.click()}
+                      disabled={draft.attachments.images.length >= MAX_SURVEY_IMAGES}
+                      className="inline-flex items-center gap-2 rounded-2xl bg-[#f35b04] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#d94f03] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <ImagePlus className="h-4 w-4" />
+                      Add images
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => surveyFileInputRef.current?.click()}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-[#ffd1ad] bg-white px-4 py-3 text-sm font-semibold text-[#d85d1c] transition hover:border-[#f35b04] hover:text-[#c2410c]"
+                    >
+                      <Paperclip className="h-4 w-4" />
+                      {draft.attachments.supportingFile ? "Replace file" : "Add file"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-5 space-y-4">
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-[#8a94a6]">
+                    <span>{draft.attachments.images.length} / {MAX_SURVEY_IMAGES} images added</span>
+                    <span>Images are optimized automatically before save</span>
+                    <span>Supporting file is optional</span>
+                  </div>
+
+                  {draft.attachments.images.length > 0 ? (
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                      {draft.attachments.images.map((image) => (
+                        <div key={image.id} className="overflow-hidden rounded-[22px] border border-[#f6d9c1] bg-white p-3">
+                          <div className="overflow-hidden rounded-[18px] bg-[#fcfcfd]">
+                            <ImageWithFallback
+                              src={image.dataUrl}
+                              alt={image.name}
+                              className="h-40 w-full object-cover"
+                            />
+                          </div>
+                          <div className="mt-3 flex items-start justify-between gap-3">
+                            <div>
+                              <p className="break-words text-sm font-semibold text-[#111827]">{image.name}</p>
+                              <p className="mt-1 text-xs text-[#98a2b3]">{formatAttachmentSize(image.sizeInBytes)}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSurveyImage(image.id)}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#f6d9c1] text-[#d85d1c] transition hover:border-[#f35b04] hover:text-[#c2410c]"
+                              aria-label={`Remove ${image.name}`}
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-[#f6d9c1] bg-white px-4 py-5 text-sm text-[#8a5a3d]">
+                      No survey images added yet. This is optional.
+                    </div>
+                  )}
+
+                  {draft.attachments.supportingFile ? (
+                    <div className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] border border-[#f6d9c1] bg-white p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fff3e7] text-[#f35b04]">
+                          <Paperclip className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-[#111827]">{draft.attachments.supportingFile.name}</p>
+                          <p className="text-xs text-[#98a2b3]">
+                            {formatAttachmentSize(draft.attachments.supportingFile.sizeInBytes)}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemoveSupportingFile}
+                        className="inline-flex items-center gap-2 rounded-full border border-[#f6d9c1] px-4 py-2 text-sm font-semibold text-[#d85d1c] transition hover:border-[#f35b04] hover:text-[#c2410c]"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Remove file
+                      </button>
+                    </div>
+                  ) : null}
+
+                  {attachmentError ? <p className="text-sm font-medium text-[#d85a2f]">{attachmentError}</p> : null}
+                </div>
+              </div>
 
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-[#4b5563]">Research area</span>
@@ -1351,6 +1605,8 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                 </button>
               </div>
             </div>
+
+            {attachmentError ? <p className="mb-5 text-sm font-medium text-[#d85a2f]">{attachmentError}</p> : null}
 
             <div className="space-y-4">
               {draft.questions.map((question, index) => (
