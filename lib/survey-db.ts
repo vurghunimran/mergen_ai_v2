@@ -323,7 +323,11 @@ export function buildSurveyInsertPayload(payload: SurveyCheckoutPayload, userId:
     research_scope: payload.researchScope.trim(),
     hypothesis: payload.hypothesis.trim(),
     include_detailed_ai: Boolean(payload.includeDetailedAI),
-    attachments: hasSurveyAttachments(payload.attachments) ? payload.attachments : null,
+    ...(hasSurveyAttachments(payload.attachments)
+      ? {
+          attachments: payload.attachments
+        }
+      : {}),
     distribution_stage: 0,
     distribution_started_at: rolloutWindow.startedAt,
     distribution_last_sent_at: null,

@@ -12,6 +12,20 @@ import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
+function isMissingAttachmentsColumnError(error: unknown) {
+  if (typeof error !== "object" || error === null) {
+    return false;
+  }
+
+  const code = typeof (error as { code?: unknown }).code === "string" ? (error as { code: string }).code : "";
+  const message =
+    typeof (error as { message?: unknown }).message === "string"
+      ? (error as { message: string }).message.toLowerCase()
+      : "";
+
+  return code === "PGRST204" && message.includes("attachments") && message.includes("schema cache");
+}
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -114,18 +128,35 @@ export async function POST(request: Request) {
 
   try {
     const supabase = createClient();
-    const { data, error } = await supabase
+    const insertPayload = buildSurveyInsertPayload(payload, authorized.profile.id);
+    let warning = "";
+    let { data, error } = await supabase
       .from("surveys")
-      .insert(buildSurveyInsertPayload(payload, authorized.profile.id))
+      .insert(insertPayload)
       .select("*")
       .single();
+
+    if (error && isMissingAttachmentsColumnError(error)) {
+      const { attachments: _attachments, ...fallbackInsertPayload } = insertPayload;
+      const fallbackResult = await supabase
+        .from("surveys")
+        .insert(fallbackInsertPayload)
+        .select("*")
+        .single();
+
+      data = fallbackResult.data;
+      error = fallbackResult.error;
+      warning =
+        "Survey published without attachments because the database attachment column is not available yet. Run the latest survey attachment migration in Supabase to enable uploads.";
+    }
 
     if (error || !data) {
       throw error ?? new Error("Survey could not be created.");
     }
 
     return NextResponse.json({
-      survey: mapSurveyRowToClientSurvey(data as SurveyRow)
+      survey: mapSurveyRowToClientSurvey(data as SurveyRow),
+      warning
     });
   } catch (error) {
     console.error("Failed to create survey.", error);

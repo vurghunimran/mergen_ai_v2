@@ -638,6 +638,7 @@ export default function ClientDashboard({
 
     const createData = (await createResponse.json().catch(() => ({}))) as {
       survey?: ClientSurvey;
+      warning?: string;
       error?: string;
     };
 
@@ -673,6 +674,7 @@ export default function ClientDashboard({
 
       if (!response.ok) {
         return {
+          publishWarning: createData.warning ?? "",
           matchedRecipients: 0,
           sentEmails: 0,
           sentTelegramMessages: 0,
@@ -681,6 +683,7 @@ export default function ClientDashboard({
       }
 
       return {
+        publishWarning: createData.warning ?? "",
         matchedRecipients: data.matchedRecipients ?? 0,
         sentEmails: data.sentEmails ?? 0,
         sentTelegramMessages: data.sentTelegramMessages ?? 0,
@@ -688,6 +691,7 @@ export default function ClientDashboard({
       };
     } catch (error) {
       return {
+        publishWarning: createData.warning ?? "",
         matchedRecipients: 0,
         sentEmails: 0,
         sentTelegramMessages: 0,
@@ -906,7 +910,9 @@ export default function ClientDashboard({
         setActiveSection("active-surveys");
         setPaymentNotice(
           launchResult.notificationError
-            ? `Payment confirmed and survey published. ${launchResult.notificationError}`
+            ? `Payment confirmed and survey published. ${launchResult.publishWarning ? `${launchResult.publishWarning} ` : ""}${launchResult.notificationError}`
+            : launchResult.publishWarning
+              ? `Payment confirmed and survey published. ${launchResult.publishWarning}`
             : launchResult.sentEmails > 0 || launchResult.sentTelegramMessages > 0
               ? `Payment confirmed and survey published. ${buildLaunchNotificationSummary(launchResult.sentEmails, launchResult.sentTelegramMessages)}.`
               : "Payment confirmed and survey published."
