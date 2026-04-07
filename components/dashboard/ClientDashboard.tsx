@@ -175,6 +175,20 @@ function getSurveyProgressPercent(survey: ClientSurvey) {
   return Math.min(100, Math.max(0, (responses / targetResponses) * 100));
 }
 
+function buildLaunchNotificationSummary(sentEmails: number, sentTelegramMessages: number) {
+  const summaryParts: string[] = [];
+
+  if (sentEmails > 0) {
+    summaryParts.push(`${sentEmails} matching community members were emailed`);
+  }
+
+  if (sentTelegramMessages > 0) {
+    summaryParts.push(`${sentTelegramMessages} received Telegram alerts`);
+  }
+
+  return summaryParts.join(" and ");
+}
+
 function buildChartPoints(values: number[], width: number, height: number, padding: number) {
   const safeMax = Math.max(...values, 1);
   const stepX = values.length > 1 ? (width - padding * 2) / (values.length - 1) : 0;
@@ -708,7 +722,7 @@ export default function ClientDashboard({
           launchResult.notificationError
             ? `Payment confirmed and survey published. ${launchResult.notificationError}`
             : launchResult.sentEmails > 0 || launchResult.sentTelegramMessages > 0
-              ? `Payment confirmed and survey published. ${launchResult.sentEmails} matching community members were emailed${launchResult.sentTelegramMessages > 0 ? ` and ${launchResult.sentTelegramMessages} received Telegram alerts` : ""}.`
+              ? `Payment confirmed and survey published. ${buildLaunchNotificationSummary(launchResult.sentEmails, launchResult.sentTelegramMessages)}.`
               : "Payment confirmed and survey published."
         );
         window.history.replaceState(null, "", dashboardPath);

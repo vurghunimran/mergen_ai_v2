@@ -479,10 +479,6 @@ function selectRecipientsForStage(params: {
       return false;
     }
 
-    if (params.stage === 1) {
-      return candidate.completionCount === 0;
-    }
-
     return true;
   });
 
@@ -534,13 +530,16 @@ async function sendSurveyEmails(params: {
   appBaseUrl: string;
 }) {
   if (params.recipients.length === 0) {
-    return 0;
+    return {
+      sentEmails: 0,
+      deliveredRecipientIds: [] as string[]
+    };
   }
 
   const resend = createResendClient();
   const fromEmail = getResendFromEmail("MERGEN AI <onboarding@resend.dev>");
   const dashboardUrl = `${params.appBaseUrl}/dashboard/community`;
-  let sentEmails = 0;
+  const deliveredRecipientIds: string[] = [];
 
   for (const recipientChunk of chunkArray(params.recipients, 50)) {
     const batchResponse = await resend.batch.send(
@@ -572,10 +571,13 @@ async function sendSurveyEmails(params: {
       throw new Error(batchResponse.error.message);
     }
 
-    sentEmails += recipientChunk.length;
+    deliveredRecipientIds.push(...recipientChunk.map((recipient) => recipient.id));
   }
 
-  return sentEmails;
+  return {
+    sentEmails: deliveredRecipientIds.length,
+    deliveredRecipientIds
+  };
 }
 
 async function sendSurveyTelegramMessages(params: {
@@ -585,7 +587,10 @@ async function sendSurveyTelegramMessages(params: {
   appBaseUrl: string;
 }) {
   if (!isTelegramBotConfigured()) {
-    return 0;
+    return {
+      sentTelegramMessages: 0,
+      deliveredRecipientIds: [] as string[]
+    };
   }
 
   const recipientsWithTelegram = params.recipients.filter(
@@ -593,7 +598,10 @@ async function sendSurveyTelegramMessages(params: {
   );
 
   if (recipientsWithTelegram.length === 0) {
-    return 0;
+    return {
+      sentTelegramMessages: 0,
+      deliveredRecipientIds: [] as string[]
+    };
   }
 
   const dashboardUrl = `${params.appBaseUrl}/dashboard/community`;
@@ -669,7 +677,10 @@ async function sendSurveyTelegramMessages(params: {
     }
   }
 
-  return deliveredRecipientIds.length;
+  return {
+    sentTelegramMessages: deliveredRecipientIds.length,
+    deliveredRecipientIds
+  };
 }
 
 async function persistNotificationRows(params: {
@@ -765,24 +776,61 @@ export async function dispatchSurveyStage(params: {
     alreadyNotifiedIds
   });
 
-  const sentEmails = await sendSurveyEmails({
-    survey: params.survey,
-    stage: params.stage,
-    recipients: matchedRecipients,
-    appBaseUrl: params.appBaseUrl
-  });
-  const sentTelegramMessages = await sendSurveyTelegramMessages({
-    admin: params.admin,
-    survey: params.survey,
-    recipients: matchedRecipients,
-    appBaseUrl: params.appBaseUrl
-  });
+  let emailResult = {
+    sentEmails: 0,
+    deliveredRecipientIds: [] as string[]
+  };
+  let telegramResult = {
+    sentTelegramMessages: 0,
+    deliveredRecipientIds: [] as string[]
+  };
+  const notificationErrors: string[] = [];
+
+  try {
+    telegramResult = await sendSurveyTelegramMessages({
+      admin: params.admin,
+      survey: params.survey,
+      recipients: matchedRecipients,
+      appBaseUrl: params.appBaseUrl
+    });
+  } catch (error) {
+    console.error("Telegram survey notification dispatch failed.", error);
+    notificationErrors.push(
+      error instanceof Error ? `Telegram: ${error.message}` : "Telegram delivery failed."
+    );
+  }
+
+  try {
+    emailResult = await sendSurveyEmails({
+      survey: params.survey,
+      stage: params.stage,
+      recipients: matchedRecipients,
+      appBaseUrl: params.appBaseUrl
+    });
+  } catch (error) {
+    console.error("Email survey notification dispatch failed.", error);
+    notificationErrors.push(
+      error instanceof Error ? `Email: ${error.message}` : "Email delivery failed."
+    );
+  }
+
+  const deliveredRecipientIds = new Set([
+    ...emailResult.deliveredRecipientIds,
+    ...telegramResult.deliveredRecipientIds
+  ]);
+  const deliveredRecipients = matchedRecipients.filter((recipient) =>
+    deliveredRecipientIds.has(recipient.id)
+  );
+
+  if (matchedRecipients.length > 0 && deliveredRecipients.length === 0 && notificationErrors.length > 0) {
+    throw new Error(notificationErrors.join(" "));
+  }
 
   await persistNotificationRows({
     admin: params.admin,
     surveyId: params.survey.id,
     stage: params.stage,
-    recipients: matchedRecipients
+    recipients: deliveredRecipients
   });
 
   await markSurveyStageProcessed({
@@ -796,8 +844,8 @@ export async function dispatchSurveyStage(params: {
     surveyId: params.survey.id,
     stage: params.stage,
     matchedRecipients: matchedRecipients.length,
-    sentEmails,
-    sentTelegramMessages,
+    sentEmails: emailResult.sentEmails,
+    sentTelegramMessages: telegramResult.sentTelegramMessages,
     remainingResponses
   };
 }
