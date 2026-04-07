@@ -143,11 +143,15 @@ export async function POST() {
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
   try {
-    await admin
+    const { error: deleteTokenError } = await admin
       .from("telegram_link_tokens")
       .delete()
       .eq("user_id", authorized.profile.id)
       .is("consumed_at", null);
+
+    if (deleteTokenError) {
+      throw deleteTokenError;
+    }
 
     const { error } = await admin.from("telegram_link_tokens").insert({
       token,
@@ -193,7 +197,7 @@ export async function DELETE() {
   try {
     const admin = createAdminClient();
 
-    await Promise.all([
+    const [subscriptionDeleteResult, tokenDeleteResult] = await Promise.all([
       admin
         .from("telegram_notification_subscriptions")
         .delete()
@@ -204,6 +208,14 @@ export async function DELETE() {
         .eq("user_id", authorized.profile.id)
         .is("consumed_at", null)
     ]);
+
+    if (subscriptionDeleteResult.error) {
+      throw subscriptionDeleteResult.error;
+    }
+
+    if (tokenDeleteResult.error) {
+      throw tokenDeleteResult.error;
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

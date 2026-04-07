@@ -105,13 +105,22 @@ export async function POST(request: Request) {
   const startToken = extractStartToken(trimmedText);
 
   if (trimmedText === "/stop") {
-    await admin
+    const { error: pauseError } = await admin
       .from("telegram_notification_subscriptions")
       .update({
         notifications_enabled: false,
         updated_at: new Date().toISOString()
       })
       .eq("telegram_chat_id", chatId);
+
+    if (pauseError) {
+      console.error("Telegram subscription pause failed.", pauseError);
+      await sendWebhookMessage(
+        chatId,
+        "We could not pause Telegram alerts right now. Please try again in a moment or disable them from your MERGEN settings."
+      );
+      return NextResponse.json({ ok: true });
+    }
 
     await sendWebhookMessage(
       chatId,
@@ -153,13 +162,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    await admin
+    const { error: linkTokenUpdateError } = await admin
       .from("telegram_link_tokens")
       .update({
         telegram_chat_id: chatId,
         telegram_user_id: fromId || null
       })
       .eq("token", tokenRow.token);
+
+    if (linkTokenUpdateError) {
+      console.error("Telegram link token chat assignment failed.", linkTokenUpdateError);
+      await sendWebhookMessage(
+        chatId,
+        "We could not store this Telegram chat yet. Please request a fresh activation link from MERGEN settings and try again."
+      );
+      return NextResponse.json({ ok: true });
+    }
 
     await sendWebhookMessage(
       chatId,
@@ -225,11 +243,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    const { data: existingChatSubscription } = await admin
+    const {
+      data: existingChatSubscription,
+      error: existingChatSubscriptionError
+    } = await admin
       .from("telegram_notification_subscriptions")
       .select("user_id")
       .eq("telegram_chat_id", chatId)
       .maybeSingle();
+
+    if (existingChatSubscriptionError) {
+      console.error(
+        "Telegram existing subscription lookup failed.",
+        existingChatSubscriptionError
+      );
+      await sendWebhookMessage(
+        chatId,
+        "We could not verify this Telegram chat right now. Please try again from MERGEN settings."
+      );
+      return NextResponse.json({ ok: true });
+    }
 
     const existingSubscription =
       (existingChatSubscription as TelegramSubscriptionRow | null) ?? null;
@@ -275,7 +308,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    await admin
+    const { error: tokenConsumeError } = await admin
       .from("telegram_link_tokens")
       .update({
         consumed_at: linkedAt,
@@ -284,6 +317,10 @@ export async function POST(request: Request) {
       })
       .eq("user_id", tokenRow.user_id)
       .is("consumed_at", null);
+
+    if (tokenConsumeError) {
+      console.error("Telegram link token consume failed.", tokenConsumeError);
+    }
 
     await sendWebhookMessage(
       chatId,
