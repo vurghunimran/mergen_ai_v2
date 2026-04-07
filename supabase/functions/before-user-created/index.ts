@@ -24,6 +24,21 @@ type UniversityDirectoryRecord = {
 const EMAIL_ADDRESS_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UNIVERSITY_DOMAIN_PATTERN =
   /(?:\.edu$)|(?:\.(?:edu|ac)\.[a-z]{2,}(?:\.[a-z]{2,})?$)/i;
+const INSTITUTION_ACRONYM_STOP_WORDS = new Set([
+  "a",
+  "an",
+  "and",
+  "at",
+  "de",
+  "del",
+  "di",
+  "for",
+  "la",
+  "le",
+  "of",
+  "the",
+  "university",
+]);
 
 const GENERIC_UNIVERSITY_EMAIL_MESSAGE =
   "Use the email address issued by your university. Personal email providers are not accepted for client accounts.";
@@ -40,6 +55,37 @@ function normalizeInstitutionName(value: string) {
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function normalizeInstitutionAcronymCandidate(value: string) {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function getInstitutionAcronym(value: string) {
+  const normalizedInstitution = normalizeInstitutionName(value);
+
+  if (!normalizedInstitution) {
+    return "";
+  }
+
+  const words = normalizedInstitution.split(" ").filter(Boolean);
+  const significantWords = words.filter(
+    (word) => !INSTITUTION_ACRONYM_STOP_WORDS.has(word),
+  );
+  const acronymSource = significantWords.length > 0 ? significantWords : words;
+
+  return acronymSource.map((word) => word[0] ?? "").join("");
+}
+
+function isInstitutionAcronymLike(value: string) {
+  const acronymCandidate = normalizeInstitutionAcronymCandidate(value);
+  const normalizedInstitution = normalizeInstitutionName(value);
+
+  return (
+    !normalizedInstitution.includes(" ") &&
+    acronymCandidate.length >= 2 &&
+    acronymCandidate.length <= 5
+  );
 }
 
 function extractEmailDomain(email: string) {
@@ -102,6 +148,15 @@ function findUniversityDirectoryMatch(
 
   if (exactMatch) {
     return exactMatch;
+  }
+
+  if (isInstitutionAcronymLike(institution)) {
+    return (
+      records.find(
+        (record) =>
+          getInstitutionAcronym(record.name ?? "") === normalizedInstitution,
+      ) ?? null
+    );
   }
 
   return (
@@ -179,9 +234,10 @@ async function fetchUniversityDirectoryRecords(
   }
 
   const response = await fetch(
-    `http://universities.hipolabs.com/search?${searchParams.toString()}`,
+    `https://universities.hipolabs.com/search?${searchParams.toString()}`,
     {
       headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(6000),
     },
   );
 

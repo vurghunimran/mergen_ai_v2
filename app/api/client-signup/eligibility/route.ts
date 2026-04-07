@@ -57,7 +57,7 @@ async function fetchUniversityDirectoryRecords(
   }
 
   const response = await fetch(
-    `http://universities.hipolabs.com/search?${searchParams.toString()}`,
+    `https://universities.hipolabs.com/search?${searchParams.toString()}`,
     {
       headers: { Accept: "application/json" },
       next: { revalidate: 86400 },

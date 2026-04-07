@@ -67,7 +67,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const response = await fetch(`http://universities.hipolabs.com/search?country=${encodeURIComponent(country)}`, {
+    const response = await fetch(`https://universities.hipolabs.com/search?country=${encodeURIComponent(country)}`, {
       headers: { Accept: "application/json" },
       next: { revalidate: 86400 },
       signal: AbortSignal.timeout(6000)

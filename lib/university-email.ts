@@ -8,6 +8,22 @@ export type UniversityDirectoryRecord = {
   domains?: string[];
 };
 
+const INSTITUTION_ACRONYM_STOP_WORDS = new Set([
+  "a",
+  "an",
+  "and",
+  "at",
+  "de",
+  "del",
+  "di",
+  "for",
+  "la",
+  "le",
+  "of",
+  "the",
+  "university"
+]);
+
 export function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
@@ -31,6 +47,37 @@ export function normalizeInstitutionName(value: string) {
     .trim();
 }
 
+function normalizeInstitutionAcronymCandidate(value: string) {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function getInstitutionAcronym(value: string) {
+  const normalizedInstitution = normalizeInstitutionName(value);
+
+  if (!normalizedInstitution) {
+    return "";
+  }
+
+  const words = normalizedInstitution.split(" ").filter(Boolean);
+  const significantWords = words.filter(
+    (word) => !INSTITUTION_ACRONYM_STOP_WORDS.has(word)
+  );
+  const acronymSource = significantWords.length > 0 ? significantWords : words;
+
+  return acronymSource.map((word) => word[0] ?? "").join("");
+}
+
+function isInstitutionAcronymLike(value: string) {
+  const acronymCandidate = normalizeInstitutionAcronymCandidate(value);
+  const normalizedInstitution = normalizeInstitutionName(value);
+
+  return (
+    !normalizedInstitution.includes(" ") &&
+    acronymCandidate.length >= 2 &&
+    acronymCandidate.length <= 5
+  );
+}
+
 export function findUniversityDirectoryMatch(
   records: UniversityDirectoryRecord[],
   institution: string,
@@ -49,6 +96,14 @@ export function findUniversityDirectoryMatch(
 
   if (exactMatch) {
     return exactMatch;
+  }
+
+  if (isInstitutionAcronymLike(institution)) {
+    return (
+      records.find(
+        (record) => getInstitutionAcronym(record.name ?? "") === normalizedInstitution
+      ) ?? null
+    );
   }
 
   return (

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  communityLaunchCountries,
   getCommunityLaunchRegionByCountry,
   normalizeCommunityLaunchCountry
 } from "@/lib/community-distribution";
@@ -7,6 +8,17 @@ import { getDetectedCountryFromHeaders } from "@/lib/request-country";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
+
+function getRequestedCountry(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const requestedCountry = searchParams.get("country")?.trim() ?? "";
+
+  if (!requestedCountry) {
+    return null;
+  }
+
+  return normalizeCommunityLaunchCountry(requestedCountry);
+}
 
 async function isRegionAvailable(country: string) {
   const region = getCommunityLaunchRegionByCountry(country);
@@ -35,24 +47,18 @@ async function isRegionAvailable(country: string) {
 export async function GET(request: Request) {
   try {
     const detectedCountry = getDetectedCountryFromHeaders(request.headers);
-
-    if (!detectedCountry) {
-      return NextResponse.json({
-        allowed: false,
-        detectedCountry: null,
-        verifiedCountry: null,
-        message: "We couldn't verify your location. Turn off VPN or proxy and try again."
-      });
-    }
-
-    const verifiedCountry = normalizeCommunityLaunchCountry(detectedCountry);
+    const requestedCountry = getRequestedCountry(request);
+    const verifiedCountry =
+      normalizeCommunityLaunchCountry(detectedCountry ?? "") ?? requestedCountry;
 
     if (!verifiedCountry) {
       return NextResponse.json({
         allowed: false,
-        detectedCountry,
+        detectedCountry: requestedCountry,
         verifiedCountry: null,
-        message: "Community sign-up isn't available for your current location."
+        availableCountries: communityLaunchCountries,
+        message:
+          "We couldn't verify your location automatically. Choose your country manually and try again."
       });
     }
 
@@ -61,6 +67,7 @@ export async function GET(request: Request) {
         allowed: false,
         detectedCountry: verifiedCountry,
         verifiedCountry: null,
+        availableCountries: communityLaunchCountries,
         message: "Community sign-up isn't available for your current location right now."
       });
     }
@@ -69,6 +76,7 @@ export async function GET(request: Request) {
       allowed: true,
       detectedCountry: verifiedCountry,
       verifiedCountry,
+      availableCountries: communityLaunchCountries,
       message: ""
     });
   } catch (error) {
@@ -79,6 +87,7 @@ export async function GET(request: Request) {
         allowed: false,
         detectedCountry: null,
         verifiedCountry: null,
+        availableCountries: communityLaunchCountries,
         message: "We couldn't verify your location right now. Please try again."
       },
       { status: 500 }

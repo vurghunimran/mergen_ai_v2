@@ -34,7 +34,10 @@ import {
   residenceOptions,
   salaryRangeOptions,
 } from "@/lib/auth-options";
-import { normalizeCommunityLaunchCountry } from "@/lib/community-distribution";
+import {
+  communityLaunchCountries,
+  normalizeCommunityLaunchCountry,
+} from "@/lib/community-distribution";
 import SiteLogo from "@/components/SiteLogo";
 import { PRIVACY_POLICY_VERSION, TERMS_VERSION } from "@/lib/legal";
 import PasswordInput from "@/components/ui/password-input";
@@ -85,6 +88,7 @@ type CommunitySignupEligibilityResponse = {
   allowed?: boolean;
   detectedCountry?: string | null;
   verifiedCountry?: string | null;
+  availableCountries?: string[];
   message?: string;
 };
 
@@ -405,16 +409,21 @@ export default function AuthClient({
     formState: { errors: loginErrors },
   } = login;
 
+  const supportedInitialCommunityCountry = normalizeCommunityLaunchCountry(
+    initialCommunityCountry ?? "",
+  );
   const selectedCountry = watch("country");
   const selectedInstitution = watch("educationalInstitution");
+  const allowManualCommunityCountry =
+    !isClient && !supportedInitialCommunityCountry;
 
   useEffect(() => {
     if (isClient) {
       return;
     }
 
-    setValue("country", initialCommunityCountry ?? "");
-  }, [initialCommunityCountry, isClient, setValue]);
+    setValue("country", supportedInitialCommunityCountry ?? "");
+  }, [isClient, setValue, supportedInitialCommunityCountry]);
 
   useEffect(() => {
     if (!isClient || !selectedCountry) {
@@ -497,9 +506,15 @@ export default function AuthClient({
       let verifiedCommunityCountry: string | null = null;
 
       if (role === "community") {
-        const verificationResponse = await fetch("/api/community-signup/eligibility", {
-          cache: "no-store",
-        });
+        const verificationQuery = values.country.trim()
+          ? `?country=${encodeURIComponent(values.country.trim())}`
+          : "";
+        const verificationResponse = await fetch(
+          `/api/community-signup/eligibility${verificationQuery}`,
+          {
+            cache: "no-store",
+          },
+        );
         const verificationPayload =
           (await verificationResponse.json().catch(() => null)) as CommunitySignupEligibilityResponse | null;
 
@@ -1402,19 +1417,53 @@ export default function AuthClient({
                             className={labelClassName}
                             htmlFor="community-country"
                           >
-                            Detected country
+                            {allowManualCommunityCountry
+                              ? "Country"
+                              : "Detected country"}
                           </label>
-                          <input
-                            id="community-country"
-                            value={selectedCountry || ""}
-                            readOnly
-                            className={`${inputClassName} bg-slate-50 text-slate-600`}
-                            placeholder="Detected when you sign up"
-                          />
-                          <input type="hidden" {...register("country")} />
+                          {allowManualCommunityCountry ? (
+                            <div className="relative">
+                              <select
+                                id="community-country"
+                                {...register("country", {
+                                  required: "Country is required.",
+                                  validate: (value) =>
+                                    Boolean(normalizeCommunityLaunchCountry(value)) ||
+                                    "Choose one of the currently supported community countries.",
+                                })}
+                                className={`${inputClassName} appearance-none pr-11`}
+                              >
+                                <option value="">Select country</option>
+                                {communityLaunchCountries.map((country) => (
+                                  <option key={country} value={country}>
+                                    {country}
+                                  </option>
+                                ))}
+                              </select>
+                              <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            </div>
+                          ) : (
+                            <>
+                              <input
+                                id="community-country"
+                                value={selectedCountry || ""}
+                                readOnly
+                                className={`${inputClassName} bg-slate-50 text-slate-600`}
+                                placeholder="Detected when you sign up"
+                              />
+                              <input type="hidden" {...register("country")} />
+                            </>
+                          )}
                           <p className="mt-2 text-sm text-slate-500">
-                            Your community country is verified automatically from your connection. Manual country switching is disabled.
+                            {allowManualCommunityCountry
+                              ? "We couldn't detect your location automatically, so choose one of the currently supported launch countries."
+                              : "Your community country is verified automatically from your connection. Manual country switching is disabled."}
                           </p>
+                          {errors.country ? (
+                            <p className={errorTextClassName}>
+                              {errors.country.message}
+                            </p>
+                          ) : null}
                         </div>
 
                         <div>
