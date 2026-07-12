@@ -1483,13 +1483,13 @@ export default function ClientDashboard({
               <section className="max-w-5xl space-y-6">
                 <div className="max-w-xl">
                   <div className="relative">
-                    <Search className="pointer-events-none absolute left-5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-gray-300" />
+                    <Search className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-300" />
                     <input
                       type="text"
                       value={projectSearch}
                       onChange={(event) => setProjectSearch(event.target.value)}
                       placeholder="Search projects..."
-                      className="w-full rounded-[24px] border border-gray-200 bg-white py-4 pl-13 pr-5 text-[15px] text-gray-900 shadow-[0_18px_40px_rgba(15,23,42,0.04)] outline-none transition focus:border-[#ff6a00]"
+                      className="w-full rounded-[24px] border border-gray-200 bg-white py-4 pl-[52px] pr-5 text-[15px] text-gray-900 shadow-[0_18px_40px_rgba(15,23,42,0.04)] outline-none transition focus:border-[#ff6a00]"
                     />
                   </div>
                 </div>
