@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import AutoDismissNotice from "@/components/ui/auto-dismiss-notice";
 
 type ContactForm = {
   fullName: string;
@@ -134,10 +135,24 @@ export default function ContactClient({ initialPurpose }: { initialPurpose: stri
                 {loading ? "Sending..." : "Send inquiry"}
               </button>
 
-              {sent && (
-                <p className="text-sm text-[#1f7a4f]">Your message has been sent. We&apos;ll reply to your email soon.</p>
-              )}
-              {error && <p className="text-sm text-[#c2410c]">Message sending failed. Please try again.</p>}
+              {sent ? (
+                <AutoDismissNotice
+                  message="Your message has been sent. We'll reply to your email soon."
+                  tone="success"
+                  variant="inline"
+                  onDismiss={() => setSent(false)}
+                  noticeKey="contact-sent"
+                />
+              ) : null}
+              {error ? (
+                <AutoDismissNotice
+                  message="Message sending failed. Please try again."
+                  tone="error"
+                  variant="inline"
+                  onDismiss={() => setError(false)}
+                  noticeKey="contact-error"
+                />
+              ) : null}
             </form>
           </section>
         </section>
