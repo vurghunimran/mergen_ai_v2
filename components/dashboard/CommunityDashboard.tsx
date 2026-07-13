@@ -30,6 +30,7 @@ import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
 import ProfileAvatarPicker from "@/components/dashboard/ProfileAvatarPicker";
 import SurveyAttachmentShowcase from "@/components/dashboard/SurveyAttachmentShowcase";
 import SiteLogo from "@/components/SiteLogo";
+import AutoDismissNotice from "@/components/ui/auto-dismiss-notice";
 import PasswordInput from "@/components/ui/password-input";
 import { buildCommunityAudienceProfile, matchesSurveyAudience } from "@/lib/audience-matching";
 import { isLikelyInternationalPhoneNumber } from "@/lib/phone-number";
@@ -1581,9 +1582,11 @@ export default function CommunityDashboard({
         <main className="flex-1 overflow-y-auto p-6">
           <div className="mx-auto max-w-7xl space-y-6">
             {surveyLoadError ? (
-              <div className="rounded-2xl border border-[#eadfff] bg-[#f8f4ff] px-5 py-4 text-sm text-[#6d28d9]">
-                {surveyLoadError}
-              </div>
+              <AutoDismissNotice
+                message={surveyLoadError}
+                tone="error"
+                onDismiss={() => setSurveyLoadError(null)}
+              />
             ) : null}
 
             {activeSection === "dashboard" ? (
@@ -1881,7 +1884,17 @@ export default function CommunityDashboard({
                         </div>
 
                         <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 pt-6">
-                          <div>{surveyError ? <p className="text-sm font-medium text-red-500">{surveyError}</p> : null}</div>
+                          <div className="flex-1">
+                            {surveyError ? (
+                              <AutoDismissNotice
+                                message={surveyError}
+                                tone="error"
+                                variant="inline"
+                                onDismiss={() => setSurveyError("")}
+                                className="max-w-md"
+                              />
+                            ) : null}
+                          </div>
                           <button
                             type="button"
                             onClick={() => void handleSubmitSurvey()}
@@ -1923,17 +1936,12 @@ export default function CommunityDashboard({
                 </div>
 
                 {surveyNotice ? (
-                  <div className="rounded-[24px] border border-[#d9c7ff] bg-[#faf7ff] p-5 shadow-sm">
-                    <div className="flex items-start gap-3">
-                      <div className="rounded-2xl bg-[#efe7ff] p-3">
-                        <CheckCircle2 className="h-5 w-5 text-[#7c3aed]" />
-                      </div>
-                      <div>
-                        <h2 className="text-[18px] font-semibold text-[#4f2a78]">Survey completed</h2>
-                        <p className="mt-1 text-sm leading-7 text-[#667085]">{surveyNotice}</p>
-                      </div>
-                    </div>
-                  </div>
+                  <AutoDismissNotice
+                    title="Survey completed"
+                    message={surveyNotice}
+                    tone="success"
+                    onDismiss={() => setSurveyNotice(null)}
+                  />
                 ) : null}
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -2039,31 +2047,21 @@ export default function CommunityDashboard({
                 </div>
 
                 {rewardError ? (
-                  <div className="rounded-[24px] border border-[#fecaca] bg-[#fff5f5] p-5 shadow-sm">
-                    <div className="flex items-start gap-3">
-                      <div className="rounded-2xl bg-[#fee2e2] p-3">
-                        <AlertCircle className="h-5 w-5 text-[#dc2626]" />
-                      </div>
-                      <div>
-                        <h2 className="text-[18px] font-semibold text-[#991b1b]">Reward issue</h2>
-                        <p className="mt-1 text-sm leading-7 text-[#7f1d1d]">{rewardError}</p>
-                      </div>
-                    </div>
-                  </div>
+                  <AutoDismissNotice
+                    title="Reward issue"
+                    message={rewardError}
+                    tone="error"
+                    onDismiss={() => setRewardError(null)}
+                  />
                 ) : null}
 
                 {rewardNotice ? (
-                  <div className="rounded-[24px] border border-[#d9c7ff] bg-[#faf7ff] p-5 shadow-sm">
-                    <div className="flex items-start gap-3">
-                      <div className="rounded-2xl bg-[#efe7ff] p-3">
-                        <CheckCircle2 className="h-5 w-5 text-[#7c3aed]" />
-                      </div>
-                      <div>
-                        <h2 className="text-[18px] font-semibold text-[#4f2a78]">Reward activated</h2>
-                        <p className="mt-1 text-sm leading-7 text-[#667085]">{rewardNotice}</p>
-                      </div>
-                    </div>
-                  </div>
+                  <AutoDismissNotice
+                    title="Reward activated"
+                    message={rewardNotice}
+                    tone="success"
+                    onDismiss={() => setRewardNotice(null)}
+                  />
                 ) : null}
 
                 <div className="space-y-8">
@@ -2354,10 +2352,20 @@ export default function CommunityDashboard({
                         )}
 
                         {telegramError ? (
-                          <p className="text-sm font-medium text-red-500">{telegramError}</p>
+                          <AutoDismissNotice
+                            message={telegramError}
+                            tone="error"
+                            variant="inline"
+                            onDismiss={() => setTelegramError("")}
+                          />
                         ) : null}
                         {telegramMessage ? (
-                          <p className="text-sm font-medium text-[#7c3aed]">{telegramMessage}</p>
+                          <AutoDismissNotice
+                            message={telegramMessage}
+                            tone="success"
+                            variant="inline"
+                            onDismiss={() => setTelegramMessage("")}
+                          />
                         ) : null}
                       </div>
 
@@ -2414,9 +2422,25 @@ export default function CommunityDashboard({
                     </div>
 
                     <div className="flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 pt-6">
-                      <div>
-                        {settingsError ? <p className="text-sm font-medium text-red-500">{settingsError}</p> : null}
-                        {settingsSaved ? <p className="text-sm font-medium text-[#7c3aed]">Changes saved successfully.</p> : null}
+                      <div className="flex-1">
+                        {settingsError ? (
+                          <AutoDismissNotice
+                            message={settingsError}
+                            tone="error"
+                            variant="inline"
+                            onDismiss={() => setSettingsError("")}
+                            className="max-w-md"
+                          />
+                        ) : settingsSaved ? (
+                          <AutoDismissNotice
+                            message="Changes saved successfully."
+                            tone="success"
+                            variant="inline"
+                            onDismiss={() => setSettingsSaved(false)}
+                            className="max-w-md"
+                            noticeKey="community-settings-saved"
+                          />
+                        ) : null}
                       </div>
                       <button
                         type="submit"
