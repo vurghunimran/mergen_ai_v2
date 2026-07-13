@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
+import AutoDismissNotice from "@/components/ui/auto-dismiss-notice";
 import PasswordInput from "@/components/ui/password-input";
 
 type DemoUser = {
@@ -137,7 +138,14 @@ export default function LoginForm({ demoUsers, redirectedFromDashboard = false }
             />
           </div>
 
-          {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
+          {error ? (
+            <AutoDismissNotice
+              message={error}
+              tone="error"
+              variant="inline"
+              onDismiss={() => setError(null)}
+            />
+          ) : null}
 
           <button
             type="submit"
