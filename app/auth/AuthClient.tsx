@@ -38,6 +38,7 @@ import {
   communityLaunchCountries,
   normalizeCommunityLaunchCountry,
 } from "@/lib/community-distribution";
+import AutoDismissNotice from "@/components/ui/auto-dismiss-notice";
 import SiteLogo from "@/components/SiteLogo";
 import { PRIVACY_POLICY_VERSION, TERMS_VERSION } from "@/lib/legal";
 import PasswordInput from "@/components/ui/password-input";
@@ -357,8 +358,6 @@ export default function AuthClient({
   const inactiveTabClassName = "text-slate-600";
   const submitButtonClassName =
     "w-full rounded-2xl bg-[color:var(--auth-accent)] px-5 py-4 text-base font-bold text-white shadow-[0_20px_40px_rgba(15,23,42,0.12)] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70";
-  const messageClassName =
-    "mt-5 rounded-2xl border border-[color:var(--auth-message-border)] bg-[color:var(--auth-message-bg)] px-4 py-3 text-sm text-slate-600";
   const leftPanelBackground = isClient
     ? "linear-gradient(180deg,#fff8f1 0%,#f5ebdf 100%)"
     : "linear-gradient(180deg,#faf6ff 0%,#efe8fb 100%)";
@@ -378,6 +377,7 @@ export default function AuthClient({
   const [interestsOpen, setInterestsOpen] = useState(false);
   const [languageSkillsOpen, setLanguageSkillsOpen] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+  const [submitMessageTone, setSubmitMessageTone] = useState<"error" | "success">("success");
   const [authPending, setAuthPending] = useState<"signup" | "login" | null>(
     null,
   );
@@ -486,6 +486,7 @@ export default function AuthClient({
 
   useEffect(() => {
     setSubmitMessage(null);
+    setSubmitMessageTone("success");
     setInterestsOpen(false);
     setLanguageSkillsOpen(false);
     setAuthPending(null);
@@ -527,6 +528,7 @@ export default function AuthClient({
           !verificationPayload?.allowed ||
           !verificationPayload.verifiedCountry
         ) {
+          setSubmitMessageTone("error");
           setSubmitMessage(
             verificationPayload?.message ||
               "Community sign-up isn't available for your current location.",
@@ -590,11 +592,13 @@ export default function AuthClient({
         return;
       }
 
+      setSubmitMessageTone("success");
       setSubmitMessage(
         "Account created. Check your email to confirm your sign up, then log in.",
       );
       setActiveTab("login");
     } catch (error) {
+      setSubmitMessageTone("error");
       setSubmitMessage(getAuthErrorMessage(error));
     } finally {
       setAuthPending(null);
@@ -2005,7 +2009,13 @@ export default function AuthClient({
             )}
 
             {submitMessage ? (
-              <div className={messageClassName}>{submitMessage}</div>
+              <AutoDismissNotice
+                message={submitMessage}
+                tone={submitMessageTone}
+                variant="inline"
+                onDismiss={() => setSubmitMessage(null)}
+                className="mt-5"
+              />
             ) : null}
           </div>
         </section>
