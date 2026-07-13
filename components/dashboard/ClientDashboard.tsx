@@ -34,6 +34,7 @@ import CreateSurveyFlow from "@/components/dashboard/CreateSurveyFlow";
 import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
 import ProfileAvatarPicker from "@/components/dashboard/ProfileAvatarPicker";
 import SiteLogo from "@/components/SiteLogo";
+import AutoDismissNotice from "@/components/ui/auto-dismiss-notice";
 import PasswordInput from "@/components/ui/password-input";
 import { AVATAR_METADATA_KEYS, getDefaultAvatarSrc, resolveAvatarSrc } from "@/lib/profile-avatars";
 import { assertClientUniversityEmail } from "@/lib/client-university-email";
@@ -1196,21 +1197,27 @@ export default function ClientDashboard({
         <main className="flex-1 overflow-y-auto p-6">
           <div className="mx-auto max-w-7xl space-y-6">
             {paymentNotice ? (
-              <div className="rounded-2xl border border-[#d7eadf] bg-[#f3fbf6] px-5 py-4 text-sm text-[#166534]">
-                {paymentNotice}
-              </div>
+              <AutoDismissNotice
+                message={paymentNotice}
+                tone="success"
+                onDismiss={() => setPaymentNotice("")}
+              />
             ) : null}
 
             {paymentError ? (
-              <div className="rounded-2xl border border-[#ffd9bf] bg-[#fff4ea] px-5 py-4 text-sm text-[#c2410c]">
-                {paymentError}
-              </div>
+              <AutoDismissNotice
+                message={paymentError}
+                tone="error"
+                onDismiss={() => setPaymentError("")}
+              />
             ) : null}
 
             {surveyLoadError ? (
-              <div className="rounded-2xl border border-[#ffd9bf] bg-[#fffaf5] px-5 py-4 text-sm text-[#c2410c]">
-                {surveyLoadError}
-              </div>
+              <AutoDismissNotice
+                message={surveyLoadError}
+                tone="error"
+                onDismiss={() => setSurveyLoadError("")}
+              />
             ) : null}
 
             {isConfirmingPolarCheckout ? (
@@ -1732,9 +1739,11 @@ export default function ClientDashboard({
                 </div>
 
                 {reportError ? (
-                  <div className="rounded-[24px] border border-[#ffd9bf] bg-[#fff4ea] p-5 text-sm text-[#c2410c] shadow-sm">
-                    {reportError}
-                  </div>
+                  <AutoDismissNotice
+                    message={reportError}
+                    tone="error"
+                    onDismiss={() => setReportError("")}
+                  />
                 ) : null}
 
                 {selectedReportSurvey ? (
@@ -2288,9 +2297,28 @@ export default function ClientDashboard({
                       isSettingsDark ? "border-[#312922]" : "border-gray-100"
                     }`}
                   >
-                    <p className={`text-sm ${settingsError ? "text-red-500" : "text-[#8a94a6]"}`}>
-                      {settingsError || (settingsSaved ? "Changes saved." : "Update your details and save.")}
-                    </p>
+                    <div className="flex-1">
+                      {settingsError ? (
+                        <AutoDismissNotice
+                          message={settingsError}
+                          tone="error"
+                          variant="inline"
+                          onDismiss={() => setSettingsError("")}
+                          className="max-w-md"
+                        />
+                      ) : settingsSaved ? (
+                        <AutoDismissNotice
+                          message="Changes saved."
+                          tone="success"
+                          variant="inline"
+                          onDismiss={() => setSettingsSaved(false)}
+                          className="max-w-md"
+                          noticeKey="client-settings-saved"
+                        />
+                      ) : (
+                        <p className="text-sm text-[#8a94a6]">Update your details and save.</p>
+                      )}
+                    </div>
                     <button
                       type="submit"
                       disabled={isSavingSettings}
