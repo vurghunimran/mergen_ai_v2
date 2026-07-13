@@ -21,6 +21,7 @@ import {
   X
 } from "lucide-react";
 import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
+import AutoDismissNotice from "@/components/ui/auto-dismiss-notice";
 import {
   getCreateSurveyDraftStorageKey,
   SURVEY_PREVIEW_STORAGE_KEY,
@@ -363,6 +364,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
   const [launchMatchedRecipients, setLaunchMatchedRecipients] = useState(0);
   const [launchSentEmails, setLaunchSentEmails] = useState(0);
   const [launchNotificationError, setLaunchNotificationError] = useState("");
+  const [isLaunchNoticeVisible, setIsLaunchNoticeVisible] = useState(true);
 
   useEffect(() => {
     try {
@@ -394,12 +396,6 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
     }
   }, [draftStorageKey]);
 
-  useEffect(() => {
-    if (!draftNotice) return;
-    const timeoutId = window.setTimeout(() => setDraftNotice(""), 2600);
-    return () => window.clearTimeout(timeoutId);
-  }, [draftNotice]);
-
   const pricing = useMemo(() => {
     const selectedQuestionCount = draft.questions.length || draft.questionCount;
     const { questionTier, basePrice } = getAcademicSurveyBasePrice(selectedQuestionCount, draft.respondentCount);
@@ -415,6 +411,10 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
       total
     };
   }, [draft.includeDetailedAI, draft.questionCount, draft.questions.length, draft.respondentCount]);
+
+  useEffect(() => {
+    setIsLaunchNoticeVisible(true);
+  }, [launchNotificationError, launchSentEmails]);
 
   const currentStageIndex = stageItems.findIndex((item) => item.id === stage);
   const currentRegion = surveyRegionGroups.includes(draft.targetRegion as SurveyRegion)
@@ -932,6 +932,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
     setLaunchMatchedRecipients(0);
     setLaunchSentEmails(0);
     setLaunchNotificationError("");
+    setIsLaunchNoticeVisible(true);
     onBackToDashboard();
   }
 
@@ -1152,7 +1153,14 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                     </div>
                   ) : null}
 
-                  {attachmentError ? <p className="text-sm font-medium text-[#d85a2f]">{attachmentError}</p> : null}
+                  {attachmentError ? (
+                    <AutoDismissNotice
+                      message={attachmentError}
+                      tone="error"
+                      variant="inline"
+                      onDismiss={() => setAttachmentError("")}
+                    />
+                  ) : null}
                 </div>
               </div>
 
@@ -1554,7 +1562,14 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                   {isGeneratingQuestions ? "Generating..." : "Generate Questions"}
                 </button>
 
-                {generationError ? <p className="text-sm font-medium text-[#d85a2f]">{generationError}</p> : null}
+                {generationError ? (
+                  <AutoDismissNotice
+                    message={generationError}
+                    tone="error"
+                    variant="inline"
+                    onDismiss={() => setGenerationError("")}
+                  />
+                ) : null}
               </div>
             </div>
           </div>
@@ -1567,9 +1582,13 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 {draftNotice ? (
-                  <div className="rounded-full bg-[#eafbf2] px-3 py-2 text-sm font-semibold text-[#12b76a]">
-                    {draftNotice}
-                  </div>
+                  <AutoDismissNotice
+                    message={draftNotice}
+                    tone="success"
+                    variant="inline"
+                    onDismiss={() => setDraftNotice("")}
+                    className="max-w-sm"
+                  />
                 ) : null}
                 <button
                   type="button"
@@ -1606,7 +1625,15 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
               </div>
             </div>
 
-            {attachmentError ? <p className="mb-5 text-sm font-medium text-[#d85a2f]">{attachmentError}</p> : null}
+            {attachmentError ? (
+              <AutoDismissNotice
+                message={attachmentError}
+                tone="error"
+                variant="inline"
+                onDismiss={() => setAttachmentError("")}
+                className="mb-5"
+              />
+            ) : null}
 
             <div className="space-y-4">
               {draft.questions.map((question, index) => (
@@ -1812,7 +1839,15 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
               You will be redirected to Polar Checkout to complete the payment securely.
             </p>
 
-            {checkoutError ? <p className="mt-4 text-sm text-[#c2410c]">{checkoutError}</p> : null}
+            {checkoutError ? (
+              <AutoDismissNotice
+                message={checkoutError}
+                tone="error"
+                variant="inline"
+                onDismiss={() => setCheckoutError("")}
+                className="mt-4"
+              />
+            ) : null}
 
             <button
               type="button"
@@ -1846,19 +1881,32 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
               <p className="mx-auto mt-3 max-w-2xl text-[16px] leading-7 text-[#667085]">
                 Your payment has been processed successfully and the survey has been added to your dashboard with launch-ready status.
               </p>
-              {launchNotificationError ? (
-                <p className="mx-auto mt-4 max-w-2xl rounded-2xl border border-[#ffd9bf] bg-[#fff4ea] px-4 py-3 text-sm text-[#c2410c]">
-                  {launchNotificationError}
-                </p>
-              ) : launchSentEmails > 0 ? (
-                <p className="mx-auto mt-4 max-w-2xl rounded-2xl border border-[#d5eadf] bg-[#f3fbf6] px-4 py-3 text-sm text-[#166534]">
-                  {launchSentEmails} matching community members were notified by email.
-                </p>
-              ) : (
-                <p className="mx-auto mt-4 max-w-2xl rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-[#667085]">
-                  Survey published successfully. No community members matched the current audience criteria yet.
-                </p>
-              )}
+              {isLaunchNoticeVisible ? (
+                launchNotificationError ? (
+                  <AutoDismissNotice
+                    message={launchNotificationError}
+                    tone="error"
+                    onDismiss={() => setIsLaunchNoticeVisible(false)}
+                    className="mx-auto mt-4 max-w-2xl text-left"
+                  />
+                ) : launchSentEmails > 0 ? (
+                  <AutoDismissNotice
+                    message={`${launchSentEmails} matching community members were notified by email.`}
+                    tone="success"
+                    onDismiss={() => setIsLaunchNoticeVisible(false)}
+                    className="mx-auto mt-4 max-w-2xl text-left"
+                    noticeKey={`launch-sent-${launchSentEmails}`}
+                  />
+                ) : (
+                  <AutoDismissNotice
+                    message="Survey published successfully. No community members matched the current audience criteria yet."
+                    tone="info"
+                    onDismiss={() => setIsLaunchNoticeVisible(false)}
+                    className="mx-auto mt-4 max-w-2xl text-left"
+                    noticeKey="launch-no-match"
+                  />
+                )
+              ) : null}
             </div>
           </div>
 
