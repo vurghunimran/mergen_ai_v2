@@ -634,6 +634,8 @@ execute function public.enforce_survey_audience_countries();
 
 alter table public.client_profiles enable row level security;
 alter table public.community_profiles enable row level security;
+alter table public.community_launch_regions enable row level security;
+alter table public.community_launch_countries enable row level security;
 alter table public.surveys enable row level security;
 alter table public.survey_responses enable row level security;
 alter table public.welcome_survey_completions enable row level security;
@@ -678,6 +680,18 @@ on public.community_profiles
 for update
 using (auth.uid() = id)
 with check (auth.uid() = id);
+
+drop policy if exists "Anyone can view community launch regions" on public.community_launch_regions;
+create policy "Anyone can view community launch regions"
+on public.community_launch_regions
+for select
+using (true);
+
+drop policy if exists "Anyone can view community launch countries" on public.community_launch_countries;
+create policy "Anyone can view community launch countries"
+on public.community_launch_countries
+for select
+using (true);
 
 drop policy if exists "Users can view their own telegram subscription" on public.telegram_notification_subscriptions;
 create policy "Users can view their own telegram subscription"
