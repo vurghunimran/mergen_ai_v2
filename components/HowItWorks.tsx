@@ -1,6 +1,6 @@
 import {
-  ArrowRight,
   Bot,
+  ChevronRight,
   FileText,
   PenSquare,
   Sparkles,
@@ -60,7 +60,7 @@ export default function HowItWorks() {
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_18%,rgba(255,255,255,0.55),transparent_18%),radial-gradient(circle_at_84%_18%,rgba(255,255,255,0.26),transparent_20%)]" />
 
               <div className="relative z-10">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div className="flex flex-col gap-4">
                   <div className="max-w-2xl">
                     <span className="inline-flex rounded-full border border-[#d85a2f]/15 bg-white/85 px-4 py-2 text-sm font-semibold text-[#d85a2f] shadow-[0_10px_20px_rgba(255,255,255,0.35)]">
                       Client perspective
@@ -72,15 +72,11 @@ export default function HowItWorks() {
                       A cleaner path for students, faculty, and research teams running educational studies.
                     </p>
                   </div>
-
-                  <div className="rounded-[24px] border border-white/75 bg-white/65 px-4 py-3 text-sm font-semibold text-slate-600 shadow-[0_14px_28px_rgba(15,23,42,0.04)]">
-                    4 steps, one smoother path
-                  </div>
                 </div>
 
                 <div className="mt-8 hidden h-px w-full bg-gradient-to-r from-[#ef8b45]/70 via-[#d85a2f]/80 to-[#f5b06a]/70 xl:block" />
 
-                <div className="mt-8 grid gap-5 lg:grid-cols-2 xl:grid-cols-4 xl:gap-4">
+                <div className="mt-8 grid gap-5 lg:grid-cols-2 xl:grid-cols-4 xl:gap-8">
                   {steps.map((step, index) => {
                     const Icon = step.icon;
 
@@ -92,8 +88,8 @@ export default function HowItWorks() {
                         <div className="absolute inset-x-0 top-0 h-1 rounded-t-[28px] bg-gradient-to-r from-[#d85a2f] to-[#ffb06d]" />
 
                         {index < steps.length - 1 ? (
-                          <div className="absolute -right-3 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/90 text-[#d85a2f] shadow-[0_14px_30px_rgba(15,23,42,0.08)] xl:flex">
-                            <ArrowRight className="h-4 w-4" />
+                          <div className="pointer-events-none absolute right-0 top-1/2 z-20 hidden h-10 w-10 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-[#f1d6c4] bg-white text-[#d85a2f] shadow-[0_14px_30px_rgba(15,23,42,0.08)] xl:flex">
+                            <ChevronRight className="h-5 w-5" strokeWidth={2.4} />
                           </div>
                         ) : null}
 
