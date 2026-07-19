@@ -1,16 +1,9 @@
-import { Sparkles } from "lucide-react";
-
 export default function PromoVideo() {
   return (
     <section id="promo-video" className="px-4 py-20 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl rounded-[36px] border border-[#f1d6c4] bg-[linear-gradient(180deg,#fffaf4_0%,#fff3e7_100%)] px-6 py-10 text-center shadow-[0_24px_70px_rgba(15,23,42,0.07)] sm:px-8 sm:py-12">
-        <span className="inline-flex items-center gap-2 rounded-full border border-[#d85a2f]/20 bg-[#fff0e5] px-4 py-2 text-sm font-semibold text-[#d85a2f]">
-          <Sparkles className="h-4 w-4" />
-          Vision video
-        </span>
-
-        <h2 className="mx-auto mt-5 max-w-3xl text-3xl font-extrabold tracking-[-0.04em] text-[#d85a2f] sm:text-4xl">
-          A short look at the idea behind Mergen and where it is going.
+        <h2 className="mx-auto max-w-3xl text-3xl font-extrabold tracking-[-0.04em] text-[#d85a2f] sm:text-4xl">
+          Discover Mergen&apos;s Vision
         </h2>
 
         <div className="mx-auto mt-8 max-w-3xl overflow-hidden rounded-[28px] border border-[#d85a2f]/15 bg-[#151515] p-3 shadow-[0_26px_80px_rgba(15,23,42,0.16)]">
@@ -23,7 +16,7 @@ export default function PromoVideo() {
           <div className="overflow-hidden rounded-[20px]">
             <video
               controls
-              poster="/vision-goals-2026-poster.jpg"
+              poster="/mergen-vision-poster.png"
               preload="none"
               className="aspect-video w-full bg-black object-cover"
               playsInline
