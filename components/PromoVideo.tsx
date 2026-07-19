@@ -1,6 +1,6 @@
 export default function PromoVideo() {
   return (
-    <section id="promo-video" className="px-4 py-20 sm:px-6 lg:px-8">
+    <section id="promo-video" className="px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-5xl rounded-[36px] border border-[#f1d6c4] bg-[linear-gradient(180deg,#fffaf4_0%,#fff3e7_100%)] px-6 py-10 text-center shadow-[0_24px_70px_rgba(15,23,42,0.07)] sm:px-8 sm:py-12">
         <h2 className="mx-auto max-w-3xl text-3xl font-extrabold tracking-[-0.04em] text-[#d85a2f] sm:text-4xl">
           Discover Mergen&apos;s Vision

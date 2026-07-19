@@ -36,7 +36,7 @@ const audienceGroups = [
 
 export default function WhoCanUseMergen() {
   return (
-    <section id="who-can-use" className="px-4 pb-8 pt-14 sm:px-6 lg:px-8">
+    <section id="who-can-use" className="px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <div className="relative overflow-hidden rounded-[40px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,248,239,0.8)_0%,rgba(255,241,225,0.84)_45%,rgba(255,235,212,0.88)_100%)] px-5 py-12 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur sm:px-8 lg:px-12 lg:py-14">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_18%,rgba(255,255,255,0.65),transparent_20%),radial-gradient(circle_at_80%_16%,rgba(241,163,95,0.24),transparent_24%),radial-gradient(circle_at_50%_80%,rgba(216,90,47,0.12),transparent_24%)]" />

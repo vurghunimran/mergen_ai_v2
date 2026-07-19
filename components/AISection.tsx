@@ -24,7 +24,7 @@ export default function AISection() {
   }, []);
 
   return (
-    <section id="ai-workflow" className="px-4 py-20 sm:px-6 lg:px-8">
+    <section id="ai-workflow" className="px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-7xl rounded-[36px] border border-white/70 bg-white/80 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.07)] backdrop-blur sm:p-8 lg:p-10">
         <div className="mx-auto max-w-3xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-[#d85a2f]/20 bg-[#fff0e5] px-4 py-2 text-sm font-semibold text-[#d85a2f]">

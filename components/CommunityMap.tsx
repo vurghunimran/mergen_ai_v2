@@ -179,7 +179,7 @@ export default function CommunityMap({
   const activeFlag = useMemo(() => countryFlagEmoji(activeCountry, countryCodeMap), [activeCountry, countryCodeMap]);
 
   return (
-    <section id="community-map" className="px-4 py-20 sm:px-6 lg:px-8">
+    <section id="community-map" className="px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-7xl rounded-[36px] border border-[#eadfce] bg-[#f8f1e6] p-6 shadow-[0_24px_70px_rgba(15,23,42,0.05)] sm:p-8 lg:p-10">
         <div className="mx-auto max-w-3xl text-center">
           <span className="inline-flex rounded-full border border-[#d85a2f]/20 bg-[#fff0e5] px-4 py-2 text-sm font-semibold text-[#d85a2f]">
