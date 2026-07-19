@@ -47,34 +47,16 @@ export default function HowItWorks() {
               </span>
               <h2 className="mt-6 text-3xl font-extrabold tracking-[-0.05em] text-transparent sm:text-4xl lg:text-5xl">
                 <span className="bg-[linear-gradient(90deg,#d85a2f_0%,#ef6b39_50%,#ff9c4d_100%)] bg-clip-text">
-                  A simple research flow from targeting to report.
+                  Define Your Audience. Discover Insights. Make Better Decisions.
                 </span>
               </h2>
-              <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-                Built to help academic teams define the right participants, shape better questions, and move faster into
-                usable insight.
-              </p>
             </div>
 
             <div className="relative mt-14 overflow-hidden rounded-[34px] border border-white/80 bg-[linear-gradient(180deg,rgba(255,248,240,0.88)_0%,rgba(255,241,226,0.92)_100%)] p-6 shadow-[0_22px_55px_rgba(15,23,42,0.06)] sm:p-7 lg:mt-20 lg:p-8">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_18%,rgba(255,255,255,0.55),transparent_18%),radial-gradient(circle_at_84%_18%,rgba(255,255,255,0.26),transparent_20%)]" />
 
               <div className="relative z-10">
-                <div className="flex flex-col gap-4">
-                  <div className="max-w-2xl">
-                    <span className="inline-flex rounded-full border border-[#d85a2f]/15 bg-white/85 px-4 py-2 text-sm font-semibold text-[#d85a2f] shadow-[0_10px_20px_rgba(255,255,255,0.35)]">
-                      Client perspective
-                    </span>
-                    <h3 className="mt-5 text-[1.9rem] font-extrabold leading-tight tracking-[-0.04em] text-slate-900 sm:text-[2.2rem]">
-                      From audience definition to decision-ready reporting
-                    </h3>
-                    <p className="mt-3 text-[15px] leading-7 text-slate-600 sm:text-base">
-                      A cleaner path for students, faculty, and research teams running educational studies.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-8 hidden h-px w-full bg-gradient-to-r from-[#ef8b45]/70 via-[#d85a2f]/80 to-[#f5b06a]/70 xl:block" />
+                <div className="hidden h-px w-full bg-gradient-to-r from-[#ef8b45]/70 via-[#d85a2f]/80 to-[#f5b06a]/70 xl:block" />
 
                 <div className="mt-8 grid gap-5 lg:grid-cols-2 xl:grid-cols-4 xl:gap-8">
                   {steps.map((step, index) => {
