@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, ChevronRight, Sparkles } from "lucide-react";
+import { ArrowRight, ChevronRight } from "lucide-react";
 import AISection from "@/components/AISection";
 import CommunityMapLoader from "@/components/CommunityMapLoader";
 import Footer from "@/components/Footer";
@@ -73,20 +73,14 @@ export default function HomePage() {
               <div className="absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(180deg,transparent_0%,rgba(255,208,126,0.10)_100%)]" />
 
               <div className="relative z-10">
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#d85a2f]/15 bg-[#fff2ea] px-4 py-2 text-sm font-semibold text-[#d85a2f] shadow-[0_10px_30px_rgba(216,90,47,0.08)]">
-                  <Sparkles className="h-4 w-4" />
-                  AI-powered research workflows
-                </span>
-
-                <h1 className="mx-auto mt-8 max-w-3xl text-[clamp(3.5rem,8vw,7rem)] font-extrabold leading-[0.92] tracking-[-0.05em] text-slate-900">
+                <h1 className="mx-auto max-w-3xl text-[clamp(3.5rem,8vw,7rem)] font-extrabold leading-[0.92] tracking-[-0.05em] text-slate-900">
                   <span className="landing-text-gradient-cool">Wisdom in</span>{" "}
                   <span className="landing-text-gradient-cool">the</span>{" "}
                   <span className="landing-text-gradient">Data.</span>
                 </h1>
 
                 <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-700 sm:text-xl">
-                  Launch AI-generated surveys, reach verified communities, and turn raw answers into clear insight reports
-                  without slowing your team down.
+                  Launch Smarter Surveys. Reach Real Communities. Gain Clear Insights.
                 </p>
 
                 <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
