@@ -1,14 +1,13 @@
 import Link from "next/link";
 import { ArrowRight, ChevronRight, Sparkles } from "lucide-react";
 import AISection from "@/components/AISection";
-import CommunityMap from "@/components/CommunityMap";
+import CommunityMapLoader from "@/components/CommunityMapLoader";
 import Footer from "@/components/Footer";
 import HowItWorks from "@/components/HowItWorks";
 import PromoVideo from "@/components/PromoVideo";
 import SiteLogo from "@/components/SiteLogo";
 import TutorialLink from "@/components/TutorialLink";
 import WhoCanUseMergen from "@/components/WhoCanUseMergen";
-import { getCommunityMapData } from "@/lib/community-map-data";
 
 const navItems = [
   { href: "#promo-video", label: "Vision" },
@@ -19,9 +18,7 @@ const navItems = [
   { href: "/contact", label: "Contact" }
 ];
 
-export default async function HomePage() {
-  const communityMapData = await getCommunityMapData();
-
+export default function HomePage() {
   return (
     <main className="landing-shell min-h-screen">
       <header className="fixed inset-x-0 top-0 z-50">
@@ -138,7 +135,7 @@ export default async function HomePage() {
           <PromoVideo />
           <WhoCanUseMergen />
           <HowItWorks />
-          <CommunityMap {...communityMapData} />
+          <CommunityMapLoader />
           <AISection />
           <Footer />
         </div>

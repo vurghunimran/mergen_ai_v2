@@ -23,7 +23,8 @@ export default function PromoVideo() {
           <div className="overflow-hidden rounded-[20px]">
             <video
               controls
-              preload="metadata"
+              poster="/vision-goals-2026-poster.jpg"
+              preload="none"
               className="aspect-video w-full bg-black object-cover"
               playsInline
             >

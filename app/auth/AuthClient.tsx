@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -304,12 +304,12 @@ function buildSignUpMetadata(profilePayload: PersistedProfilePayload) {
 }
 
 export default function AuthClient({
-  initialType,
   initialCommunityCountry,
 }: {
-  initialType?: string;
   initialCommunityCountry?: string | null;
 }) {
+  const searchParams = useSearchParams();
+  const initialType = searchParams.get("type") ?? undefined;
   const role: AuthRole = initialType === "community" ? "community" : "client";
   const copy = roleCopy[role];
   const isClient = role === "client";
@@ -493,6 +493,53 @@ export default function AuthClient({
     clearLoginErrors();
   }, [activeTab, clearLoginErrors, role]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function redirectAuthenticatedUser() {
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const user = session?.user;
+
+      if (!user || cancelled) {
+        return;
+      }
+
+      const metadataRole = user.user_metadata?.role;
+      let resolvedRole: AuthRole =
+        metadataRole === "client" || metadataRole === "community"
+          ? metadataRole
+          : role;
+
+      if (!(metadataRole === "client" || metadataRole === "community")) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (
+          !cancelled &&
+          (profileData?.role === "client" || profileData?.role === "community")
+        ) {
+          resolvedRole = profileData.role;
+        }
+      }
+
+      if (!cancelled) {
+        router.replace(getDashboardPath(resolvedRole, user.id));
+      }
+    }
+
+    void redirectAuthenticatedUser();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router, role]);
+
   async function handleRoleSubmit(values: SignUpFormValues) {
     const normalizedInstitution =
       values.educationalInstitution === "Other"
@@ -588,7 +635,6 @@ export default function AuthClient({
             ? `${getDashboardPath(role, data.user.id)}?section=settings&telegram=setup`
             : getDashboardPath(role, data.user.id)
         );
-        router.refresh();
         return;
       }
 
@@ -643,7 +689,6 @@ export default function AuthClient({
       }
 
       router.push(getDashboardPath(resolvedRole, data.user.id));
-      router.refresh();
     } catch (error) {
       setLoginError("password", {
         type: "manual",

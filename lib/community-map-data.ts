@@ -1,6 +1,5 @@
 import "server-only";
 
-import { unstable_noStore as noStore } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type CommunityMapData = {
@@ -45,8 +44,6 @@ function mapCountryName(value: string) {
 }
 
 export async function getCommunityMapData(): Promise<CommunityMapData> {
-  noStore();
-
   try {
     const admin = createAdminClient();
     const { data, error } = await admin.from("community_profiles").select("country");
