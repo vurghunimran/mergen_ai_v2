@@ -4,31 +4,31 @@ import { Building2, GraduationCap, Microscope, Sparkles } from "lucide-react";
 const audienceGroups = [
   {
     icon: GraduationCap,
-    title: "Students",
+    title: "Students & Universities",
     description:
-      "Bachelor, Master, and PhD students conducting thesis, dissertations, and academic research.",
-    accent: "For thesis, capstone, and dissertation work",
-    imageAlt: "Student studying in a university library",
+      "For students, departments, and university teams running thesis, capstone, dissertation, and institutional research projects.",
+    accent: "For students, universities, and academic programs",
+    imageAlt: "Student studying inside a university library",
     imageSrc:
       "https://images.unsplash.com/photo-1741699427788-74db37639fc3?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=60&w=3000"
   },
   {
     icon: Microscope,
-    title: "Professors & Academic Researchers",
+    title: "Faculty & Academic Researchers",
     description:
-      "Faculty members and independent researchers conducting academic and educational studies.",
-    accent: "For faculty-led and independent studies",
+      "Support faculty-led studies with targeted participant access, cleaner survey design, and decision-ready reporting.",
+    accent: "For faculty-led studies and research groups",
     imageAlt: "Professor teaching students in a lecture hall",
     imageSrc:
       "https://images.unsplash.com/photo-1758270703884-e1c40c43465f?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=60&w=3000"
   },
   {
     icon: Building2,
-    title: "Research Centers & Universities",
+    title: "Global R&D & Innovation",
     description:
-      "Institutions and research teams conducting collaborative and large-scale educational research.",
-    accent: "For research teams and institutional projects",
-    imageAlt: "Research team collaborating around a table",
+      "For R&D units, innovation centers, NGOs, and international institutions validating programs, policies, and education initiatives.",
+    accent: "For R&D, innovation, and global institutions",
+    imageAlt: "Research and innovation team collaborating around a table",
     imageSrc:
       "https://images.unsplash.com/photo-1768796370577-c6e8b708b980?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=60&w=3000"
   }
@@ -50,10 +50,10 @@ export default function WhoCanUseMergen() {
                   Who Can Use MERGEN?
                 </span>
                 <h2 className="mt-6 text-3xl font-extrabold tracking-[-0.05em] text-slate-900 sm:text-4xl lg:text-[2.9rem]">
-                  Built for <span className="text-[#d85a2f]">academic research</span>.
+                  Built for <span className="text-[#d85a2f]">education and institutional research</span>.
                 </h2>
                 <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-                  Connect with the right participants and collect reliable data for your educational studies.
+                  Connect educational institutions, research teams, and innovation programs with reliable participant insight.
                 </p>
             </div>
 
