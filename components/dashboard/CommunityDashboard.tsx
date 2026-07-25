@@ -1827,7 +1827,6 @@ export default function CommunityDashboard({
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div>
                         <h2 className="text-[24px] font-semibold text-[#111827]">{selectedSurvey.name}</h2>
-                        <p className="mt-2 max-w-3xl text-[15px] leading-7 text-[#667085]">{selectedSurvey.description}</p>
                       </div>
                       <div className="rounded-[20px] border border-[#dccbff] bg-[#faf7ff] px-4 py-3 text-right">
                         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b5cf6]">Reward</p>
