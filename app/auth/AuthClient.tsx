@@ -324,6 +324,12 @@ export default function AuthClient({
   const copy = roleCopy[role];
   const isClient = role === "client";
   const router = useRouter();
+  const requestedNextPath = searchParams.get("next");
+  const postAuthPath =
+    requestedNextPath &&
+    requestedNextPath.startsWith(role === "community" ? "/dashboard/community" : "/dashboard/client")
+      ? requestedNextPath
+      : null;
   const authThemeStyle: CSSProperties & Record<string, string> = isClient
     ? {
         "--auth-accent": "#d85a2f",
@@ -558,7 +564,11 @@ export default function AuthClient({
       }
 
       if (!cancelled) {
-        router.replace(getDashboardPath(resolvedRole, user.id));
+        router.replace(
+          postAuthPath && resolvedRole === role
+            ? postAuthPath
+            : getDashboardPath(resolvedRole, user.id)
+        );
       }
     }
 
@@ -567,7 +577,7 @@ export default function AuthClient({
     return () => {
       cancelled = true;
     };
-  }, [router, role]);
+  }, [postAuthPath, router, role]);
 
   async function handleRoleSubmit(values: SignUpFormValues) {
     const normalizedInstitution =
@@ -639,7 +649,7 @@ export default function AuthClient({
         options: {
           emailRedirectTo:
             typeof window !== "undefined"
-              ? `${window.location.origin}/auth/confirm?next=${encodeURIComponent(getDashboardPath(role))}`
+              ? `${window.location.origin}/auth/confirm?next=${encodeURIComponent(postAuthPath ?? getDashboardPath(role))}`
               : undefined,
           data: signUpMetadata,
         },
@@ -719,7 +729,11 @@ export default function AuthClient({
         }
       }
 
-      router.push(getDashboardPath(resolvedRole, data.user.id));
+      router.push(
+        postAuthPath && resolvedRole === role
+          ? postAuthPath
+          : getDashboardPath(resolvedRole, data.user.id)
+      );
     } catch (error) {
       setLoginError("password", {
         type: "manual",
