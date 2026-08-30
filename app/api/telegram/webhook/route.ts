@@ -43,6 +43,7 @@ type TelegramLinkTokenRow = {
 
 type TelegramSubscriptionRow = {
   user_id: string;
+  notifications_enabled?: boolean | null;
 };
 
 function toTelegramId(value: number | string | undefined) {
@@ -103,6 +104,36 @@ export async function POST(request: Request) {
   const dashboardUrl = buildCommunitySettingsUrl(request);
   const trimmedText = message.text?.trim() || "";
   const startToken = extractStartToken(trimmedText);
+
+  if (trimmedText === "/start" && !startToken) {
+    const { data: subscription, error: subscriptionError } = await admin
+      .from("telegram_notification_subscriptions")
+      .select("user_id,notifications_enabled")
+      .eq("telegram_chat_id", chatId)
+      .maybeSingle();
+
+    if (subscriptionError) {
+      console.error("Telegram subscription lookup failed for /start.", subscriptionError);
+    }
+
+    const linkedSubscription = (subscription as TelegramSubscriptionRow | null) ?? null;
+
+    if (linkedSubscription?.notifications_enabled) {
+      await sendWebhookMessage(
+        chatId,
+        "Welcome to MERGEN AI! Your Telegram alerts are active. You’ll be notified here whenever a new survey matching your profile becomes available."
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    await sendWebhookMessage(
+      chatId,
+      dashboardUrl
+        ? `Welcome to MERGEN AI! Connect this Telegram account from your MERGEN settings to receive new survey notifications: ${dashboardUrl}`
+        : "Welcome to MERGEN AI! Connect this Telegram account from your MERGEN settings to receive new survey notifications."
+    );
+    return NextResponse.json({ ok: true });
+  }
 
   if (trimmedText === "/stop") {
     const { error: pauseError } = await admin
@@ -325,8 +356,8 @@ export async function POST(request: Request) {
     await sendWebhookMessage(
       chatId,
       dashboardUrl
-        ? `Telegram alerts are active for ${tokenRow.phone_number}. We will send new survey notifications here. Manage them anytime in MERGEN settings: ${dashboardUrl}`
-        : `Telegram alerts are active for ${tokenRow.phone_number}. We will send new survey notifications here.`,
+        ? `Welcome to MERGEN AI! Your Telegram alerts are active. You’ll be notified here whenever a new survey matching your profile becomes available. Manage alerts in MERGEN settings: ${dashboardUrl}`
+        : "Welcome to MERGEN AI! Your Telegram alerts are active. You’ll be notified here whenever a new survey matching your profile becomes available.",
       {
         remove_keyboard: true
       }
