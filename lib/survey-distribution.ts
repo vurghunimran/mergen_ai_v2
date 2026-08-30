@@ -26,11 +26,6 @@ import {
   shouldDisableTelegramSubscription,
   isTelegramBotConfigured
 } from "@/lib/telegram";
-import {
-  createTelegramSurveyToken,
-  hashTelegramSurveyToken,
-  TELEGRAM_SURVEY_SESSION_HOURS
-} from "@/lib/telegram-mini-app";
 
 type CommunityBaseRow = {
   id: string;
@@ -615,22 +610,8 @@ async function sendSurveyTelegramMessages(params: {
   for (const recipientChunk of chunkArray(recipientsWithTelegram, 20)) {
     const results = await Promise.allSettled(
       recipientChunk.map(async (recipient) => {
-        const token = createTelegramSurveyToken();
-        const expiresAt = new Date(Date.now() + TELEGRAM_SURVEY_SESSION_HOURS * 60 * 60 * 1000).toISOString();
-        const { error: sessionError } = await params.admin.from("telegram_survey_sessions").upsert({
-          token_hash: hashTelegramSurveyToken(token),
-          survey_id: params.survey.id,
-          user_id: recipient.id,
-          telegram_chat_id: recipient.telegramChatId ?? "",
-          status: "active",
-          answers: {},
-          started_at: null,
-          completed_at: null,
-          expires_at: expiresAt
-        }, { onConflict: "survey_id,user_id" });
-        if (sessionError) throw sessionError;
-
-        const surveyUrl = `${params.appBaseUrl}/telegram/survey?token=${encodeURIComponent(token)}`;
+        const surveyPath = `/dashboard/community?section=take-survey&surveyId=${params.survey.id}`;
+        const surveyUrl = `${params.appBaseUrl}/auth?type=community&next=${encodeURIComponent(surveyPath)}`;
         await sendTelegramMessage({
           chatId: recipient.telegramChatId ?? "",
           text: buildSurveyLaunchTelegramMessage({
@@ -638,10 +619,11 @@ async function sendSurveyTelegramMessages(params: {
             title: params.survey.name,
             description: params.survey.description,
             questionCount: params.survey.question_count ?? 0,
-            targetResponses: params.survey.target_responses
+            targetResponses: params.survey.target_responses,
+            dashboardUrl: surveyUrl
           }),
           replyMarkup: {
-            inline_keyboard: [[{ text: "Answer survey", web_app: { url: surveyUrl } }]]
+            inline_keyboard: [[{ text: "Open survey in Mergen", url: surveyUrl }]]
           }
         });
 
