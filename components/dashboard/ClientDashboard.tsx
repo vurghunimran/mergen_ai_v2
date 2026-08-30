@@ -1009,6 +1009,8 @@ export default function ClientDashboard({
           email: nextSettings.email,
           country: profileSnapshot.country,
           institution: profileSnapshot.educationalInstitution,
+          institutionId: profileSnapshot.institutionId || undefined,
+          affiliationType: profileSnapshot.affiliationType,
         });
       }
 
@@ -1025,6 +1027,8 @@ export default function ClientDashboard({
           position: nextSettings.position,
           country: profileSnapshot.country,
           educational_institution: profileSnapshot.educationalInstitution,
+          affiliation_type: profileSnapshot.affiliationType,
+          institution_id: profileSnapshot.institutionId,
           appearance: nextSettings.appearance,
           two_factor_enabled: nextSettings.twoFactorEnabled,
           [AVATAR_METADATA_KEYS.mode]: nextSettings.avatarMode === "custom" ? "default" : nextSettings.avatarMode,
