@@ -23,11 +23,14 @@ export async function GET(request: Request) {
     let directoryQuery = admin
       .from("institutions")
       .select("id,name,organization_types")
-      .eq("country_name", country)
       .eq("category", category)
       .eq("active", true)
       .order("name", { ascending: true })
       .limit(MAX_RESULTS);
+
+    if (country !== "International") {
+      directoryQuery = directoryQuery.eq("country_name", country);
+    }
 
     if (query.length >= 2) {
       directoryQuery = directoryQuery.ilike("name", `%${query}%`);
