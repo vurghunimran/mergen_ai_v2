@@ -424,19 +424,25 @@ export default function AuthClient({
   const supportedInitialCommunityCountry = normalizeCommunityLaunchCountry(
     initialCommunityCountry ?? "",
   );
+  const detectedUnsupportedCommunityCountry = Boolean(
+    initialCommunityCountry && !supportedInitialCommunityCountry,
+  );
   const selectedCountry = watch("country");
   const selectedAffiliationType = watch("affiliationType");
   const selectedInstitution = watch("educationalInstitution");
   const allowManualCommunityCountry =
-    !isClient && !supportedInitialCommunityCountry;
+    !isClient && !initialCommunityCountry;
 
   useEffect(() => {
     if (isClient) {
       return;
     }
 
-    setValue("country", supportedInitialCommunityCountry ?? "");
-  }, [isClient, setValue, supportedInitialCommunityCountry]);
+    setValue(
+      "country",
+      supportedInitialCommunityCountry ?? initialCommunityCountry ?? "",
+    );
+  }, [initialCommunityCountry, isClient, setValue, supportedInitialCommunityCountry]);
 
   useEffect(() => {
     if (!isClient || !selectedCountry || !selectedAffiliationType) {
@@ -1583,7 +1589,9 @@ export default function AuthClient({
                             </>
                           )}
                           <p className="mt-2 text-sm text-slate-500">
-                            {allowManualCommunityCountry
+                            {detectedUnsupportedCommunityCountry
+                              ? "Your residence country is not listed in our community yet."
+                              : allowManualCommunityCountry
                               ? "We couldn't detect your location automatically, so choose one of the currently supported launch countries."
                               : "Your community country is verified automatically from your connection. Manual country switching is disabled."}
                           </p>
