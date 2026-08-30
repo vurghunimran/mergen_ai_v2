@@ -19,6 +19,8 @@ export type ClientProfileRow = {
   id: string;
   country: string | null;
   educational_institution: string | null;
+  affiliation_type: "university" | "institution" | null;
+  institution_id: string | null;
   position: string | null;
 };
 
@@ -51,6 +53,8 @@ export type UserProfile = {
   phoneNumber: string;
   country: string;
   educationalInstitution: string;
+  affiliationType: "university" | "institution";
+  institutionId: string;
   position: string;
   ageSpan: string;
   gender: string;
