@@ -11,6 +11,8 @@ export type PersistedProfilePayload = {
   two_factor_enabled: boolean;
   country?: string;
   educational_institution?: string;
+  affiliation_type?: "university" | "institution";
+  institution_id?: string;
   position?: string;
   age_span?: string;
   gender?: string;
@@ -42,6 +44,8 @@ export function buildPersistedProfilePayload(profile: UserProfile): PersistedPro
     two_factor_enabled: profile.twoFactorEnabled,
     country: profile.country,
     educational_institution: profile.educationalInstitution,
+    affiliation_type: profile.affiliationType,
+    institution_id: profile.institutionId,
     position: profile.position,
     age_span: profile.ageSpan,
     gender: profile.gender,
@@ -92,6 +96,8 @@ export async function upsertProfileRecords(
         id: userId,
         country: payload.country || null,
         educational_institution: payload.educational_institution || null,
+        affiliation_type: payload.affiliation_type ?? "university",
+        institution_id: payload.institution_id || null,
         position: payload.position || null
       },
       {
