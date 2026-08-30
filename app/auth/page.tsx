@@ -1,5 +1,9 @@
 import { Suspense } from "react";
+import { headers } from "next/headers";
 import AuthClient from "./AuthClient";
+import { getDetectedCountryFromHeaders } from "@/lib/request-country";
+
+export const dynamic = "force-dynamic";
 
 function AuthPageFallback() {
   return (
@@ -16,9 +20,11 @@ function AuthPageFallback() {
 }
 
 export default function AuthPage() {
+  const detectedCountry = getDetectedCountryFromHeaders(headers());
+
   return (
     <Suspense fallback={<AuthPageFallback />}>
-      <AuthClient />
+      <AuthClient initialCommunityCountry={detectedCountry} />
     </Suspense>
   );
 }
