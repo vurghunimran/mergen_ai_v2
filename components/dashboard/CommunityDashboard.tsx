@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -461,6 +461,7 @@ export default function CommunityDashboard({
   const [surveyStartedAt, setSurveyStartedAt] = useState<number | null>(null);
   const [isSubmittingSurvey, setIsSubmittingSurvey] = useState(false);
   const [isCommunityAnnouncementVisible, setIsCommunityAnnouncementVisible] = useState(true);
+  const hasOpenedLinkedSurvey = useRef(false);
   const memberProfile = useMemo(() => buildMemberProfile(profileSnapshot), [profileSnapshot]);
 
   useEffect(() => {
@@ -626,6 +627,23 @@ export default function CommunityDashboard({
     () => availableSurveys.find((survey) => survey.id === selectedSurveyId) ?? null,
     [availableSurveys, selectedSurveyId]
   );
+
+  useEffect(() => {
+    if (!hasHydratedData || hasOpenedLinkedSurvey.current) return;
+
+    const requestedSurveyId = Number(searchParams.get("surveyId"));
+    if (!Number.isInteger(requestedSurveyId) || requestedSurveyId <= 0) return;
+
+    hasOpenedLinkedSurvey.current = true;
+    const requestedSurvey = availableSurveys.find((survey) => survey.id === requestedSurveyId);
+
+    if (requestedSurvey) {
+      handleOpenSurvey(requestedSurvey);
+    } else {
+      setActiveSection("dashboard");
+      setSurveyLoadError("This survey is completed, expired, or no longer available for your profile.");
+    }
+  }, [availableSurveys, hasHydratedData, searchParams]);
   const scoredCompletions = useMemo(
     () =>
       completedSurveys.filter(
