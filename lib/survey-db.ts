@@ -119,7 +119,7 @@ function getNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
-export function parseStoredSurveyQuestions(value: unknown): StoredSurveyQuestion[] {
+function parseStoredSurveyQuestions(value: unknown): StoredSurveyQuestion[] {
   if (!Array.isArray(value)) {
     return [];
   }
