@@ -29,8 +29,8 @@ import {
   householdSizeOptions,
   industryOptions,
   interestOptions,
+  institutionPositionOptions,
   languageSkillOptions,
-  popularUniversities,
   residenceOptions,
   salaryRangeOptions,
 } from "@/lib/auth-options";
@@ -54,7 +54,9 @@ type AuthRole = "client" | "community";
 type SignUpFormValues = {
   name: string;
   surname: string;
+  affiliationType: "university" | "institution";
   universityEmail: string;
+  institutionId: string;
   educationalInstitution: string;
   customInstitution: string;
   position: string;
@@ -91,6 +93,12 @@ type CommunitySignupEligibilityResponse = {
   verifiedCountry?: string | null;
   availableCountries?: string[];
   message?: string;
+};
+
+type InstitutionOption = {
+  id: string;
+  name: string;
+  organization_types?: string[];
 };
 
 const roleCopy = {
@@ -266,6 +274,8 @@ function buildProfilePayload(
     return {
       ...commonPayload,
       educational_institution: normalizedInstitution,
+      affiliation_type: values.affiliationType,
+      institution_id: values.institutionId === "other" ? "" : values.institutionId,
       position: values.position,
       interests: [] as string[],
     };
@@ -370,10 +380,11 @@ export default function AuthClient({
 
   const [activeTab, setActiveTab] = useState<"signup" | "login">("signup");
   const [institutionOptions, setInstitutionOptions] =
-    useState<string[]>(popularUniversities);
+    useState<InstitutionOption[]>([]);
   const [institutionStatus, setInstitutionStatus] = useState<
     "idle" | "loading" | "ready" | "error"
   >("idle");
+  const [institutionSearch, setInstitutionSearch] = useState("");
   const [interestsOpen, setInterestsOpen] = useState(false);
   const [languageSkillsOpen, setLanguageSkillsOpen] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
@@ -384,6 +395,8 @@ export default function AuthClient({
 
   const signUp = useForm<SignUpFormValues>({
     defaultValues: {
+      affiliationType: "university",
+      institutionId: "",
       languageSkills: [],
       interests: [],
       acceptLegal: false,
@@ -413,6 +426,7 @@ export default function AuthClient({
     initialCommunityCountry ?? "",
   );
   const selectedCountry = watch("country");
+  const selectedAffiliationType = watch("affiliationType");
   const selectedInstitution = watch("educationalInstitution");
   const allowManualCommunityCountry =
     !isClient && !supportedInitialCommunityCountry;
@@ -426,57 +440,64 @@ export default function AuthClient({
   }, [isClient, setValue, supportedInitialCommunityCountry]);
 
   useEffect(() => {
-    if (!isClient || !selectedCountry) {
-      setInstitutionOptions(popularUniversities);
+    if (!isClient || !selectedCountry || !selectedAffiliationType) {
+      setInstitutionOptions([]);
       setInstitutionStatus("idle");
       return;
     }
 
     let cancelled = false;
 
-    async function loadUniversities() {
+    async function loadInstitutions() {
       setInstitutionStatus("loading");
 
       try {
+        const searchQuery = institutionSearch.trim().length >= 2
+          ? `&q=${encodeURIComponent(institutionSearch.trim())}`
+          : "";
         const response = await fetch(
-          `/api/universities?country=${encodeURIComponent(selectedCountry)}`,
+          `/api/institutions?country=${encodeURIComponent(selectedCountry)}&category=${encodeURIComponent(selectedAffiliationType)}${searchQuery}`,
         );
 
         if (!response.ok) {
           throw new Error("Could not load universities.");
         }
 
-        const payload = (await response.json()) as { universities?: string[] };
-        const universities = payload.universities?.length
-          ? payload.universities
-          : popularUniversities;
+        const payload = (await response.json()) as { institutions?: InstitutionOption[] };
+        const institutions = payload.institutions ?? [];
 
         if (cancelled) return;
 
-        setInstitutionOptions(universities);
+        setInstitutionOptions(institutions);
         setInstitutionStatus("ready");
 
-        const currentInstitution = getValues("educationalInstitution");
-        if (
-          currentInstitution &&
-          currentInstitution !== "Other" &&
-          !universities.includes(currentInstitution)
-        ) {
+        const currentInstitutionId = getValues("institutionId");
+        if (currentInstitutionId && !institutions.some((item) => item.id === currentInstitutionId)) {
+          setValue("institutionId", "");
           setValue("educationalInstitution", "");
         }
       } catch {
         if (cancelled) return;
-        setInstitutionOptions(popularUniversities);
+        setInstitutionOptions([]);
         setInstitutionStatus("error");
       }
     }
 
-    void loadUniversities();
+    const timeoutId = window.setTimeout(() => void loadInstitutions(), 250);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timeoutId);
     };
-  }, [getValues, isClient, selectedCountry, setValue]);
+  }, [getValues, institutionSearch, isClient, selectedAffiliationType, selectedCountry, setValue]);
+
+  useEffect(() => {
+    if (!isClient) return;
+    setValue("institutionId", "");
+    setValue("educationalInstitution", "");
+    setValue("customInstitution", "");
+    setInstitutionSearch("");
+  }, [isClient, selectedAffiliationType, selectedCountry, setValue]);
 
   useEffect(() => {
     if (selectedInstitution !== "Other") {
@@ -591,6 +612,8 @@ export default function AuthClient({
           email: values.universityEmail,
           country: values.country,
           institution: normalizedInstitution,
+          institutionId: values.institutionId === "other" ? undefined : values.institutionId,
+          affiliationType: values.affiliationType,
         });
       }
 
@@ -903,19 +926,50 @@ export default function AuthClient({
                         </div>
                       </div>
 
+                      <fieldset>
+                        <legend className={labelClassName}>I represent</legend>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {([
+                            ["university", "University", "Students, faculty and academic researchers"],
+                            ["institution", "Institution or organization", "Government, R&D, scientific and international organizations"],
+                          ] as const).map(([value, title, description]) => (
+                            <label
+                              key={value}
+                              className={`cursor-pointer rounded-2xl border p-4 transition ${
+                                selectedAffiliationType === value
+                                  ? "border-[color:var(--auth-accent)] bg-[color:var(--auth-selected-bg)]"
+                                  : "border-[color:var(--auth-border)] bg-white"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                value={value}
+                                {...register("affiliationType", { required: true })}
+                                className="sr-only"
+                              />
+                              <span className="block text-sm font-bold text-slate-900">{title}</span>
+                              <span className="mt-1 block text-xs leading-5 text-slate-500">{description}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </fieldset>
+
                       <div>
                         <label
                           className={labelClassName}
                           htmlFor="client-email"
                         >
-                          University email
+                          {selectedAffiliationType === "institution" ? "Work email" : "University email"}
                         </label>
                         <input
                           id="client-email"
                           type="email"
                           autoComplete="email"
                           {...register("universityEmail", {
-                            required: "University email is required.",
+                            required:
+                              selectedAffiliationType === "institution"
+                                ? "Work email is required."
+                                : "University email is required.",
                             pattern: {
                               value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                               message: "Enter a valid email address.",
@@ -924,9 +978,8 @@ export default function AuthClient({
                           className={inputClassName}
                         />
                         <p className="mt-2 text-sm text-slate-500">
-                          Use the email address issued by your university.
-                          Personal email providers are not accepted for client
-                          accounts.
+                          Use the email address issued by your {selectedAffiliationType === "institution" ? "organization" : "university"}.
+                          Personal email providers are not accepted for client accounts.
                         </p>
                         {errors.universityEmail ? (
                           <p className={errorTextClassName}>
@@ -938,7 +991,7 @@ export default function AuthClient({
 
                     <AuthFormSection
                       title="Work and institution"
-                      description="These details shape the university list and client profile."
+                      description={`Choose the country and ${selectedAffiliationType === "institution" ? "organization" : "university"} connected to this account.`}
                     >
                       <div>
                         <label
@@ -976,35 +1029,56 @@ export default function AuthClient({
                           className={labelClassName}
                           htmlFor="client-institution"
                         >
-                          Educational institution
+                          {selectedAffiliationType === "institution" ? "Institution or organization" : "University"}
                         </label>
+                        <input
+                          type="search"
+                          value={institutionSearch}
+                          onChange={(event) => setInstitutionSearch(event.target.value)}
+                          placeholder={`Search ${selectedAffiliationType === "institution" ? "institutions" : "universities"} by name`}
+                          className={`${inputClassName} mb-3`}
+                          disabled={!selectedCountry}
+                        />
                         <div className="relative">
                           <select
                             id="client-institution"
-                            {...register("educationalInstitution", {
-                              required: "Educational institution is required.",
+                            {...register("institutionId", {
+                              required:
+                                selectedAffiliationType === "institution"
+                                  ? "Institution is required."
+                                  : "University is required.",
+                              onChange: (event) => {
+                                const selectedId = event.target.value;
+                                const selected = institutionOptions.find((item) => item.id === selectedId);
+                                setValue(
+                                  "educationalInstitution",
+                                  selectedId === "other" ? "Other" : selected?.name ?? "",
+                                );
+                              },
                             })}
                             className={`${inputClassName} appearance-none pr-11`}
                           >
-                            <option value="">Select institution</option>
+                            <option value="">Select {selectedAffiliationType === "institution" ? "institution" : "university"}</option>
                             {institutionOptions.map((institution) => (
-                              <option key={institution} value={institution}>
-                                {institution}
+                              <option key={institution.id} value={institution.id}>
+                                {institution.name}
                               </option>
                             ))}
+                            <option value="other">Other / not listed</option>
                           </select>
+                          <input type="hidden" {...register("educationalInstitution")} />
                           <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         </div>
                         <p className="mt-2 text-sm text-slate-500">
                           {institutionStatus === "loading"
-                            ? "Loading universities for the selected country..."
+                            ? `Loading ${selectedAffiliationType === "institution" ? "institutions" : "universities"} for the selected country...`
                             : institutionStatus === "error"
-                              ? "University lookup fell back to a local list."
-                              : "Choose country to narrow the university list, or use Other."}
+                              ? "The local institution directory could not be loaded. You can still use Other."
+                              : "The list comes from Mergen's synchronized directory; use Other if needed."}
                         </p>
-                        {errors.educationalInstitution ? (
+                        {errors.institutionId ? (
                           <p className={errorTextClassName}>
-                            {errors.educationalInstitution.message}
+                            {errors.institutionId.message}
                           </p>
                         ) : null}
                       </div>
@@ -1051,7 +1125,10 @@ export default function AuthClient({
                             className={`${inputClassName} appearance-none pr-11`}
                           >
                             <option value="">Select position</option>
-                            {clientPositionOptions.map((position) => (
+                            {(selectedAffiliationType === "institution"
+                              ? institutionPositionOptions
+                              : clientPositionOptions
+                            ).map((position) => (
                               <option key={position} value={position}>
                                 {position}
                               </option>
