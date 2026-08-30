@@ -17,10 +17,50 @@ create table if not exists public.client_profiles (
   id uuid primary key references public.profiles (id) on delete cascade,
   country text,
   educational_institution text,
+  affiliation_type text not null default 'university' check (affiliation_type in ('university', 'institution')),
   position text,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
+
+create table if not exists public.institutions (
+  id uuid primary key default gen_random_uuid(),
+  source text not null check (source in ('hipo', 'ror', 'mergen')),
+  external_id text not null,
+  category text not null check (category in ('university', 'institution')),
+  name text not null,
+  country_name text not null,
+  country_code text,
+  website text,
+  organization_types text[] not null default '{}',
+  verified boolean not null default false,
+  active boolean not null default true,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  unique (source, external_id)
+);
+
+alter table public.client_profiles add column if not exists institution_id uuid references public.institutions (id) on delete set null;
+
+create table if not exists public.institution_aliases (
+  institution_id uuid not null references public.institutions (id) on delete cascade,
+  alias text not null,
+  language_code text,
+  primary key (institution_id, alias)
+);
+
+create table if not exists public.institution_domains (
+  institution_id uuid not null references public.institutions (id) on delete cascade,
+  domain text not null,
+  source text not null check (source in ('hipo', 'ror', 'mergen')),
+  verified boolean not null default false,
+  primary key (institution_id, domain)
+);
+
+create index if not exists institutions_country_category_name_idx on public.institutions (country_name, category, name);
+create index if not exists institutions_country_code_category_idx on public.institutions (country_code, category);
+create index if not exists institution_aliases_alias_idx on public.institution_aliases (alias);
+create index if not exists institution_domains_domain_idx on public.institution_domains (domain);
 
 create table if not exists public.community_profiles (
   id uuid primary key references public.profiles (id) on delete cascade,
@@ -431,6 +471,12 @@ before update on public.client_profiles
 for each row
 execute function public.set_updated_at();
 
+drop trigger if exists set_institutions_updated_at on public.institutions;
+create trigger set_institutions_updated_at
+before update on public.institutions
+for each row
+execute function public.set_updated_at();
+
 drop trigger if exists set_community_profiles_updated_at on public.community_profiles;
 create trigger set_community_profiles_updated_at
 before update on public.community_profiles
@@ -528,17 +574,23 @@ begin
       id,
       country,
       educational_institution,
+      affiliation_type,
+      institution_id,
       position
     )
     values (
       new.id,
       new.raw_user_meta_data ->> 'country',
       new.raw_user_meta_data ->> 'educational_institution',
+      coalesce(new.raw_user_meta_data ->> 'affiliation_type', 'university'),
+      nullif(new.raw_user_meta_data ->> 'institution_id', '')::uuid,
       new.raw_user_meta_data ->> 'position'
     )
     on conflict (id) do update set
       country = excluded.country,
       educational_institution = excluded.educational_institution,
+      affiliation_type = excluded.affiliation_type,
+      institution_id = excluded.institution_id,
       position = excluded.position;
 
   else
@@ -612,6 +664,9 @@ execute function public.handle_new_user();
 alter table public.profiles enable row level security;
 alter table public.client_profiles enable row level security;
 alter table public.community_profiles enable row level security;
+alter table public.institutions enable row level security;
+alter table public.institution_aliases enable row level security;
+alter table public.institution_domains enable row level security;
 alter table public.community_launch_regions enable row level security;
 alter table public.community_launch_countries enable row level security;
 alter table public.surveys enable row level security;
@@ -678,6 +733,26 @@ on public.community_profiles
 for update
 using (auth.uid() = id)
 with check (auth.uid() = id);
+
+drop policy if exists "Anyone can view active institutions" on public.institutions;
+create policy "Anyone can view active institutions"
+on public.institutions
+for select
+to anon, authenticated
+using (active = true);
+
+drop policy if exists "Anyone can view institution aliases" on public.institution_aliases;
+create policy "Anyone can view institution aliases"
+on public.institution_aliases
+for select
+to anon, authenticated
+using (
+  exists (
+    select 1 from public.institutions
+    where institutions.id = institution_aliases.institution_id
+      and institutions.active = true
+  )
+);
 
 drop policy if exists "Anyone can view community launch regions" on public.community_launch_regions;
 create policy "Anyone can view community launch regions"
