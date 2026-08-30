@@ -1,24 +1,29 @@
 import { NextResponse } from "next/server";
 import { isAdminEmail } from "@/lib/admin-access";
+import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  hasMailExchange,
+  isKnownPersonalEmailDomain,
+} from "@/lib/organization-email";
 import {
   extractEmailDomain,
-  findUniversityDirectoryMatch,
   formatUniversityDomains,
   isLikelyUniversityEmailDomain,
   isValidEmailAddress,
   matchesUniversityEmailDomain,
   normalizeEmail,
-  type UniversityDirectoryRecord,
 } from "@/lib/university-email";
 
 type ClientSignupEligibilityRequest = {
   email?: string;
   country?: string;
   institution?: string;
+  institutionId?: string;
+  affiliationType?: "university" | "institution";
 };
 
 const GENERIC_UNIVERSITY_EMAIL_MESSAGE =
-  "Use the email address issued by your university. Personal email providers are not accepted for client accounts.";
+  "Use the work or institutional email issued by your university or organization. Personal email providers are not accepted for client accounts.";
 
 function buildInstitutionMismatchMessage(
   institution: string,
@@ -36,42 +41,6 @@ function buildInstitutionMismatchMessage(
   }
 
   return `Use your ${normalizedInstitution} email address (${domainHint}), or change the institution to match your university email.`;
-}
-
-async function fetchUniversityDirectoryRecords(
-  country: string,
-  institution: string,
-) {
-  const searchParams = new URLSearchParams();
-
-  if (country.trim()) {
-    searchParams.set("country", country.trim());
-  }
-
-  if (institution.trim()) {
-    searchParams.set("name", institution.trim());
-  }
-
-  if (!searchParams.toString()) {
-    return [] as UniversityDirectoryRecord[];
-  }
-
-  const response = await fetch(
-    `https://universities.hipolabs.com/search?${searchParams.toString()}`,
-    {
-      headers: { Accept: "application/json" },
-      next: { revalidate: 86400 },
-      signal: AbortSignal.timeout(6000),
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      `University lookup failed with status ${response.status}.`,
-    );
-  }
-
-  return (await response.json()) as UniversityDirectoryRecord[];
 }
 
 export async function POST(request: Request) {
@@ -92,6 +61,8 @@ export async function POST(request: Request) {
   const email = normalizeEmail(body.email ?? "");
   const country = body.country?.trim() ?? "";
   const institution = body.institution?.trim() ?? "";
+  const institutionId = body.institutionId?.trim() ?? "";
+  const affiliationType = body.affiliationType === "institution" ? "institution" : "university";
 
   if (!isValidEmailAddress(email)) {
     return NextResponse.json(
@@ -119,18 +90,41 @@ export async function POST(request: Request) {
     );
   }
 
-  if (institution) {
+  if (isKnownPersonalEmailDomain(emailDomain)) {
+    return NextResponse.json({
+      allowed: false,
+      message: GENERIC_UNIVERSITY_EMAIL_MESSAGE,
+    });
+  }
+
+  if (institutionId) {
     try {
-      const directoryRecords = await fetchUniversityDirectoryRecords(
-        country,
-        institution,
-      );
-      const matchedUniversity = findUniversityDirectoryMatch(
-        directoryRecords,
-        institution,
-      );
-      const matchedDomains =
-        matchedUniversity?.domains?.map((domain) => domain.trim()) ?? [];
+      const admin = createAdminClient();
+      const [{ data: matchedInstitution }, { data: domainRows }] = await Promise.all([
+        admin
+          .from("institutions")
+          .select("id,name,country_name,category")
+          .eq("id", institutionId)
+          .eq("active", true)
+          .maybeSingle(),
+        admin
+          .from("institution_domains")
+          .select("domain")
+          .eq("institution_id", institutionId),
+      ]);
+
+      if (
+        !matchedInstitution ||
+        matchedInstitution.category !== affiliationType ||
+        (country && matchedInstitution.country_name !== country)
+      ) {
+        return NextResponse.json({
+          allowed: false,
+          message: "Choose a valid institution for the selected country and account type.",
+        });
+      }
+
+      const matchedDomains = (domainRows ?? []).map((row) => row.domain.trim());
 
       if (matchedDomains.length > 0) {
         const matchesInstitutionDomain = matchedDomains.some((domain) =>
@@ -140,27 +134,30 @@ export async function POST(request: Request) {
         if (!matchesInstitutionDomain) {
           return NextResponse.json({
             allowed: false,
-            message: buildInstitutionMismatchMessage(institution, matchedDomains),
+            message: buildInstitutionMismatchMessage(matchedInstitution.name, matchedDomains),
             matchedDomains,
-            matchedInstitution: matchedUniversity?.name ?? institution,
+            matchedInstitution: matchedInstitution.name,
           });
         }
 
         return NextResponse.json({
           allowed: true,
           matchedDomains,
-          matchedInstitution: matchedUniversity?.name ?? institution,
+          matchedInstitution: matchedInstitution.name,
         });
       }
     } catch {
-      // Fall back to domain pattern checks when the directory cannot be reached.
+      // Fall through to conservative domain checks if directory data is incomplete.
     }
   }
 
-  if (isLikelyUniversityEmailDomain(emailDomain)) {
+  if (
+    isLikelyUniversityEmailDomain(emailDomain) ||
+    (await hasMailExchange(emailDomain))
+  ) {
     return NextResponse.json({
       allowed: true,
-      matchedInstitution: null,
+      matchedInstitution: institution || null,
       usedFallback: true,
     });
   }
