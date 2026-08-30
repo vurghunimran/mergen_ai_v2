@@ -8,6 +8,12 @@ const HIPO_DATA_URL =
   "https://raw.githubusercontent.com/Hipo/university-domains-list/master/world_universities_and_domains.json";
 const ROR_ZENODO_RECORD_URL = "https://zenodo.org/api/records/6347574";
 const BATCH_SIZE = 300;
+const MERGEN_CURATED_UNIVERSITIES = [
+  { name: "ADA University", country: "Azerbaijan", countryCode: "AZ", domain: "ada.edu.az", website: "https://www.ada.edu.az" },
+  { name: "Baku State University", country: "Azerbaijan", countryCode: "AZ", domain: "bsu.edu.az", website: "https://bsu.edu.az" },
+  { name: "Azerbaijan State Oil and Industry University", country: "Azerbaijan", countryCode: "AZ", domain: "asoiu.edu.az", website: "https://asoiu.edu.az" },
+  { name: "Khazar University", country: "Azerbaijan", countryCode: "AZ", domain: "khazar.org", website: "https://khazar.org" },
+];
 const COUNTRY_NAME_OVERRIDES = new Map([
   ["BO", "Bolivia"],
   ["BN", "Brunei"],
@@ -57,6 +63,27 @@ function chunks(items, size = BATCH_SIZE) {
     result.push(items.slice(index, index + size));
   }
   return result;
+}
+
+function deduplicateRecords(records) {
+  const unique = new Map();
+
+  for (const record of records) {
+    const key = `${record.institution.source}:${record.institution.external_id}`;
+    const existing = unique.get(key);
+    if (!existing) {
+      unique.set(key, record);
+      continue;
+    }
+
+    existing.domains = [...new Set([...existing.domains, ...record.domains])];
+    const aliases = new Map(
+      [...existing.aliases, ...record.aliases].map((alias) => [alias.alias, alias]),
+    );
+    existing.aliases = [...aliases.values()];
+  }
+
+  return [...unique.values()];
 }
 
 async function fetchJson(url) {
@@ -147,6 +174,25 @@ async function loadHipoRecords() {
     });
 }
 
+function loadCuratedUniversityRecords() {
+  return MERGEN_CURATED_UNIVERSITIES.map((record) => ({
+    institution: {
+      source: "mergen",
+      external_id: record.domain,
+      category: "university",
+      name: record.name,
+      country_name: record.country,
+      country_code: record.countryCode,
+      website: record.website,
+      organization_types: ["education"],
+      verified: true,
+      active: true,
+    },
+    domains: [record.domain],
+    aliases: [],
+  }));
+}
+
 async function loadRorRecords() {
   const metadata = await fetchJson(ROR_ZENODO_RECORD_URL);
   const zipFile = (metadata.files ?? []).find((file) => file.key?.endsWith("-ror-data.zip"));
@@ -216,13 +262,16 @@ async function main() {
   const dryRun = process.argv.includes("--dry-run");
 
   if (!institutionsOnly) {
-    const universities = await loadHipoRecords();
+    const universities = deduplicateRecords([
+      ...(await loadHipoRecords()),
+      ...loadCuratedUniversityRecords(),
+    ]);
     console.log(`Loaded ${universities.length} university records from Hipo.`);
     if (!dryRun) await upsertRecords(supabase, universities);
   }
 
   if (!universitiesOnly) {
-    const institutions = await loadRorRecords();
+    const institutions = deduplicateRecords(await loadRorRecords());
     console.log(`Loaded ${institutions.length} research-organization records from ROR.`);
     if (!dryRun) await upsertRecords(supabase, institutions);
   }
