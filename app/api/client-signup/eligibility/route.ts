@@ -116,7 +116,7 @@ export async function POST(request: Request) {
       if (
         !matchedInstitution ||
         matchedInstitution.category !== affiliationType ||
-        (country && matchedInstitution.country_name !== country)
+        (country && country !== "International" && matchedInstitution.country_name !== country)
       ) {
         return NextResponse.json({
           allowed: false,
