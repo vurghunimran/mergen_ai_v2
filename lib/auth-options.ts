@@ -212,6 +212,22 @@ export const clientPositionOptions = [
   "Other"
 ];
 
+export const institutionPositionOptions = [
+  "Researcher",
+  "Scientist",
+  "Research Assistant",
+  "R&D Specialist",
+  "Data Analyst",
+  "Policy Analyst",
+  "Program Officer",
+  "Project Manager",
+  "Department Head",
+  "Director",
+  "Consultant",
+  "Administrator",
+  "Other"
+];
+
 export const ageSpanOptions = ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"];
 
 export const genderOptions = ["Female", "Male", "Non-binary", "Prefer not to say"];
