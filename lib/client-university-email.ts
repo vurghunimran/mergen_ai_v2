@@ -10,10 +10,12 @@ type ClientUniversityEmailValidationParams = {
   email: string;
   country?: string;
   institution?: string;
+  institutionId?: string;
+  affiliationType?: "university" | "institution";
 };
 
 const DEFAULT_UNIVERSITY_EMAIL_MESSAGE =
-  "Use the email address issued by your university.";
+  "Use the email address issued by your university or organization.";
 
 export async function assertClientUniversityEmail(
   params: ClientUniversityEmailValidationParams,
