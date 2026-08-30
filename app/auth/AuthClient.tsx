@@ -384,7 +384,6 @@ export default function AuthClient({
   const [institutionStatus, setInstitutionStatus] = useState<
     "idle" | "loading" | "ready" | "error"
   >("idle");
-  const [institutionSearch, setInstitutionSearch] = useState("");
   const [interestsOpen, setInterestsOpen] = useState(false);
   const [languageSkillsOpen, setLanguageSkillsOpen] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<string | null>(null);
@@ -452,8 +451,8 @@ export default function AuthClient({
       setInstitutionStatus("loading");
 
       try {
-        const searchQuery = institutionSearch.trim().length >= 2
-          ? `&q=${encodeURIComponent(institutionSearch.trim())}`
+        const searchQuery = selectedInstitution.trim().length >= 2 && selectedInstitution !== "Other"
+          ? `&q=${encodeURIComponent(selectedInstitution.trim())}`
           : "";
         const response = await fetch(
           `/api/institutions?country=${encodeURIComponent(selectedCountry)}&category=${encodeURIComponent(selectedAffiliationType)}${searchQuery}`,
@@ -471,11 +470,6 @@ export default function AuthClient({
         setInstitutionOptions(institutions);
         setInstitutionStatus("ready");
 
-        const currentInstitutionId = getValues("institutionId");
-        if (currentInstitutionId && !institutions.some((item) => item.id === currentInstitutionId)) {
-          setValue("institutionId", "");
-          setValue("educationalInstitution", "");
-        }
       } catch {
         if (cancelled) return;
         setInstitutionOptions([]);
@@ -489,14 +483,22 @@ export default function AuthClient({
       cancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [getValues, institutionSearch, isClient, selectedAffiliationType, selectedCountry, setValue]);
+  }, [isClient, selectedAffiliationType, selectedCountry, selectedInstitution]);
+
+  useEffect(() => {
+    if (!isClient) return;
+    if (selectedAffiliationType === "institution") {
+      setValue("country", "International");
+    } else if (getValues("country") === "International") {
+      setValue("country", "");
+    }
+  }, [getValues, isClient, selectedAffiliationType, setValue]);
 
   useEffect(() => {
     if (!isClient) return;
     setValue("institutionId", "");
     setValue("educationalInstitution", "");
     setValue("customInstitution", "");
-    setInstitutionSearch("");
   }, [isClient, selectedAffiliationType, selectedCountry, setValue]);
 
   useEffect(() => {
@@ -1009,6 +1011,9 @@ export default function AuthClient({
                             className={`${inputClassName} appearance-none pr-11`}
                           >
                             <option value="">Select country</option>
+                            {selectedAffiliationType === "institution" ? (
+                              <option value="International">International</option>
+                            ) : null}
                             {countryOptions.map((country) => (
                               <option key={country} value={country}>
                                 {country}
@@ -1032,43 +1037,40 @@ export default function AuthClient({
                           {selectedAffiliationType === "institution" ? "Institution or organization" : "University"}
                         </label>
                         <input
+                          id="client-institution"
                           type="search"
-                          value={institutionSearch}
-                          onChange={(event) => setInstitutionSearch(event.target.value)}
-                          placeholder={`Search ${selectedAffiliationType === "institution" ? "institutions" : "universities"} by name`}
-                          className={`${inputClassName} mb-3`}
+                          list="client-institution-options"
+                          autoComplete="off"
+                          placeholder={`Search and choose ${selectedAffiliationType === "institution" ? "an institution" : "a university"}`}
                           disabled={!selectedCountry}
+                          {...register("educationalInstitution", {
+                            required:
+                              selectedAffiliationType === "institution"
+                                ? "Institution is required."
+                                : "University is required.",
+                            onChange: (event) => {
+                              const value = event.target.value;
+                              const selected = institutionOptions.find((item) => item.name === value);
+                              setValue("institutionId", value === "Other" ? "other" : selected?.id ?? "");
+                            },
+                          })}
+                          className={inputClassName}
                         />
-                        <div className="relative">
-                          <select
-                            id="client-institution"
-                            {...register("institutionId", {
-                              required:
-                                selectedAffiliationType === "institution"
-                                  ? "Institution is required."
-                                  : "University is required.",
-                              onChange: (event) => {
-                                const selectedId = event.target.value;
-                                const selected = institutionOptions.find((item) => item.id === selectedId);
-                                setValue(
-                                  "educationalInstitution",
-                                  selectedId === "other" ? "Other" : selected?.name ?? "",
-                                );
-                              },
-                            })}
-                            className={`${inputClassName} appearance-none pr-11`}
-                          >
-                            <option value="">Select {selectedAffiliationType === "institution" ? "institution" : "university"}</option>
-                            {institutionOptions.map((institution) => (
-                              <option key={institution.id} value={institution.id}>
-                                {institution.name}
-                              </option>
-                            ))}
-                            <option value="other">Other / not listed</option>
-                          </select>
-                          <input type="hidden" {...register("educationalInstitution")} />
-                          <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        </div>
+                        <datalist id="client-institution-options">
+                          {institutionOptions.map((institution) => (
+                            <option key={institution.id} value={institution.name} />
+                          ))}
+                          <option value="Other" />
+                        </datalist>
+                        <input
+                          type="hidden"
+                          {...register("institutionId", {
+                            validate: (value) =>
+                              value
+                                ? true
+                                : `Choose ${selectedAffiliationType === "institution" ? "an institution" : "a university"} from the list or select Other.`,
+                          })}
+                        />
                         <p className="mt-2 text-sm text-slate-500">
                           {institutionStatus === "loading"
                             ? `Loading ${selectedAffiliationType === "institution" ? "institutions" : "universities"} for the selected country...`
@@ -1076,9 +1078,9 @@ export default function AuthClient({
                               ? "The local institution directory could not be loaded. You can still use Other."
                               : "The list comes from Mergen's synchronized directory; use Other if needed."}
                         </p>
-                        {errors.institutionId ? (
+                        {errors.educationalInstitution || errors.institutionId ? (
                           <p className={errorTextClassName}>
-                            {errors.institutionId.message}
+                            {errors.educationalInstitution?.message ?? errors.institutionId?.message}
                           </p>
                         ) : null}
                       </div>
