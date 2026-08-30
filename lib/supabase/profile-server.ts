@@ -51,6 +51,11 @@ function mapProfile(
     country: roleCountry ?? getStringValue(metadata.country),
     educationalInstitution:
       clientRow?.educational_institution ?? getStringValue(metadata.educational_institution),
+    affiliationType:
+      clientRow?.affiliation_type === "institution" || metadata.affiliation_type === "institution"
+        ? "institution"
+        : "university",
+    institutionId: clientRow?.institution_id ?? getStringValue(metadata.institution_id),
     position: clientRow?.position ?? getStringValue(metadata.position),
     ageSpan: communityRow?.age_span ?? getStringValue(metadata.age_span),
     gender: communityRow?.gender ?? getStringValue(metadata.gender),
