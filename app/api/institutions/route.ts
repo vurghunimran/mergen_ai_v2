@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     const admin = createAdminClient();
     let directoryQuery = admin
       .from("institutions")
-      .select("id,name,organization_types")
+      .select("id,name,organization_types,source")
       .eq("category", category)
       .eq("active", true)
       .order("name", { ascending: true })
@@ -42,7 +42,13 @@ export async function GET(request: Request) {
       throw error;
     }
 
-    return NextResponse.json({ institutions: data ?? [] });
+    const uniqueInstitutions = Array.from(
+      new Map(
+        (data ?? []).map((institution) => [institution.name.trim().toLowerCase(), institution]),
+      ).values(),
+    ).map(({ source: _source, ...institution }) => institution);
+
+    return NextResponse.json({ institutions: uniqueInstitutions });
   } catch (error) {
     console.error("Institution directory lookup failed.", error);
     return NextResponse.json(
