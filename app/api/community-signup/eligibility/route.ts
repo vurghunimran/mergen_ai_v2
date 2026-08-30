@@ -47,9 +47,21 @@ async function isRegionAvailable(country: string) {
 export async function GET(request: Request) {
   try {
     const detectedCountry = getDetectedCountryFromHeaders(request.headers);
+    const normalizedDetectedCountry = normalizeCommunityLaunchCountry(
+      detectedCountry ?? ""
+    );
     const requestedCountry = getRequestedCountry(request);
-    const verifiedCountry =
-      normalizeCommunityLaunchCountry(detectedCountry ?? "") ?? requestedCountry;
+    const verifiedCountry = normalizedDetectedCountry ?? requestedCountry;
+
+    if (detectedCountry && !normalizedDetectedCountry) {
+      return NextResponse.json({
+        allowed: false,
+        detectedCountry,
+        verifiedCountry: null,
+        availableCountries: communityLaunchCountries,
+        message: "Your residence country is not listed in our community yet."
+      });
+    }
 
     if (!verifiedCountry) {
       return NextResponse.json({
