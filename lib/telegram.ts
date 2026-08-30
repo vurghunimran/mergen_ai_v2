@@ -30,7 +30,7 @@ type SurveyLaunchTelegramInput = {
   description: string;
   questionCount: number;
   targetResponses: number;
-  dashboardUrl?: string;
+  dashboardUrl: string;
 };
 
 function normalizeTelegramUsername(value: string) {
@@ -196,7 +196,7 @@ export function buildSurveyLaunchTelegramMessage(input: SurveyLaunchTelegramInpu
     `Questions: ${input.questionCount}`,
     `Target responses: ${input.targetResponses}`,
     "",
-    input.dashboardUrl ? `Open your dashboard: ${input.dashboardUrl}` : "Tap the button below to answer securely in Telegram."
+    `Open the survey in Mergen: ${input.dashboardUrl}`
   ].join("\n");
 }
 
