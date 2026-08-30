@@ -296,6 +296,21 @@ create table if not exists public.telegram_link_tokens (
   consumed_at timestamptz
 );
 
+create table if not exists public.telegram_survey_sessions (
+  token_hash text primary key,
+  survey_id bigint not null references public.surveys (id) on delete cascade,
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  telegram_chat_id text not null,
+  status text not null default 'active' check (status in ('active', 'completed', 'revoked')),
+  answers jsonb not null default '{}'::jsonb,
+  started_at timestamptz,
+  expires_at timestamptz not null,
+  completed_at timestamptz,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  unique (survey_id, user_id)
+);
+
 alter table public.surveys add column if not exists distribution_stage integer;
 alter table public.surveys add column if not exists distribution_started_at timestamptz;
 alter table public.surveys add column if not exists distribution_last_sent_at timestamptz;
@@ -495,6 +510,12 @@ before update on public.telegram_notification_subscriptions
 for each row
 execute function public.set_updated_at();
 
+drop trigger if exists set_telegram_survey_sessions_updated_at on public.telegram_survey_sessions;
+create trigger set_telegram_survey_sessions_updated_at
+before update on public.telegram_survey_sessions
+for each row
+execute function public.set_updated_at();
+
 drop trigger if exists set_reward_activations_updated_at on public.reward_activations;
 create trigger set_reward_activations_updated_at
 before update on public.reward_activations
@@ -676,6 +697,7 @@ alter table public.survey_notifications enable row level security;
 alter table public.reward_activations enable row level security;
 alter table public.telegram_notification_subscriptions enable row level security;
 alter table public.telegram_link_tokens enable row level security;
+alter table public.telegram_survey_sessions enable row level security;
 
 drop policy if exists "Users can view their own profile" on public.profiles;
 create policy "Users can view their own profile"
