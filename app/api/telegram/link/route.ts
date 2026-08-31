@@ -54,18 +54,10 @@ export async function GET() {
 
     const subscription = (data as TelegramSubscriptionRow | null) ?? null;
     const currentPhoneNumber = authorized.profile.phoneNumber.trim();
-    const currentPhoneKey = getPhoneComparisonKey(currentPhoneNumber);
     const phoneReady = isLikelyInternationalPhoneNumber(currentPhoneNumber);
-    const phoneMismatch = Boolean(
-      subscription &&
-        currentPhoneKey &&
-        subscription.phone_number_normalized !== currentPhoneKey
-    );
     const linked = Boolean(
       subscription?.notifications_enabled &&
-        subscription?.verified_at &&
-        currentPhoneKey &&
-        !phoneMismatch
+        subscription?.verified_at
     );
 
     return NextResponse.json({
@@ -73,7 +65,7 @@ export async function GET() {
       phoneNumber: currentPhoneNumber,
       phoneAvailable: Boolean(currentPhoneNumber),
       phoneReady,
-      phoneMismatch,
+      phoneMismatch: false,
       botConfigured: isTelegramActivationConfigured(),
       botConfigurationError: configurationError || null,
       botUsername: getTelegramBotUsername() || null,
