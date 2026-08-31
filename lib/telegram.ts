@@ -171,6 +171,29 @@ export async function sendTelegramMessage({
   });
 }
 
+export async function ensureTelegramWebhook(request: Request) {
+  const botToken = getTelegramBotToken();
+  const webhookSecret = getTelegramWebhookSecret();
+  const appBaseUrl = getAppBaseUrl(request);
+
+  if (!botToken || !webhookSecret || !appBaseUrl) {
+    throw new Error(getTelegramActivationConfigurationError() || "Missing APP_BASE_URL.");
+  }
+
+  const webhookUrl = `${appBaseUrl}/api/telegram/webhook`;
+  const configured = await callTelegramApi<boolean>("setWebhook", {
+    url: webhookUrl,
+    secret_token: webhookSecret,
+    allowed_updates: ["message"]
+  });
+
+  if (!configured) {
+    throw new Error("Telegram did not accept the MERGEN webhook configuration.");
+  }
+
+  return webhookUrl;
+}
+
 export function shouldDisableTelegramSubscription(error: unknown) {
   if (!(error instanceof TelegramApiRequestError)) {
     return false;
