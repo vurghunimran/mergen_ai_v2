@@ -10,7 +10,6 @@ import {
   getResendFromEmail,
   isValidEmail
 } from "@/lib/email/config";
-import { getPhoneComparisonKey } from "@/lib/phone-number";
 import {
   buildAudienceForDistributionStage,
   calculateSurveyDaysRemaining,
@@ -237,12 +236,9 @@ async function loadDistributionRecipientPool(
     .map((baseRow) => {
       const normalizedEmail = baseRow.email?.trim().toLowerCase() ?? "";
       const communityRow = communityById.get(baseRow.id);
-      const currentPhoneKey = getPhoneComparisonKey(baseRow.phone_number);
       const telegramSubscription = telegramSubscriptionByUserId.get(baseRow.id);
       const hasVerifiedTelegramLink = Boolean(
-        telegramSubscription &&
-          currentPhoneKey &&
-          telegramSubscription.phone_number_normalized === currentPhoneKey
+        telegramSubscription?.notifications_enabled && telegramSubscription.telegram_chat_id
       );
 
       if (!communityRow || !normalizedEmail || !isValidEmail(normalizedEmail)) {
