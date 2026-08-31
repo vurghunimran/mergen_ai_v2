@@ -211,11 +211,33 @@ export async function POST(request: Request) {
     const existingSubscription = (existingChatSubscription as TelegramSubscriptionRow | null) ?? null;
 
     if (existingSubscription && existingSubscription.user_id !== tokenRow.user_id) {
-      await sendWebhookMessage(
-        chatId,
-        "This Telegram account is already linked to another MERGEN account. Disconnect it there before linking it to a different account."
-      );
-      return NextResponse.json({ ok: true });
+      const { error: currentAccountCleanupError } = await admin
+        .from("telegram_notification_subscriptions")
+        .delete()
+        .eq("user_id", tokenRow.user_id);
+
+      if (currentAccountCleanupError) {
+        console.error("Telegram current-account subscription cleanup failed.", currentAccountCleanupError);
+        await sendWebhookMessage(
+          chatId,
+          "We could not move this Telegram account to your current MERGEN account. Please try again."
+        );
+        return NextResponse.json({ ok: true });
+      }
+
+      const { error: previousAccountCleanupError } = await admin
+        .from("telegram_notification_subscriptions")
+        .delete()
+        .eq("telegram_chat_id", chatId);
+
+      if (previousAccountCleanupError) {
+        console.error("Telegram previous-account subscription cleanup failed.", previousAccountCleanupError);
+        await sendWebhookMessage(
+          chatId,
+          "We could not move this Telegram account to your current MERGEN account. Please try again."
+        );
+        return NextResponse.json({ ok: true });
+      }
     }
 
     const linkedAt = new Date().toISOString();
