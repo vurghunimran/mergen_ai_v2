@@ -4,6 +4,7 @@ import { getPhoneComparisonKey, isLikelyInternationalPhoneNumber } from "@/lib/p
 import { requireAuthorizedProfile } from "@/lib/survey-authorization";
 import {
   buildTelegramStartUrl,
+  ensureTelegramWebhook,
   getTelegramActivationConfigurationError,
   getTelegramBotUsername,
   isTelegramActivationConfigured
@@ -25,7 +26,7 @@ type TelegramSubscriptionRow = {
 function buildLinkInstructions(phoneNumber: string) {
   return [
     "Telegram activation is ready.",
-    `Open the bot, press Start, and share the same phone number you saved in MERGEN: ${phoneNumber}.`
+    `Open the bot and press Start. Your MERGEN account will be linked automatically to receive survey notifications for ${phoneNumber}.`
   ].join(" ");
 }
 
@@ -97,7 +98,7 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   const authorized = await requireAuthorizedProfile("community");
 
   if (authorized.response) {
@@ -135,6 +136,21 @@ export async function POST() {
           "Telegram activation is not available on this deployment yet."
       },
       { status: 500 }
+    );
+  }
+
+  try {
+    await ensureTelegramWebhook(request);
+  } catch (error) {
+    console.error("Telegram webhook registration failed.", error);
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? `Telegram setup failed: ${error.message}`
+            : "Telegram setup failed while registering the webhook."
+      },
+      { status: 502 }
     );
   }
 
