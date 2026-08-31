@@ -193,31 +193,81 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    const { error: linkTokenUpdateError } = await admin
-      .from("telegram_link_tokens")
-      .update({
-        telegram_chat_id: chatId,
-        telegram_user_id: fromId || null
-      })
-      .eq("token", tokenRow.token);
+    const { data: existingChatSubscription, error: existingChatSubscriptionError } = await admin
+      .from("telegram_notification_subscriptions")
+      .select("user_id")
+      .eq("telegram_chat_id", chatId)
+      .maybeSingle();
 
-    if (linkTokenUpdateError) {
-      console.error("Telegram link token chat assignment failed.", linkTokenUpdateError);
+    if (existingChatSubscriptionError) {
+      console.error("Telegram existing subscription lookup failed.", existingChatSubscriptionError);
       await sendWebhookMessage(
         chatId,
-        "We could not store this Telegram chat yet. Please request a fresh activation link from MERGEN settings and try again."
+        "We could not verify this Telegram account right now. Please try again from MERGEN settings."
       );
       return NextResponse.json({ ok: true });
     }
 
+    const existingSubscription = (existingChatSubscription as TelegramSubscriptionRow | null) ?? null;
+
+    if (existingSubscription && existingSubscription.user_id !== tokenRow.user_id) {
+      await sendWebhookMessage(
+        chatId,
+        "This Telegram account is already linked to another MERGEN account. Disconnect it there before linking it to a different account."
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    const linkedAt = new Date().toISOString();
+    const { error: upsertError } = await admin
+      .from("telegram_notification_subscriptions")
+      .upsert(
+        {
+          user_id: tokenRow.user_id,
+          phone_number: tokenRow.phone_number,
+          phone_number_normalized: tokenRow.phone_number_normalized,
+          telegram_chat_id: chatId,
+          telegram_user_id: fromId || null,
+          telegram_username: message.from?.username ?? null,
+          telegram_first_name: message.from?.first_name ?? null,
+          telegram_last_name: message.from?.last_name ?? null,
+          notifications_enabled: true,
+          linked_at: linkedAt,
+          verified_at: linkedAt,
+          updated_at: linkedAt
+        },
+        { onConflict: "user_id" }
+      );
+
+    if (upsertError) {
+      console.error("Telegram subscription upsert failed.", upsertError);
+      await sendWebhookMessage(
+        chatId,
+        "We could not link this Telegram account right now. Please try again from MERGEN settings."
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    const { error: tokenConsumeError } = await admin
+      .from("telegram_link_tokens")
+      .update({
+        consumed_at: linkedAt,
+        telegram_chat_id: chatId,
+        telegram_user_id: fromId || null
+      })
+      .eq("user_id", tokenRow.user_id)
+      .is("consumed_at", null);
+
+    if (tokenConsumeError) {
+      console.error("Telegram link token consume failed.", tokenConsumeError);
+    }
+
     await sendWebhookMessage(
       chatId,
-      `Almost done. Share the same phone number you saved in MERGEN: ${tokenRow.phone_number}`,
-      {
-        keyboard: [[{ text: "Share phone number", request_contact: true }]],
-        resize_keyboard: true,
-        one_time_keyboard: true
-      }
+      dashboardUrl
+        ? `Welcome to MERGEN AI! Your Telegram alerts are active. You’ll be notified here whenever a new survey matching your profile becomes available. Manage alerts in MERGEN settings: ${dashboardUrl}`
+        : "Welcome to MERGEN AI! Your Telegram alerts are active. You’ll be notified here whenever a new survey matching your profile becomes available.",
+      { remove_keyboard: true }
     );
 
     return NextResponse.json({ ok: true });
