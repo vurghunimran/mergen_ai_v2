@@ -598,6 +598,15 @@ export default function CommunityDashboard({
   }, []);
 
   useEffect(() => {
+    function refreshTelegramAfterReturn() {
+      void refreshTelegramStatus({ preserveMessage: true });
+    }
+
+    window.addEventListener("focus", refreshTelegramAfterReturn);
+    return () => window.removeEventListener("focus", refreshTelegramAfterReturn);
+  }, []);
+
+  useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
       if (!(event.target instanceof Element)) return;
       if (!event.target.closest("[data-profile-menu]")) {
@@ -2343,7 +2352,7 @@ export default function CommunityDashboard({
                       <div className="mt-4 space-y-2">
                         {hasUnsavedPhoneChange ? (
                           <p className={`text-sm ${settingsMutedTextClassName}`}>
-                            Save your phone number changes first, then activate Telegram with the updated number.
+                            Save your profile changes before activating Telegram.
                           </p>
                         ) : !savedSettings.phone.trim() ? (
                           <p className={`text-sm ${settingsMutedTextClassName}`}>
@@ -2352,10 +2361,6 @@ export default function CommunityDashboard({
                         ) : !isLikelyInternationalPhoneNumber(savedSettings.phone) ? (
                           <p className={`text-sm ${settingsMutedTextClassName}`}>
                             Telegram verification works best with an international number format like +994501234567.
-                          </p>
-                        ) : telegramStatus?.phoneMismatch ? (
-                          <p className={`text-sm ${settingsMutedTextClassName}`}>
-                            Your phone number changed since the last Telegram verification. Activate Telegram again to keep alerts working.
                           </p>
                         ) : telegramStatus?.botConfigured === false ? (
                           <p className={`text-sm ${settingsMutedTextClassName}`}>
