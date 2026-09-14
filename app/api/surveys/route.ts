@@ -1,3 +1,5 @@
+import { verifySurveyOrder } from "@/lib/survey-orders";
+import { assertOrderSurvey } from "@/lib/survey-order-verification";
 import { NextResponse } from "next/server";
 import type { SurveyCheckoutPayload } from "@/lib/dashboard-data";
 import {
@@ -59,7 +61,7 @@ function parseCreateSurveyPayload(body: unknown): {
     };
   }
 
-  if (!title || !description || !researchDescription || targetResponses <= 0 || questionCount <= 0 || !audience || !questions) {
+  if (typeof body.includeDetailedAI !== "boolean" || !title || !description || !researchDescription || targetResponses <= 0 || questionCount <= 0 || !audience || !questions) {
     return {
       payload: null,
       error: "Invalid survey payload."
@@ -69,6 +71,7 @@ function parseCreateSurveyPayload(body: unknown): {
   return {
     payload: {
       title,
+      checkoutId: typeof body.checkoutId === "string" ? body.checkoutId : undefined,
       targetResponses,
       questionCount,
       description,
@@ -127,8 +130,15 @@ export async function POST(request: Request) {
   payload.audience.countries = normalizeCommunityLaunchCountries(payload.audience.countries);
 
   try {
+    if (!payload.checkoutId) return NextResponse.json({ error: "A verified paid checkout is required." }, { status: 400 });
+    const { order, isPaid } = await verifySurveyOrder(payload.checkoutId, authorized.profile.id);
+    if (!isPaid) return NextResponse.json({ error: "Payment has not succeeded." }, { status: 409 });
+    try { assertOrderSurvey(order, payload); }
+    catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid purchased allowance." }, { status: 400 }); }
     const supabase = createClient();
-    const insertPayload = buildSurveyInsertPayload(payload, authorized.profile.id);
+    const { data: existing } = await supabase.from("surveys").select("*").eq("pricing_order_id", order.id).maybeSingle();
+    if (existing) return NextResponse.json({ survey: mapSurveyRowToClientSurvey(existing as SurveyRow), warning: "This checkout was already published." });
+    const insertPayload = { ...buildSurveyInsertPayload(payload, authorized.profile.id), pricing_order_id: order.id };
     let warning = "";
     let { data, error } = await supabase
       .from("surveys")
