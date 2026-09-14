@@ -782,6 +782,7 @@ export default function ClientDashboard({
         },
         body: JSON.stringify({
           surveyTitle: payload.title,
+          pricingCategory: payload.pricingCategory,
           questionCount: payload.questionCount,
           respondentCount: payload.targetResponses,
           includeDetailedAI: payload.includeDetailedAI
@@ -900,7 +901,7 @@ export default function ClientDashboard({
           );
         }
 
-        const launchResult = await publishSurvey(publishPayload);
+        const launchResult = await publishSurvey({ ...publishPayload, checkoutId: currentPolarCheckoutId });
 
         if (cancelled) {
           return;
