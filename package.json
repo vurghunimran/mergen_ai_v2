@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "sync:institutions": "node scripts/sync-institution-directory.mjs"
+    "sync:institutions": "node scripts/sync-institution-directory.mjs",
+    "test": "node --test tests/*.test.cjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.1.1",
@@ -29,6 +30,7 @@
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.17",
     "@types/react-dom": "^18.3.5",
