@@ -4,7 +4,7 @@ New quotes use `survey-formula-v1`, in USD integer cents:
 
 - Students: `1000 + responses * (30 + 3 * questions)`.
 - Institutions & Businesses: `2500 + responses * (50 + 5 * questions)`.
-- Optional detailed AI report: 2000 cents once. Basic AI summary included.
+- Optional AI-generated summary: 2000 cents once, available only after the survey finishes and has responses. No AI-generated summary is included in the base price. Internal report field names remain unchanged for order compatibility.
 - Question allowances: 5, 10, 15, 20, 25. Completed response targets: 50, 100, 250, 500, 1000.
 - Q is the explicitly selected allowance. The editor permits at least 5 actual questions up to that allowance. It does not change the purchased allowance when adding/removing a question, nor round unsupported saved values.
 
