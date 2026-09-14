@@ -1,4 +1,5 @@
 "use client";
+import SurveyPriceBreakdown from "@/components/pricing/SurveyPriceBreakdown";
 
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -32,11 +33,12 @@ import {
   type SurveyQuestionType
 } from "@/lib/dashboard-data";
 import {
-  AI_DETAILED_SURVEY_FEE,
+  calculateSurveyPricing,
+  assertSurveyAllowance,
+  type PricingCategory,
   academicQuestionCountOptions,
   academicRespondentCountOptions,
-  formatUsd,
-  getAcademicSurveyBasePrice
+  type AcademicQuestionCount
 } from "@/lib/survey-pricing";
 import {
   surveyRegionCountries,
@@ -348,6 +350,17 @@ function formatDraftSavedAt() {
 }
 
 export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartCheckout }: Props) {
+  const [pricingCategory, setPricingCategory] = useState<PricingCategory>("institution");
+  const [categoryStatus, setCategoryStatus] = useState("loading");
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/polar/pricing-category", { cache: "no-store" }).then(async response => {
+      const value = await response.json();
+      if (!response.ok || !["student", "institution"].includes(value.pricingCategory)) throw new Error("Eligibility unavailable");
+      if (!cancelled) { setPricingCategory(value.pricingCategory); setCategoryStatus("ready"); }
+    }).catch(() => { if (!cancelled) setCategoryStatus("error"); });
+    return () => { cancelled = true; };
+  }, [userId]);
   const draftStorageKey = getCreateSurveyDraftStorageKey(userId);
   const surveyImagesInputRef = useRef<HTMLInputElement | null>(null);
   const surveyFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -389,7 +402,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
           ...restoredDraft
         });
         setStage(parsedDraft.stage);
-        setDraftNotice(`Draft restored from ${parsedDraft.savedAt}.`);
+        setDraftNotice(`Draft restored from ${parsedDraft.savedAt}. New formula pricing applies; review the updated receipt before checkout.`);
       }
     } catch {
       // Ignore malformed local draft.
@@ -397,20 +410,10 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
   }, [draftStorageKey]);
 
   const pricing = useMemo(() => {
-    const selectedQuestionCount = draft.questions.length || draft.questionCount;
-    const { questionTier, basePrice } = getAcademicSurveyBasePrice(selectedQuestionCount, draft.respondentCount);
-    const aiDetailedFee = draft.includeDetailedAI ? AI_DETAILED_SURVEY_FEE : 0;
-    const total = basePrice + aiDetailedFee;
-
-    return {
-      selectedQuestionCount,
-      questionTier,
-      basePrice,
-      aiDetailedFee,
-      isTierAdjusted: selectedQuestionCount !== questionTier,
-      total
-    };
-  }, [draft.includeDetailedAI, draft.questionCount, draft.questions.length, draft.respondentCount]);
+    try { return calculateSurveyPricing({ pricingCategory, questionCount: draft.questionCount,
+      responseCount: draft.respondentCount, includeDetailedReport: draft.includeDetailedAI }); }
+    catch { return null; }
+  }, [pricingCategory, draft.questionCount, draft.respondentCount, draft.includeDetailedAI]);
 
   useEffect(() => {
     setIsLaunchNoticeVisible(true);
@@ -439,7 +442,8 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
     return {
       title: draft.surveyTitle,
       targetResponses: draft.respondentCount,
-      questionCount: draft.questions.length || draft.questionCount,
+      questionCount: draft.questionCount,
+      pricingCategory,
       description: buildCommunityMessage(draft),
       researchDescription: draft.assistantPrompt || buildDefaultPrompt(draft),
       researchScope: draft.researchScope || buildDefaultScope(draft),
@@ -820,7 +824,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
     setDraft((currentDraft) => ({
       ...currentDraft,
       questions:
-        currentDraft.questions.length >= 25
+        currentDraft.questions.length >= currentDraft.questionCount
           ? currentDraft.questions
           : [
               ...currentDraft.questions,
@@ -831,7 +835,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                 options: questionOptionsForType("Open question")
               }
             ],
-      questionCount: currentDraft.questions.length >= 25 ? currentDraft.questionCount : currentDraft.questions.length + 1
+      questionCount: currentDraft.questionCount
     }));
   }
 
@@ -842,7 +846,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
         currentDraft.questions.length <= 5
           ? currentDraft.questions
           : currentDraft.questions.filter((question) => question.id !== questionId),
-      questionCount: currentDraft.questions.length <= 5 ? currentDraft.questionCount : currentDraft.questions.length - 1
+      questionCount: currentDraft.questionCount
     }));
   }
 
@@ -896,6 +900,12 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
       return;
     }
 
+    if (!pricing || categoryStatus !== "ready") {
+      setCheckoutError("Select a supported allowance and wait for account pricing verification. If verification failed, refresh to retry.");
+      return;
+    }
+    try { assertSurveyAllowance(draft.questionCount, draft.questions); }
+    catch (error) { setCheckoutError(error instanceof Error ? error.message : "Invalid question allowance."); return; }
     setIsCompletingPayment(true);
     setCheckoutError("");
 
@@ -1450,7 +1460,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-sm font-medium text-[#4b5563]">Number of questions</p>
-                    <p className="mt-1 text-xs text-[#98a2b3]">Academic pricing tiers: 5, 10, 15, 20, 25</p>
+                    <p className="mt-1 text-xs text-[#98a2b3]">Question allowances: 5, 10, 15, 20, 25</p>
                   </div>
                   <div className="rounded-2xl bg-[#fff0f1] px-4 py-2 text-xl font-semibold text-[#ef476f]">{draft.questionCount}</div>
                 </div>
@@ -1725,7 +1735,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
               <button
                 type="button"
                 onClick={handleAddQuestion}
-                disabled={draft.questions.length >= 25}
+                disabled={draft.questions.length >= draft.questionCount}
                 className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2.5 text-sm font-semibold text-[#4b5563] transition hover:border-[#ffd1ad] hover:text-[#d85d1c] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Plus className="h-4 w-4" />
@@ -1769,7 +1779,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
               </div>
               <div className="rounded-[24px] border border-gray-200 bg-[#fcfcfd] p-5">
                 <p className="text-sm font-medium text-[#98a2b3]">Questions</p>
-                <p className="mt-2 text-[20px] font-semibold text-[#111827]">{pricing.selectedQuestionCount}</p>
+                <p className="mt-2 text-[20px] font-semibold text-[#111827]">{draft.questionCount}</p>
               </div>
               <div className="rounded-[24px] border border-gray-200 bg-[#fcfcfd] p-5">
                 <p className="text-sm font-medium text-[#98a2b3]">Respondents</p>
@@ -1780,11 +1790,14 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
             <div className="mt-6 rounded-[24px] border border-gray-200 bg-[#fff9f4] p-5">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-[18px] font-semibold text-[#7c3412]">AI-based detailed survey</h3>
+                  <h3 className="text-[18px] font-semibold text-[#7c3412]">Detailed AI report</h3>
                   <p className="mt-1 text-sm text-[#8a94a6]">Add AI-generated extra detail and deeper recommendation notes.</p>
                 </div>
                 <button
                   type="button"
+                  role="switch"
+                  aria-label="Detailed AI report: add $20 once per survey"
+                  aria-checked={draft.includeDetailedAI}
                   onClick={() => updateDraft("includeDetailedAI", !draft.includeDetailedAI)}
                   className={`relative inline-flex h-7 w-12 items-center rounded-full transition ${
                     draft.includeDetailedAI ? "bg-[#f35b04]" : "bg-gray-300"
@@ -1804,36 +1817,21 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
           <div className="rounded-[28px] border border-gray-200 bg-white p-6 shadow-[0_18px_44px_rgba(15,23,42,0.04)]">
             <h2 className="text-[22px] font-semibold text-[#111827]">Receipt</h2>
             <div className="mt-6 space-y-4">
-              <div className="flex items-center justify-between text-sm text-[#667085]">
-                <span>Academic survey package</span>
-                <span>{formatUsd(pricing.basePrice)}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm text-[#667085]">
-                <span>{pricing.questionTier} questions x {draft.respondentCount} respondents</span>
-                <span>Included</span>
-              </div>
-              <div className="flex items-center justify-between text-sm text-[#667085]">
-                <span>Survey active window</span>
-                <span>{surveyActiveWindowDays} days</span>
-              </div>
-              <div className="flex items-center justify-between text-sm text-[#667085]">
-                <span>AI-based detailed survey</span>
-                <span>{formatUsd(pricing.aiDetailedFee)}</span>
-              </div>
-              <div className="border-t border-dashed border-gray-200 pt-4">
-                <div className="flex items-center justify-between text-[18px] font-semibold text-[#111827]">
-                  <span>Total</span>
-                  <span>{formatUsd(pricing.total)}</span>
-                </div>
-              </div>
+              <label className="block text-sm text-[#667085]">Client pricing category
+                <select aria-label="Client pricing category" value={pricingCategory} disabled className="mt-2 w-full rounded-xl border border-gray-200 bg-[#fff9f4] p-3 text-[#111827]">
+                  <option value="student">Students</option><option value="institution">Institutions &amp; Businesses</option>
+                </select>
+              </label>
+              <p className="text-xs text-[#667085]" role="status">{categoryStatus === "ready" ? "Category verified using your account. New formula pricing applies to this draft." : categoryStatus === "loading" ? "Checking your account pricing…" : "Could not verify account pricing. Refresh to retry before payment."}</p>
+              <label className="block text-sm text-[#667085]">Selected question allowance
+                <select value={academicQuestionCountOptions.includes(draft.questionCount as AcademicQuestionCount) ? draft.questionCount : ""} onChange={event => updateDraft("questionCount", Number(event.target.value))} className="mt-2 w-full rounded-xl border border-gray-200 p-3">
+                  <option value="" disabled>Choose an allowance</option>{academicQuestionCountOptions.map(count => <option key={count} value={count}>{count}</option>)}
+                </select>
+              </label>
+              <p className="text-xs text-[#667085]">{draft.questions.length} prepared questions. You may prepare 5 up to the selected allowance; pricing uses the selected allowance.</p>
+              {pricing ? <SurveyPriceBreakdown pricing={pricing} /> : <p role="alert" className="text-sm text-red-700">Choose a supported question allowance and response count. Unsupported saved values are not rounded.</p>}
+              <p className="text-xs text-[#667085]">Survey active window: {surveyActiveWindowDays} days</p>
             </div>
-
-            {pricing.isTierAdjusted ? (
-              <p className="mt-4 rounded-2xl bg-[#fff9f4] px-4 py-3 text-xs leading-6 text-[#8a5a3d]">
-                You currently have {pricing.selectedQuestionCount} prepared questions. Pricing rounds this up to the{" "}
-                {pricing.questionTier}-question academic tier.
-              </p>
-            ) : null}
 
             <p className="mt-6 rounded-2xl bg-[#fcfcfd] px-4 py-3 text-sm text-[#8a94a6]">
               You will be redirected to Polar Checkout to complete the payment securely.
@@ -1852,7 +1850,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
             <button
               type="button"
               onClick={handleCompletePayment}
-              disabled={isCompletingPayment}
+              disabled={isCompletingPayment || !pricing || categoryStatus !== "ready"}
               className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff7a00_0%,#ea5f2d_100%)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(255,106,0,0.22)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
             >
               <CreditCard className="h-4 w-4" />
