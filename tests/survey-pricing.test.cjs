@@ -109,12 +109,43 @@ test('account resolver rechecks confirmed email and existing signup eligibility'
     row=null;assert.equal((await getClientPricingContext()).pricingCategory,'institution');
   } finally {mocks.clear();}
 });
-test('rendered preview defaults to institution and displays exact cents and included summary', () => {
+test('rendered preview defaults to institution and displays exact cents and optional summary', () => {
   const React=require('react'); const {renderToStaticMarkup}=require('react-dom/server');
   const Calculator=require('../components/pricing/SurveyPricingCalculator.tsx').default;
   const Breakdown=require('../components/pricing/SurveyPriceBreakdown.tsx').default;
   const html=renderToStaticMarkup(React.createElement(Calculator));
-  assert.match(html,/value="institution" selected/);assert.match(html,/\$125\.00/);assert.match(html,/Basic AI summary included/);
+  assert.match(html,/value="institution" selected/);assert.match(html,/\$125\.00/);assert.match(html,/AI-generated summary not selected/);assert.doesNotMatch(html,/Basic AI summary included/);
   const student=renderToStaticMarkup(React.createElement(Breakdown,{pricing:p.calculateSurveyPricing({...valid,questionCount:5,responseCount:50})}));
   assert.match(student,/\$32\.50/);assert.match(student,/\$0\.45/);
+});
+
+test('AI summaries require purchase and finished collection with responses', () => {
+  const {getSurveyReportAccessError,isSurveyFinished}=require('../lib/survey-report-access.ts');
+  const survey={status:'published',responses:1,targetResponses:50,daysRemaining:3,includeDetailedAI:false,rawResponses:[{}]};
+  assert.equal(getSurveyReportAccessError(survey).status,403);
+  assert.equal(getSurveyReportAccessError({...survey,includeDetailedAI:true}).status,409);
+  for (const finish of [{status:'archived'},{status:'completed'},{responses:50},{distributionExpiresAt:'2020-01-01T00:00:00Z'},{daysRemaining:0}]) {
+    assert.equal(getSurveyReportAccessError({...survey,...finish,includeDetailedAI:true}),null);
+    assert.equal(getSurveyReportAccessError({...survey,...finish}).status,403);
+  }
+  assert.equal(getSurveyReportAccessError({...survey,status:'archived',includeDetailedAI:true,rawResponses:[]}).status,400);
+  assert.equal(isSurveyFinished({...survey,status:'draft',daysRemaining:0}),false);
+  const React=require('react'),{renderToStaticMarkup}=require('react-dom/server');
+  const Breakdown=require('../components/pricing/SurveyPriceBreakdown.tsx').default;
+  const html=renderToStaticMarkup(React.createElement(Breakdown,{pricing:p.calculateSurveyPricing({...valid,includeDetailedReport:true})}));
+  assert.match(html,/available once the survey finishes/);assert.match(html,/\$90\.00/);
+});
+
+test('report API blocks unpaid and unfinished requests before generation', async () => {
+  let survey={status:'published',responses:1,targetResponses:50,daysRemaining:3,includeDetailedAI:false,rawResponses:[{}]};
+  mocks.set('@/lib/survey-authorization',{requireAuthorizedProfile:async()=>({profile:{id:'client-1'}}),buildForbiddenSurveyResponse:()=>Response.json({error:'Forbidden'},{status:403})});
+  mocks.set('@/lib/supabase/server',{createClient:()=>({})});
+  mocks.set('@/lib/survey-db',{getClientSurveyForUser:async()=>survey});
+  const {POST}=require('../app/api/survey-report/route.ts');
+  const req=()=>new Request('https://mergen.example/api/survey-report',{method:'POST',body:JSON.stringify({surveyId:1})});
+  try {
+    assert.equal((await POST(req())).status,403);
+    survey={...survey,includeDetailedAI:true};assert.equal((await POST(req())).status,409);
+    survey={...survey,status:'archived',rawResponses:[]};assert.equal((await POST(req())).status,400);
+  } finally {mocks.clear();}
 });
