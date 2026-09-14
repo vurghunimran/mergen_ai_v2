@@ -1,3 +1,4 @@
+import { getSurveyReportAccessError } from "@/lib/survey-report-access";
 import { NextResponse } from "next/server";
 import type { SurveyReportRequest, SurveyReportResponse } from "@/lib/dashboard-data";
 import { getClientSurveyForUser } from "@/lib/survey-db";
@@ -97,12 +98,9 @@ export async function POST(request: Request) {
     return buildForbiddenSurveyResponse();
   }
 
-  if (!survey.includeDetailedAI) {
-    return NextResponse.json({ error: "AI report is only available for surveys that purchased the AI report add-on." }, { status: 403 });
-  }
-
-  if (!survey.rawResponses?.length) {
-    return NextResponse.json({ error: "No raw responses are available yet for this survey." }, { status: 400 });
+  const accessError = getSurveyReportAccessError(survey);
+  if (accessError) {
+    return NextResponse.json({ error: accessError.error }, { status: accessError.status });
   }
 
   const geminiApiKey = process.env.GEMINI_API_KEY;
