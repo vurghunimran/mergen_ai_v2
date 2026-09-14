@@ -1,4 +1,5 @@
 "use client";
+import { getSurveyReportAccessError, isSurveyFinished } from "@/lib/survey-report-access";
 
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -705,13 +706,9 @@ export default function ClientDashboard({
   }
 
   async function handleOpenAiReport(survey: ClientSurvey) {
-    if (!survey.includeDetailedAI) {
-      setReportError("AI report is only available for surveys that purchased the AI report add-on.");
-      return;
-    }
-
-    if (!survey.rawResponses?.length) {
-      setReportError("Raw data is not available yet for this survey.");
+    const accessError = getSurveyReportAccessError(survey);
+    if (accessError) {
+      setReportError(accessError.error);
       return;
     }
 
@@ -2099,21 +2096,21 @@ export default function ClientDashboard({
                               <td className="border-b border-gray-100 py-6 pr-6 align-top">
                                 <span className="inline-flex items-center gap-2 text-[15px] font-medium text-[#4b5563]">
                                   <span className="h-3 w-3 rounded-full bg-emerald-500" />
-                                  published
+                                  {isSurveyFinished(survey) ? "Finished" : survey.status}
                                 </span>
                               </td>
                               <td className="border-b border-gray-100 py-6 pr-6 align-top text-[15px] font-medium text-[#4b5563]">
                                 {survey.responses} / {survey.targetResponses}
                               </td>
                               <td className="border-b border-gray-100 py-6 pr-6 align-top text-[15px] font-medium text-[#667085]">
-                                Live
+                                {isSurveyFinished(survey) ? "Finished" : "Live"}
                               </td>
                               <td className="border-b border-gray-100 py-6 align-top">
                                 <div className="flex flex-wrap gap-2">
                                   <button
                                     type="button"
                                     onClick={() => void handleOpenAiReport(survey)}
-                                    disabled={isGeneratingReport || !survey.rawResponses?.length}
+                                    disabled={isGeneratingReport || Boolean(getSurveyReportAccessError(survey))}
                                     className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff7a00_0%,#ea5f2d_100%)] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(234,95,45,0.2)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                                   >
                                     {isGeneratingReport && selectedReportSurveyId === survey.id ? (
@@ -2121,7 +2118,7 @@ export default function ClientDashboard({
                                     ) : (
                                       <FileText className="h-4 w-4" />
                                     )}
-                                    AI REPORT
+                                    {isSurveyFinished(survey) ? "AI SUMMARY" : "Available after completion"}
                                   </button>
                                   <button
                                     type="button"
