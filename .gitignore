@@ -18,3 +18,5 @@ pnpm-debug.log*
 .vercel/
 .turbo/
 *.tsbuildinfo
+*.png
+/outputs/01a07838-budget
