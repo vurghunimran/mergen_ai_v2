@@ -150,6 +150,8 @@ export type ClientSurvey = {
 };
 
 export type SurveyCheckoutPayload = {
+  pricingCategory?: "student" | "institution";
+  checkoutId?: string;
   title: string;
   targetResponses: number;
   questionCount: number;
