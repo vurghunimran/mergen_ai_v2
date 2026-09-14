@@ -15,6 +15,7 @@ type PolarCheckoutResponse = {
   status: "open" | "expired" | "confirmed" | "succeeded" | "failed";
   amount: number;
   total_amount: number;
+  discount_amount?: number;
   currency: string;
   external_customer_id: string | null;
   metadata: Record<string, string>;
@@ -90,6 +91,7 @@ export async function createPolarCheckout(input: CreatePolarCheckoutInput) {
         ]
       },
       allow_trial: false,
+      allow_discount_codes: false,
       customer_email: input.customerEmail,
       customer_name: input.customerName,
       external_customer_id: input.externalCustomerId,
