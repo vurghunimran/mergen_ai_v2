@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPolarCheckout } from "@/lib/polar";
+import { verifySurveyOrder } from "@/lib/survey-orders";
 import { getCurrentUserProfile } from "@/lib/supabase/profile-server";
 
 type RouteContext = {
@@ -20,16 +20,13 @@ export async function GET(_request: Request, context: RouteContext) {
       return NextResponse.json({ success: false, error: "Only client accounts can verify survey checkouts." }, { status: 403 });
     }
 
-    const checkout = await getPolarCheckout(context.params.checkoutId);
-
-    if (checkout.external_customer_id && checkout.external_customer_id !== authenticated.profile.id) {
-      return NextResponse.json({ success: false, error: "This checkout belongs to another customer." }, { status: 403 });
-    }
+    const { checkout, order, isPaid } = await verifySurveyOrder(context.params.checkoutId, authenticated.profile.id);
 
     return NextResponse.json({
       success: true,
       status: checkout.status,
-      isPaid: checkout.status === "succeeded",
+      isPaid,
+      pricing: order.pricing,
       metadata: checkout.metadata
     });
   } catch (error) {
