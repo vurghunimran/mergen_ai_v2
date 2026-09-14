@@ -222,3 +222,7 @@ If Vercel still shows old auth behavior, it is previewing an older commit, not t
 npm run lint
 npm run build
 ```
+
+## Client survey pricing
+
+New student and institution/business survey prices use a shared integer-cent formula. See [survey pricing and migration notes](docs/SURVEY_PRICING.md) and the public `/pricing` calculator. Apply `supabase/migrate-survey-pricing-orders.sql` before enabling the new checkout flow. Run `npm test` for pricing/payment regression tests. This change does not alter community rewards.
