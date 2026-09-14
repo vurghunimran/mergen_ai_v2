@@ -1790,13 +1790,13 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
             <div className="mt-6 rounded-[24px] border border-gray-200 bg-[#fff9f4] p-5">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-[18px] font-semibold text-[#7c3412]">Detailed AI report</h3>
-                  <p className="mt-1 text-sm text-[#8a94a6]">Add AI-generated extra detail and deeper recommendation notes.</p>
+                  <h3 className="text-[18px] font-semibold text-[#7c3412]">AI-generated summary</h3>
+                  <p className="mt-1 text-sm text-[#8a94a6]">Receive an AI-generated summary and recommendations once the survey finishes.</p>
                 </div>
                 <button
                   type="button"
                   role="switch"
-                  aria-label="Detailed AI report: add $20 once per survey"
+                  aria-label="AI-generated summary: add $20 once per survey"
                   aria-checked={draft.includeDetailedAI}
                   onClick={() => updateDraft("includeDetailedAI", !draft.includeDetailedAI)}
                   className={`relative inline-flex h-7 w-12 items-center rounded-full transition ${
