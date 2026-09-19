@@ -23,8 +23,9 @@ export function getPostLoginPath(params: {
   email: string;
   role: UserRole;
   userId: string;
+  emailConfirmed?: boolean;
 }) {
-  if (isAdminEmail(params.email)) {
+  if (isAdminIdentity({ id: params.userId, email: params.email, email_confirmed_at: params.emailConfirmed ? "confirmed" : null })) {
     return getAdminDashboardPath();
   }
 
@@ -48,11 +49,17 @@ export async function requireAdminProfile() {
     redirect("/auth?type=client");
   }
 
-  if (!isAdminEmail(authenticatedProfile.profile.email)) {
+  const allowed = isAdminIdentity(authenticatedProfile.user);
+  if (!allowed) {
     redirect(
       getDashboardPathForRole(authenticatedProfile.profile.role, authenticatedProfile.profile.id)
     );
   }
 
   return authenticatedProfile;
+}
+
+export function isAdminIdentity(user: {id: string; email?: string; email_confirmed_at?: string | null}) {
+  const ids = (process.env.ADMIN_USER_IDS ?? "").split(/[\n,]/).map(id=>id.trim()).filter(Boolean);
+  return ids.length ? ids.includes(user.id) : Boolean(user.email_confirmed_at && isAdminEmail(user.email ?? ""));
 }
