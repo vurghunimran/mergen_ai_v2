@@ -19,8 +19,8 @@ function AuthPageFallback() {
   );
 }
 
-export default function AuthPage() {
-  const detectedCountry = getDetectedCountryFromHeaders(headers());
+export default async function AuthPage() {
+  const detectedCountry = getDetectedCountryFromHeaders(await headers());
 
   return (
     <Suspense fallback={<AuthPageFallback />}>
