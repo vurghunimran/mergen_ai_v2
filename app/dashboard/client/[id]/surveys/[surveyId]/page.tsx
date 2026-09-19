@@ -8,10 +8,10 @@ import { isAuthorizedDashboardRequest } from "@/lib/survey-authorization";
 export const dynamic = "force-dynamic";
 
 type PageProps = {
-  params: {
+  params: Promise<{
     id: string;
     surveyId: string;
-  };
+  }>;
 };
 
 function parseSurveyId(value: string) {
@@ -23,17 +23,17 @@ export default async function ClientSurveyDetailsPage({ params }: PageProps) {
   const { profile } = await requireAuthenticatedProfile("client");
   const dashboardPath = getDashboardPathForRole("client", profile.id);
 
-  if (!isAuthorizedDashboardRequest(profile.id, params.id)) {
+  if (!isAuthorizedDashboardRequest(profile.id, (await params).id)) {
     redirect(`${dashboardPath}?error=access-denied`);
   }
 
-  const surveyId = parseSurveyId(params.surveyId);
+  const surveyId = parseSurveyId((await params).surveyId);
 
   if (!surveyId) {
     redirect(`${dashboardPath}?error=access-denied`);
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const survey = await getClientSurveyForUser(supabase, surveyId, profile.id);
 
   if (!survey) {
