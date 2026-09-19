@@ -1,91 +1,11 @@
-import { verifySurveyOrder } from "@/lib/survey-orders";
-import { assertOrderSurvey } from "@/lib/survey-order-verification";
 import { NextResponse } from "next/server";
-import type { SurveyCheckoutPayload } from "@/lib/dashboard-data";
-import {
-  getUnsupportedCommunityLaunchCountries,
-  normalizeCommunityLaunchCountries
-} from "@/lib/community-distribution";
-import { buildSurveyInsertPayload, listClientSurveysForUser, mapSurveyRowToClientSurvey, type SurveyRow } from "@/lib/survey-db";
-import { validateSurveyAttachmentsInput } from "@/lib/survey-attachments";
-import { buildForbiddenSurveyResponse, requireAuthorizedProfile } from "@/lib/survey-authorization";
-import { getSurveyStorageErrorMessage } from "@/lib/survey-storage-errors";
+import { requireAuthorizedProfile } from "@/lib/survey-authorization";
+import { listClientSurveysForUser } from "@/lib/survey-db";
 import { createClient } from "@/lib/supabase/server";
-
+import { getSurveyStorageErrorMessage } from "@/lib/survey-storage-errors";
+import { fulfillSurveyOrder } from "@/lib/survey-fulfillment";
+import { readJsonObject, RequestError } from "@/lib/security/request";
 export const dynamic = "force-dynamic";
-
-function isMissingAttachmentsColumnError(error: unknown) {
-  if (typeof error !== "object" || error === null) {
-    return false;
-  }
-
-  const code = typeof (error as { code?: unknown }).code === "string" ? (error as { code: string }).code : "";
-  const message =
-    typeof (error as { message?: unknown }).message === "string"
-      ? (error as { message: string }).message.toLowerCase()
-      : "";
-
-  return code === "PGRST204" && message.includes("attachments") && message.includes("schema cache");
-}
-
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function parseCreateSurveyPayload(body: unknown): {
-  payload: SurveyCheckoutPayload | null;
-  error?: string;
-} {
-  if (!isObject(body)) {
-    return {
-      payload: null,
-      error: "Invalid survey payload."
-    };
-  }
-
-  const title = typeof body.title === "string" ? body.title.trim() : "";
-  const description = typeof body.description === "string" ? body.description.trim() : "";
-  const researchDescription = typeof body.researchDescription === "string" ? body.researchDescription.trim() : "";
-  const researchScope = typeof body.researchScope === "string" ? body.researchScope.trim() : "";
-  const hypothesis = typeof body.hypothesis === "string" ? body.hypothesis.trim() : "";
-  const targetResponses = typeof body.targetResponses === "number" ? body.targetResponses : 0;
-  const questionCount = typeof body.questionCount === "number" ? body.questionCount : 0;
-  const audience = isObject(body.audience) ? body.audience : null;
-  const questions = Array.isArray(body.questions) ? body.questions : null;
-  const { attachments, error: attachmentError } = validateSurveyAttachmentsInput(body.attachments);
-
-  if (attachmentError) {
-    return {
-      payload: null,
-      error: attachmentError
-    };
-  }
-
-  if (typeof body.includeDetailedAI !== "boolean" || !title || !description || !researchDescription || targetResponses <= 0 || questionCount <= 0 || !audience || !questions) {
-    return {
-      payload: null,
-      error: "Invalid survey payload."
-    };
-  }
-
-  return {
-    payload: {
-      title,
-      checkoutId: typeof body.checkoutId === "string" ? body.checkoutId : undefined,
-      targetResponses,
-      questionCount,
-      description,
-      researchDescription,
-      researchScope,
-      hypothesis,
-      audience: audience as SurveyCheckoutPayload["audience"],
-      questions: questions as SurveyCheckoutPayload["questions"],
-      includeDetailedAI: Boolean(body.includeDetailedAI),
-      attachments
-    }
-  };
-}
-
 export async function GET() {
   const authorized = await requireAuthorizedProfile("client");
 
@@ -94,7 +14,7 @@ export async function GET() {
   }
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const surveys = await listClientSurveysForUser(supabase, authorized.profile.id);
     return NextResponse.json({ surveys });
   } catch (error) {
@@ -105,77 +25,13 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const authorized = await requireAuthorizedProfile("client");
-
-  if (authorized.response) {
-    return authorized.response;
-  }
-
-  const { payload, error: payloadError } = parseCreateSurveyPayload(await request.json().catch(() => null));
-
-  if (!payload) {
-    return NextResponse.json({ error: payloadError ?? "Invalid survey payload." }, { status: 400 });
-  }
-
-  const unsupportedCountries = getUnsupportedCommunityLaunchCountries(payload.audience.countries);
-
-  if (unsupportedCountries.length > 0) {
-    return NextResponse.json(
-      {
-        error: `Survey audience countries must stay within the first-stage community rollout. Unsupported: ${unsupportedCountries.join(", ")}.`
-      },
-      { status: 400 }
-    );
-  }
-
-  payload.audience.countries = normalizeCommunityLaunchCountries(payload.audience.countries);
-
+  if (authorized.response) return authorized.response;
   try {
-    if (!payload.checkoutId) return NextResponse.json({ error: "A verified paid checkout is required." }, { status: 400 });
-    const { order, isPaid } = await verifySurveyOrder(payload.checkoutId, authorized.profile.id);
-    if (!isPaid) return NextResponse.json({ error: "Payment has not succeeded." }, { status: 409 });
-    try { assertOrderSurvey(order, payload); }
-    catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid purchased allowance." }, { status: 400 }); }
-    const supabase = createClient();
-    const { data: existing } = await supabase.from("surveys").select("*").eq("pricing_order_id", order.id).maybeSingle();
-    if (existing) return NextResponse.json({ survey: mapSurveyRowToClientSurvey(existing as SurveyRow), warning: "This checkout was already published." });
-    const insertPayload = { ...buildSurveyInsertPayload(payload, authorized.profile.id), pricing_order_id: order.id };
-    let warning = "";
-    let { data, error } = await supabase
-      .from("surveys")
-      .insert(insertPayload)
-      .select("*")
-      .single();
-
-    if (error && isMissingAttachmentsColumnError(error)) {
-      const { attachments: _attachments, ...fallbackInsertPayload } = insertPayload;
-      const fallbackResult = await supabase
-        .from("surveys")
-        .insert(fallbackInsertPayload)
-        .select("*")
-        .single();
-
-      data = fallbackResult.data;
-      error = fallbackResult.error;
-      warning =
-        "Survey published without attachments because the database attachment column is not available yet. Run the latest survey attachment migration in Supabase to enable uploads.";
-    }
-
-    if (error || !data) {
-      throw error ?? new Error("Survey could not be created.");
-    }
-
-    return NextResponse.json({
-      survey: mapSurveyRowToClientSurvey(data as SurveyRow),
-      warning
-    });
+    const body = await readJsonObject(request, 4_000_000);
+    if (typeof body.checkoutId !== "string" || !body.checkoutId || body.checkoutId.length > 128) throw new RequestError("A verified checkout is required.");
+    const survey = await fulfillSurveyOrder(body.checkoutId, authorized.profile.id);
+    return NextResponse.json({ survey });
   } catch (error) {
-    console.error("Failed to create survey.", error);
-    const storageErrorMessage = getSurveyStorageErrorMessage(error);
-
-    if (error instanceof Error && error.message.toLowerCase().includes("permission")) {
-      return buildForbiddenSurveyResponse();
-    }
-
-    return NextResponse.json({ error: storageErrorMessage ?? "Could not create survey." }, { status: 500 });
+    return NextResponse.json({ error: error instanceof RequestError ? error.message : "Could not publish survey. Your payment remains recorded; retry or contact support." }, { status: error instanceof RequestError ? error.status : 503 });
   }
 }
