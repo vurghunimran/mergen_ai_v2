@@ -5,14 +5,14 @@ import { getMockLoginUsers } from "@/lib/mock-auth/mock-users";
 
 export const dynamic = "force-dynamic";
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams
 }: {
-  searchParams?: {
+  searchParams?: Promise<{
     next?: string;
-  };
+  }>;
 }) {
-  const authenticatedUser = getAuthenticatedMockUser();
+  const authenticatedUser = await getAuthenticatedMockUser();
 
   if (authenticatedUser) {
     redirect(`/dashboard/${authenticatedUser.id}`);
@@ -23,7 +23,7 @@ export default function LoginPage({
       <div className="mx-auto max-w-7xl">
         <LoginForm
           demoUsers={getMockLoginUsers()}
-          redirectedFromDashboard={Boolean(searchParams?.next)}
+          redirectedFromDashboard={Boolean((await searchParams)?.next)}
         />
       </div>
     </main>
