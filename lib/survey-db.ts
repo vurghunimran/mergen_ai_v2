@@ -449,7 +449,13 @@ export async function getClientSurveyForUser(supabase: SupabaseClient, surveyId:
   }
 
   const responseRows = await listSurveyResponses(supabase, [surveyId]);
-  return mapSurveyRowToClientSurvey(data as SurveyRow, responseRows);
+  const mapped = mapSurveyRowToClientSurvey(data as SurveyRow, responseRows);
+  if (data.pricing_order_id) {
+    const order = await supabase.from("survey_orders").select("refund_status").eq("id", data.pricing_order_id).single();
+    if (order.error) throw order.error;
+    if (order.data.refund_status) mapped.includeDetailedAI = false;
+  }
+  return mapped;
 }
 
 export async function listPublishedSurveys(supabase: SupabaseClient) {
