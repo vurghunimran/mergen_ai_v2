@@ -1,6 +1,8 @@
 export type PersistedSurveyOrder = {
   id: string;
   requires_review?: boolean;
+  draft_payload?: unknown;
+  refund_status?: string | null;
   user_id: string;
   checkout_id: string | null;
   currency: string;
@@ -25,6 +27,7 @@ export function assertOrderPayment(order: PersistedSurveyOrder, checkout: Checko
     throw new Error("Payment does not match the stored order reference.");
   if (order.pricing_version !== "legacy-polar-v0" && (checkout.discount_amount ?? 0) !== 0)
     throw new Error("Unexpected discount on a fixed-price survey order.");
+  if (order.refund_status) throw new Error("This payment is under refund review.");
   // Do not recalculate historical prices with the current pricing formula.
   return checkout.status === "succeeded";
 }
