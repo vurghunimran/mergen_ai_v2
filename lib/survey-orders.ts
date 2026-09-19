@@ -9,6 +9,18 @@ export async function verifySurveyOrder(checkoutId: string, userId: string) {
   const { data, error } = await admin.from("survey_orders").select("*").eq("checkout_id", checkoutId).maybeSingle();
   if (error) throw error;
   let order = data as PersistedSurveyOrder | null;
+  if (!order && checkout.metadata.pricing_version && checkout.metadata.order_id) {
+    const recovery = await admin.from("survey_orders").select("*").eq("id", checkout.metadata.order_id).eq("user_id", userId).maybeSingle();
+    if (recovery.error) throw recovery.error;
+    if (recovery.data && (!recovery.data.checkout_id || recovery.data.checkout_id === checkout.id)) {
+      assertOrderPayment({ ...recovery.data, checkout_id: checkout.id }, checkout, userId);
+      const linked = await admin.from("survey_orders").update({ checkout_id: checkout.id }).eq("id", recovery.data.id).is("checkout_id", null);
+      if (linked.error) throw linked.error;
+      const reread = await admin.from("survey_orders").select("*").eq("id", recovery.data.id).single();
+      if (reread.error) throw reread.error;
+      order = reread.data as PersistedSurveyOrder;
+    }
+  }
   if (!order) {
     // Previously paid provider orders are imported at their original amount, never repriced.
     if (checkout.metadata.pricing_version || checkout.status !== "succeeded")
