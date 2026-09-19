@@ -1,5 +1,4 @@
 "use client";
-import PaymentRecovery from "@/components/dashboard/PaymentRecovery";
 import { getSurveyReportAccessError, isSurveyFinished } from "@/lib/survey-report-access";
 
 import { type FormEvent, useEffect, useRef, useState } from "react";
@@ -1182,7 +1181,6 @@ export default function ClientDashboard({
         </div>
 
         <main className="flex-1 overflow-y-auto p-6">
-        <PaymentRecovery />
           <div className="mx-auto max-w-7xl space-y-6">
             {paymentNotice ? (
               <AutoDismissNotice
