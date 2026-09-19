@@ -48,13 +48,11 @@ import {
   type SurveyAnswerValue,
   type StoredSurveyQuestion,
   type SurveyAnswerMap,
-  type SurveyTrustEvaluationRequest,
   type SurveyTrustEvaluationResponse
 } from "@/lib/dashboard-data";
 import {
   MAX_TRUST_CREDITS,
   MIN_TRUST_CREDITS,
-  buildFallbackTrustEvaluation,
   buildSurveySubmissionAnswers
 } from "@/lib/trust-score";
 import {
@@ -1095,7 +1093,13 @@ export default function CommunityDashboard({
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          rewardId: reward.id
+          rewardId: reward.id,
+          idempotencyKey: (() => {
+            const key = `mergen-reward-request:${profileSnapshot.id}:${reward.id}`;
+            const id = window.localStorage.getItem(key) ?? crypto.randomUUID();
+            window.localStorage.setItem(key, id);
+            return id;
+          })()
         })
       });
       const data = (await response.json().catch(() => ({}))) as {
@@ -1108,7 +1112,8 @@ export default function CommunityDashboard({
         throw new Error(data.error ?? "Could not activate reward.");
       }
 
-      setRewardActivations((currentActivations) => [data.activation as RewardActivation, ...currentActivations]);
+      window.localStorage.removeItem(`mergen-reward-request:${profileSnapshot.id}:${reward.id}`);
+      setRewardActivations((currentActivations) => [data.activation as RewardActivation, ...currentActivations.filter(item => item.id !== data.activation?.id)]);
       setActivatedRewardId(reward.id);
       setRewardNotice(
         data.message ??
@@ -1134,7 +1139,14 @@ export default function CommunityDashboard({
     setActiveSection("take-survey");
   }
 
-  function handleStartSelectedSurvey() {
+  async function handleStartSelectedSurvey() {
+    if (!selectedSurvey) return;
+    if (selectedSurvey.kind !== "welcome") {
+      try {
+        const response = await fetch(`/api/surveys/${selectedSurvey.id}/start`, { method: "POST" });
+        if (!response.ok) throw new Error("Could not start this survey. Please refresh and try again.");
+      } catch (error) { setSurveyError(error instanceof Error ? error.message : "Could not start survey."); return; }
+    }
     setSurveyError("");
     setHasStartedSelectedSurvey(true);
     setSurveyStartedAt(Date.now());
@@ -1278,72 +1290,16 @@ export default function CommunityDashboard({
         };
         successMessage = `${selectedSurvey.name} submitted successfully. ${earnedCredits} welcome credits added to your balance. ${summary}`;
       } else {
-        const evaluationRequest: SurveyTrustEvaluationRequest = {
-          surveyTitle: selectedSurvey.name,
-          surveyDescription: selectedSurvey.description,
-          questions,
-          answers: submissionAnswers,
-          completionTimeSeconds
-        };
-
-        let evaluation: SurveyTrustEvaluationResponse;
-
-        try {
-          const response = await fetch("/api/survey-trust-score", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify(evaluationRequest)
-          });
-
-          const responseBody = (await response.json()) as Partial<SurveyTrustEvaluationResponse> & {
-            error?: string;
-          };
-
-          if (
-            !response.ok ||
-            typeof responseBody.trustScore !== "number" ||
-            typeof responseBody.credits !== "number"
-          ) {
-            throw new Error(responseBody.error ?? "AI trust scoring failed.");
-          }
-
-          evaluation = {
-            trustScore: responseBody.trustScore,
-            credits: responseBody.credits,
-            summary: responseBody.summary ?? "AI reviewed the response quality and timing.",
-            strengths: Array.isArray(responseBody.strengths) ? responseBody.strengths : [],
-            risks: Array.isArray(responseBody.risks) ? responseBody.risks : [],
-            completionTimeSeconds: responseBody.completionTimeSeconds ?? completionTimeSeconds,
-            source: responseBody.source === "gemini" ? "gemini" : "fallback"
-          };
-        } catch {
-          evaluation = buildFallbackTrustEvaluation(evaluationRequest);
-        }
-
         const submitResponse = await fetch(`/api/surveys/${selectedSurvey.id}/responses`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            completionTimeSeconds: evaluation.completionTimeSeconds,
-            trustScore: evaluation.trustScore,
-            earnedCredits: evaluation.credits,
-            summary: evaluation.summary,
-            answers: evaluationRequest.answers
-          })
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ answers: submissionAnswers })
         });
-
-        const submitData = (await submitResponse.json().catch(() => ({}))) as {
-          submittedAt?: string;
-          error?: string;
+        const submitData = await submitResponse.json();
+        if (!submitResponse.ok) throw new Error(submitData.error ?? "Survey submission failed.");
+        const evaluation: SurveyTrustEvaluationResponse = {
+          trustScore: submitData.score, credits: submitData.earnedCredits, summary: submitData.summary,
+          strengths: [], risks: [], completionTimeSeconds: submitData.completionTimeSeconds, source: submitData.source
         };
-
-        if (!submitResponse.ok) {
-          throw new Error(submitData.error ?? "Survey submission failed.");
-        }
 
         completion = {
           surveyId: selectedSurvey.id,
