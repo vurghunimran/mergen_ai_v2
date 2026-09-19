@@ -63,12 +63,12 @@ async function polarRequest<T>(path: string, init?: RequestInit) {
       "Content-Type": "application/json",
       ...(init?.headers ?? {})
     },
+    signal: AbortSignal.timeout(15000),
     cache: "no-store"
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Polar API request failed (${response.status}): ${errorText}`);
+    throw new Error(`Polar API request failed (${response.status}).`);
   }
 
   return (await response.json()) as T;
@@ -111,7 +111,7 @@ export async function createPolarCheckout(input: CreatePolarCheckoutInput) {
 }
 
 export async function getPolarCheckout(checkoutId: string) {
-  return polarRequest<PolarCheckoutResponse>(`/v1/checkouts/${checkoutId}`, {
+  return polarRequest<PolarCheckoutResponse>(`/v1/checkouts/${encodeURIComponent(checkoutId)}`, {
     method: "GET"
   });
 }
