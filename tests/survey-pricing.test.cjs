@@ -160,3 +160,34 @@ test('report API blocks unpaid and unfinished requests before generation', async
     survey={...survey,status:'archived',rawResponses:[]};assert.equal((await POST(req())).status,400);
   } finally {mocks.clear();}
 });
+
+
+test('Polar-applied discounts preserve full-price entitlements and require consistent evidence', () => {
+  for (const discount of [700,7000]) {
+    const discounted={...evidence,discount_id:'polar-discount',discount_amount:discount,net_amount:7000-discount};
+    assert.equal(assertOrderPayment(order,discounted,'client-1'),true);
+    assert.equal(assertOrderPayment(order,{...discounted,status:'open'},'client-1'),false);
+    for(const patch of [{discount_id:null},{discount_id:''},{net_amount:1},{amount:7000-discount},{external_customer_id:'other'}])
+      assert.throws(()=>assertOrderPayment(order,{...discounted,...patch},'client-1'));
+  }
+  for (const discount of [-1,7001,NaN,Infinity,1.5,'700'])
+    assert.throws(()=>assertOrderPayment(order,{...evidence,discount_id:'polar-discount',discount_amount:discount,net_amount:0},'client-1'));
+});
+
+test('Polar checkout enables discount entry and retains fixed server pricing', async () => {
+  const originalFetch=global.fetch, token=process.env.POLAR_ACCESS_TOKEN, product=process.env.POLAR_SURVEY_PRODUCT_ID;
+  process.env.POLAR_ACCESS_TOKEN='synthetic';process.env.POLAR_SURVEY_PRODUCT_ID='synthetic-product';
+  let payload;
+  global.fetch=async (_url,init)=>{payload=JSON.parse(init.body);return Response.json({id:'checkout',url:'https://example.invalid/checkout'})};
+  try {
+    const {createPolarCheckout}=require('../lib/polar.ts');
+    await createPolarCheckout({amountInCents:3250,customerEmail:'test@example.invalid',customerName:'Test',externalCustomerId:'client',origin:'https://example.invalid',metadata:{order_id:'order'}});
+    assert.equal(payload.allow_discount_codes,true);
+    assert.equal(payload.prices['synthetic-product'][0].price_amount,3250);
+    assert.equal(payload.allow_trial,false);
+  } finally {
+    global.fetch=originalFetch;
+    if(token===undefined)delete process.env.POLAR_ACCESS_TOKEN;else process.env.POLAR_ACCESS_TOKEN=token;
+    if(product===undefined)delete process.env.POLAR_SURVEY_PRODUCT_ID;else process.env.POLAR_SURVEY_PRODUCT_ID=product;
+  }
+});
