@@ -14,7 +14,7 @@ export async function GET() {
   }
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const [surveys, completions] = await Promise.all([
       listPublishedSurveysForRespondent(supabase, authorized.profile.id),
       listCommunityCompletions(supabase, authorized.profile.id)
