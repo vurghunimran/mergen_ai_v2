@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 import { getMockUserById } from "@/lib/mock-auth/mock-users";
 import { MOCK_SESSION_COOKIE_NAME, verifyMockSessionToken } from "@/lib/mock-auth/session";
 
-export function getAuthenticatedMockUser() {
-  const token = cookies().get(MOCK_SESSION_COOKIE_NAME)?.value;
+export async function getAuthenticatedMockUser() {
+  const token = (await cookies()).get(MOCK_SESSION_COOKIE_NAME)?.value;
 
   if (!token) {
     return null;
@@ -19,8 +19,8 @@ export function getAuthenticatedMockUser() {
   return getMockUserById(session.userId);
 }
 
-export function requireAuthenticatedMockUser() {
-  const user = getAuthenticatedMockUser();
+export async function requireAuthenticatedMockUser() {
+  const user = await getAuthenticatedMockUser();
 
   if (!user) {
     redirect("/login");
