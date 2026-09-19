@@ -1,4 +1,5 @@
 "use client";
+import PaymentRecovery from "@/components/dashboard/PaymentRecovery";
 import { getSurveyReportAccessError, isSurveyFinished } from "@/lib/survey-report-access";
 
 import { type FormEvent, useEffect, useRef, useState } from "react";
@@ -648,7 +649,7 @@ export default function ClientDashboard({
       throw new Error(createData.error ?? "Survey could not be created.");
     }
 
-    setSurveys((currentSurveys) => [createData.survey as ClientSurvey, ...currentSurveys]);
+    setSurveys((currentSurveys) => [createData.survey as ClientSurvey, ...currentSurveys.filter(survey => survey.id !== createData.survey?.id)]);
 
     try {
       const response = await fetchWithTimeout(
@@ -782,7 +783,8 @@ export default function ClientDashboard({
           pricingCategory: payload.pricingCategory,
           questionCount: payload.questionCount,
           respondentCount: payload.targetResponses,
-          includeDetailedAI: payload.includeDetailedAI
+          includeDetailedAI: payload.includeDetailedAI,
+          draft: payload
         })
       },
       20000,
@@ -855,25 +857,6 @@ export default function ClientDashboard({
       setPaymentNotice("");
 
       try {
-        const pendingCheckout = readPendingPolarCheckoutRecord(
-          pendingPolarCheckoutStorageKey,
-          currentPolarCheckoutId
-        );
-
-        if (!pendingCheckout) {
-          throw new Error("Payment returned from Polar, but no pending survey draft was found on this device.");
-        }
-
-        const draftPayloadRaw = window.localStorage.getItem(createSurveyDraftStorageKey);
-        const draftPayload = draftPayloadRaw ? (JSON.parse(draftPayloadRaw) as { draft?: { attachments?: unknown } }) : null;
-        const restoredAttachments = parseSurveyAttachments(draftPayload?.draft?.attachments);
-        const publishPayload = hasSurveyAttachments(restoredAttachments)
-          ? {
-              ...pendingCheckout.payload,
-              attachments: restoredAttachments
-            }
-          : pendingCheckout.payload;
-
         const verificationResponse = await fetchWithTimeout(
           `/api/polar/checkout/${currentPolarCheckoutId}`,
           {},
@@ -882,6 +865,7 @@ export default function ClientDashboard({
         );
         const verificationData = (await verificationResponse.json()) as {
           isPaid?: boolean;
+          draft?: SurveyCheckoutPayload;
           status?: string;
           error?: string;
         };
@@ -898,7 +882,8 @@ export default function ClientDashboard({
           );
         }
 
-        const launchResult = await publishSurvey({ ...publishPayload, checkoutId: currentPolarCheckoutId });
+        if (!verificationData.draft) throw new Error("This older payment has no recoverable draft. Contact support with your checkout reference.");
+        const launchResult = await publishSurvey({ ...verificationData.draft, checkoutId: currentPolarCheckoutId });
 
         if (cancelled) {
           return;
@@ -1197,6 +1182,7 @@ export default function ClientDashboard({
         </div>
 
         <main className="flex-1 overflow-y-auto p-6">
+        <PaymentRecovery />
           <div className="mx-auto max-w-7xl space-y-6">
             {paymentNotice ? (
               <AutoDismissNotice
