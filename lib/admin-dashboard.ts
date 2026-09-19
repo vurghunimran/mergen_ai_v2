@@ -1,4 +1,5 @@
 import "server-only";
+import { requireAdminProfile } from "@/lib/admin-access";
 import { ageSpanOptions, genderOptions } from "@/lib/auth-options";
 import { getCommunityLaunchRegionByCountry, communityLaunchTotalMembers } from "@/lib/community-distribution";
 import {
@@ -333,6 +334,7 @@ function isMissingRewardActivationTableError(error: { message?: string; details?
 }
 
 export async function getAdminSurveyOverview(): Promise<AdminSurveyOverview> {
+  await requireAdminProfile();
   const admin = createAdminClient();
   const now = new Date();
 
@@ -503,6 +505,7 @@ export async function getAdminSurveyOverview(): Promise<AdminSurveyOverview> {
 }
 
 export async function getAdminCommunityOverview(): Promise<AdminCommunityOverview> {
+  await requireAdminProfile();
   const admin = createAdminClient();
 
   const [
