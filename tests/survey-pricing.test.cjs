@@ -83,7 +83,7 @@ test('actual checkout handler persists server price, rejects discount spoof and 
   mocks.set('@/lib/supabase/admin',{createAdminClient:()=>({from:()=>({insert:value=>{saved=value;events.push('persist');return{select:()=>({single:async()=>({data:{id:'order-1'},error:null})})}},update:()=>({eq:async()=>({error:null})})})})});
   const {POST}=require('../app/api/polar/checkout/route.ts');
   const request = body=>new Request('https://mergen.example/api/polar/checkout',{method:'POST',body:JSON.stringify(body)});
-  const input={surveyTitle:'Test',pricingCategory:'institution',questionCount:10,respondentCount:100,includeDetailedAI:true,totalCents:1,discount:100};
+  const input={surveyTitle:'Test',pricingCategory:'institution',questionCount:10,respondentCount:100,includeDetailedAI:true,totalCents:1,discount:100,draft:{title:'Test',description:'Synthetic',researchDescription:'Synthetic',researchScope:'Scope',hypothesis:'Hypothesis',questionCount:10,targetResponses:100,includeDetailedAI:true,audience:{countries:['Azerbaijan'],ageMin:18,ageMax:80,gender:'All genders',education:'Any education level',interests:[],researchArea:'Education'},questions:Array.from({length:5},(_,i)=>({id:'q'+i,text:'Synthetic?',type:'Yes / No',options:['Yes','No']}))}};
   const response=await POST(request(input)); assert.equal(response.status,200);
   assert.equal(charged.amountInCents,14500);assert.equal(saved.total_cents,14500);assert.equal(saved.pricing.reportFeeCents,2000);
   assert.deepEqual(events,['persist','provider']);
