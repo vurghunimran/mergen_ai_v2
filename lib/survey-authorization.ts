@@ -29,6 +29,9 @@ export async function requireAuthorizedProfile(requiredRole?: UserRole): Promise
     };
   }
 
+  if (requiredRole === "community" && !["18-24","25-34","35-44","45-54","55-64","65+"].includes(authenticated.profile.ageSpan)) {
+    return { profile: null, response: NextResponse.json({ error: "An adult age group is required. Please update your profile or contact support." }, { status: 403 }) };
+  }
   return {
     profile: authenticated.profile,
     response: null
