@@ -77,10 +77,10 @@ test('published survey must match bought responses, question allowance and repor
   for (const patch of [{questionCount:25},{targetResponses:1000},{includeDetailedAI:true},{questions:Array(11).fill({})}]) assert.throws(()=>assertOrderSurvey(order,{...payload,...patch}));
 });
 test('actual checkout handler persists server price, rejects discount spoof and invalid requests', async () => {
-  let category='institution', saved, charged; const events=[];
+  let category='institution', saved, charged, storageError=null; const events=[];
   mocks.set('@/lib/client-pricing-category',{getClientPricingContext:async()=>({profile:{id:'client-1',email:'client@university.edu'},user:{email:'client@university.edu'},pricingCategory:category})});
   mocks.set('@/lib/polar',{createPolarCheckout:async input=>{events.push('provider');charged=input;return{id:'checkout-1',url:'https://checkout.example/1'}}});
-  mocks.set('@/lib/supabase/admin',{createAdminClient:()=>({from:()=>({insert:value=>{saved=value;events.push('persist');return{select:()=>({single:async()=>({data:{id:'order-1'},error:null})})}},update:()=>({eq:async()=>({error:null})})})})});
+  mocks.set('@/lib/supabase/admin',{createAdminClient:()=>({from:()=>({insert:value=>{saved=value;events.push('persist');return{select:()=>({single:async()=>({data:storageError?null:{id:'order-1'},error:storageError})})}},update:()=>({eq:async()=>({error:null})})})})});
   const {POST}=require('../app/api/polar/checkout/route.ts');
   const request = body=>new Request('https://mergen.example/api/polar/checkout',{method:'POST',body:JSON.stringify(body)});
   const input={surveyTitle:'Test',pricingCategory:'institution',questionCount:10,respondentCount:100,includeDetailedAI:true,totalCents:1,discount:100,draft:{title:'Test',description:'Synthetic',researchDescription:'Synthetic',researchScope:'Scope',hypothesis:'Hypothesis',questionCount:10,targetResponses:100,includeDetailedAI:true,audience:{countries:['Azerbaijan'],ageMin:18,ageMax:80,gender:'All genders',education:'Any education level',interests:[],researchArea:'Education'},questions:Array.from({length:5},(_,i)=>({id:'q'+i,text:'Synthetic?',type:'Yes / No',options:['Yes','No']}))}};
@@ -93,6 +93,17 @@ test('actual checkout handler persists server price, rejects discount spoof and 
     assert.equal((await POST(request({...input,questionCount:11}))).status,400);
     assert.equal((await POST(request({...input,includeDetailedAI:'false'}))).status,400);
     category='student'; assert.equal((await POST(request({...input,pricingCategory:'student'}))).status,200);assert.equal(charged.amountInCents,9000);
+    category='institution';
+    for (const code of ['PGRST205','PGRST204','42P01','42703','42501']) {
+      storageError={code,message:'Internal database details must stay private'};
+      const providerCalls=events.filter(event=>event==='provider').length;
+      const failed=await POST(request(input));
+      assert.equal(failed.status,503);
+      const body=await failed.json();
+      assert.equal(body.code,code==='42501'?'CHECKOUT_STORAGE_UNAVAILABLE':'CHECKOUT_SETUP_REQUIRED');
+      assert.doesNotMatch(body.error,/Internal database|Failed to create Polar checkout/);
+      assert.equal(events.filter(event=>event==='provider').length,providerCalls);
+    }
   } finally { console.error=originalError; mocks.clear(); }
 });
 test('account resolver rechecks confirmed email and existing signup eligibility', async () => {
