@@ -28,7 +28,17 @@ export async function POST(request: Request) {
       include_detailed_report: pricing.reportFeeCents > 0, pricing_version: pricing.pricingVersion,
       pricing, status: "pending", draft_payload: draft
     }).select("id").single();
-    if (error) throw error;
+    if (error) {
+      console.error("Failed to persist checkout order.", { code: error.code });
+      const missingSchema = ["PGRST205", "PGRST204", "42P01", "42703"].includes(error.code);
+      return NextResponse.json({
+        success: false,
+        code: missingSchema ? "CHECKOUT_SETUP_REQUIRED" : "CHECKOUT_STORAGE_UNAVAILABLE",
+        error: missingSchema
+          ? "Checkout is temporarily unavailable because payment setup is incomplete. Please contact support."
+          : "We could not save your checkout. Please try again shortly."
+      }, { status: 503 });
+    }
     const checkout = await createPolarCheckout({ amountInCents: pricing.totalCents,
       customerEmail: context.user.email ?? context.profile.email,
       customerName: [context.profile.firstName, context.profile.lastName].filter(Boolean).join(" ") || context.profile.email,
