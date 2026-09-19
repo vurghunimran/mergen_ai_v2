@@ -1,11 +1,12 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');const {PGlite}=require('@electric-sql/pglite');
-test('security migration: privilege boundaries, serialized capacity/debits, replay, historical entitlements, adult consent and AI budgets',async()=>{
+for (const missingRewards of [false, true]) test(`security migration (reward table ${missingRewards ? 'missing' : 'existing'}): privilege boundaries, capacity/debits, replay, consent and budgets`,async()=>{
  const db=new PGlite();const client='11111111-1111-4111-8111-111111111111',a='22222222-2222-4222-8222-222222222222',b='33333333-3333-4333-8333-333333333333';
  const questions=Array.from({length:5},(_,i)=>({id:'q'+i,text:'Question?',type:'Yes / No',options:['Yes','No']}));const answers=questions.map(q=>({questionId:q.id,questionText:q.text,questionType:q.type,answer:'Yes'}));
  const sql=f=>fs.readFileSync(path.join(__dirname,'../supabase',f),'utf8').replace('create extension if not exists pgcrypto;','');
  try{
  await db.exec(`create role anon;create role authenticated;create role service_role;create schema auth;create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;`);
  await db.exec(sql('schema.sql'));
+ if(missingRewards) await db.exec('drop table public.reward_activations');
  for(const [id,role]of[[client,'client'],[a,'community'],[b,'community']])await db.query('insert into auth.users values($1,$2,$3)',[id,id+'@example.invalid',{role,country:'Azerbaijan',age_span:'25-34'}]);
  for(let i=1;i<=9;i++)await db.query("insert into surveys(id,user_id,name,target_responses,question_count,questions) values($1,$2,'Synthetic',1,5,$3)",[i,client,questions]);
  for(let i=2;i<=9;i++)await db.query('insert into survey_responses(survey_id,respondent_id,completion_time_seconds,trust_score,earned_credits,answers) values($1,$2,60,100,70,$3)',[i,a,answers]);
@@ -36,6 +37,11 @@ test('security migration: privilege boundaries, serialized capacity/debits, repl
  const redeem=id=>db.query("select redeem_reward($1,'notion',$2) as result",[a,id]);
  const spends=await Promise.allSettled([redeem(r1),redeem(r2)]);assert.equal(spends.filter(x=>x.status==='fulfilled').length,1);
  assert.equal((await db.query('select sum(credits)::int as spent from reward_activations')).rows[0].spent,560);
+ await db.exec('set role authenticated');
+ assert.equal((await db.query('select count(*)::int as n from reward_activations')).rows[0].n,1);
+ await db.query("select set_config('request.jwt.claim.sub',$1,false)",[b]);
+ assert.equal((await db.query('select count(*)::int as n from reward_activations')).rows[0].n,0);
+ await db.exec('reset role');
  const repeated=await redeem(r1);assert.equal(repeated.rows[0].result.activation.credits,560);assert.equal((await db.query('select count(*)::int as n from reward_activations')).rows[0].n,1);
  await assert.rejects(db.query("select redeem_reward($1,'withdraw-cash',$2)",[a,r1]),/Idempotency/);
  await assert.rejects(db.query('update surveys set target_responses=1000 where id=2'),/Historical/);
