@@ -1,17 +1,17 @@
 import ContactClient from "./ContactClient";
 
-export default function ContactPage({
+export default async function ContactPage({
   searchParams
 }: {
-  searchParams?: { purpose?: string };
+  searchParams?: Promise<{ purpose?: string }>;
 }) {
   let initialPurpose = "General Inquiry";
 
-  if (searchParams?.purpose === "business") {
+  if ((await searchParams)?.purpose === "business") {
     initialPurpose = "Business Partnership";
   }
 
-  if (searchParams?.purpose === "university") {
+  if ((await searchParams)?.purpose === "university") {
     initialPurpose = "University Cooperation";
   }
 
