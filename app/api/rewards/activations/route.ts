@@ -9,23 +9,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-type CreateRewardActivationRequestBody = {
-  rewardId?: string;
-};
-
-type RewardBalanceRow = {
-  earned_credits: number;
-};
-
-type WelcomeRewardBalanceRow = {
-  earned_credits: number;
-};
-
-type RewardSpendRow = {
-  credits: number;
-  status: "activated" | "fulfilled" | "cancelled";
-};
-
 function getRewardActivationStorageErrorMessage(error: unknown) {
   const message =
     error instanceof Error
@@ -105,99 +88,20 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const authorized = await requireAuthorizedProfile("community");
-
-  if (authorized.response) {
-    return authorized.response;
+  if (authorized.response) return authorized.response;
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body.rewardId !== "string" || !getRewardById(body.rewardId) ||
+      typeof body.idempotencyKey !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.idempotencyKey)) {
+    return NextResponse.json({ error: "Invalid reward request." }, { status: 400 });
   }
-
-  const body = (await request.json().catch(() => null)) as CreateRewardActivationRequestBody | null;
-  const reward = body?.rewardId ? getRewardById(body.rewardId) : null;
-
-  if (!reward) {
-    return NextResponse.json({ error: "Invalid reward selection." }, { status: 400 });
-  }
-
   try {
-    const admin = createAdminClient();
-    const [earnedCreditsResult, welcomeCreditsResult, redeemedCreditsResult] = await Promise.all([
-      admin
-        .from("survey_responses")
-        .select("earned_credits")
-        .eq("respondent_id", authorized.profile.id),
-      admin
-        .from("welcome_survey_completions")
-        .select("earned_credits")
-        .eq("respondent_id", authorized.profile.id),
-      admin.from("reward_activations").select("credits,status").eq("member_id", authorized.profile.id)
-    ]);
-
-    if (earnedCreditsResult.error) {
-      throw earnedCreditsResult.error;
-    }
-
-    if (welcomeCreditsResult.error) {
-      throw welcomeCreditsResult.error;
-    }
-
-    if (redeemedCreditsResult.error) {
-      throw redeemedCreditsResult.error;
-    }
-
-    const totalEarnedCredits =
-      ((earnedCreditsResult.data ?? []) as RewardBalanceRow[]).reduce(
-        (sum, row) => sum + row.earned_credits,
-        0
-      ) +
-      ((welcomeCreditsResult.data ?? []) as WelcomeRewardBalanceRow[]).reduce(
-        (sum, row) => sum + row.earned_credits,
-        0
-      );
-    const totalRedeemedCredits = ((redeemedCreditsResult.data ?? []) as RewardSpendRow[])
-      .filter((row) => row.status !== "cancelled")
-      .reduce((sum, row) => sum + row.credits, 0);
-    const availableCredits = Math.max(0, totalEarnedCredits - totalRedeemedCredits);
-
-    if (availableCredits < reward.credits) {
-      return NextResponse.json(
-        {
-          error: `You need ${reward.credits} credits for ${reward.company}, but only ${availableCredits} are available.`
-        },
-        { status: 409 }
-      );
-    }
-
-    const { data, error } = await admin
-      .from("reward_activations")
-      .insert({
-        member_id: authorized.profile.id,
-        reward_id: reward.id,
-        reward_company: reward.company,
-        reward_subtitle: reward.subtitle,
-        activation_email: authorized.profile.email,
-        credits: reward.credits
-      })
-      .select("id,member_id,reward_id,reward_company,reward_subtitle,activation_email,credits,status,activated_at")
-      .single();
-
-    if (error || !data) {
-      throw error ?? new Error("Could not create reward activation.");
-    }
-
-    const message =
-      reward.id === "withdraw-cash"
-        ? `Cash withdrawal request has been sent to ${authorized.profile.email}.`
-        : `${reward.company} reward has been sent to ${authorized.profile.email}.`;
-
-    return NextResponse.json({
-      activation: mapRewardActivationRow(data as RewardActivationRow),
-      remainingCredits: availableCredits - reward.credits,
-      message
+    const { data, error } = await createAdminClient().rpc("redeem_reward", {
+      p_member: authorized.profile.id, p_reward: body.rewardId, p_request: body.idempotencyKey
     });
-  } catch (error) {
-    console.error("Failed to create reward activation.", error);
-    return NextResponse.json(
-      { error: getRewardActivationStorageErrorMessage(error) },
-      { status: 500 }
-    );
+    if (error) return NextResponse.json({ error: error.code === "23514" ? "Insufficient credits or reward unavailable." : "Could not process reward request." }, { status: ["23514", "23505"].includes(error.code) ? 409 : 503 });
+    return NextResponse.json({ activation: mapRewardActivationRow(data.activation), remainingCredits: data.remainingCredits,
+      message: "Your reward request is recorded and awaiting fulfillment." });
+  } catch {
+    return NextResponse.json({ error: "Could not process reward request." }, { status: 503 });
   }
 }
