@@ -3,9 +3,9 @@ import { verifySurveyOrder } from "@/lib/survey-orders";
 import { getCurrentUserProfile } from "@/lib/supabase/profile-server";
 
 type RouteContext = {
-  params: {
+  params: Promise<{
     checkoutId: string;
-  };
+  }>;
 };
 
 export async function GET(_request: Request, context: RouteContext) {
@@ -20,13 +20,14 @@ export async function GET(_request: Request, context: RouteContext) {
       return NextResponse.json({ success: false, error: "Only client accounts can verify survey checkouts." }, { status: 403 });
     }
 
-    const { checkout, order, isPaid } = await verifySurveyOrder(context.params.checkoutId, authenticated.profile.id);
+    const { checkout, order, isPaid } = await verifySurveyOrder((await context.params).checkoutId, authenticated.profile.id);
 
     return NextResponse.json({
       success: true,
       status: checkout.status,
       isPaid,
       pricing: order.pricing,
+      draft: order.draft_payload,
       metadata: checkout.metadata
     });
   } catch (error) {
