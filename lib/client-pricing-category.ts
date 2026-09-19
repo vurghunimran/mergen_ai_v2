@@ -9,7 +9,7 @@ export async function getClientPricingContext() {
   let pricingCategory: PricingCategory = "institution";
   // Use stored account classification and the confirmed auth email, never checkout fields
   // or user-editable auth metadata as evidence of discounted eligibility.
-  const { data: row, error } = await createClient().from("client_profiles")
+  const { data: row, error } = await (await createClient()).from("client_profiles")
     .select("affiliation_type,position,country,educational_institution,institution_id")
     .eq("id", authenticated.profile.id).maybeSingle();
   if (error) throw error;
