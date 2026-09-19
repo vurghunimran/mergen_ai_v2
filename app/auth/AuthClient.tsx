@@ -306,6 +306,7 @@ function buildSignUpMetadata(profilePayload: PersistedProfilePayload) {
 
   return {
     ...profilePayload,
+    adult_confirmed: true,
     terms_accepted_at: acceptedAt,
     terms_version: TERMS_VERSION,
     privacy_policy_accepted_at: acceptedAt,
