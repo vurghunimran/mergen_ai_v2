@@ -44,7 +44,7 @@ function mapProfile(
   return {
     id: user.id,
     role,
-    email: baseRow?.email ?? user.email ?? getStringValue(metadata.email),
+    email: user.email ?? "",
     firstName: baseRow?.first_name ?? getStringValue(metadata.first_name),
     lastName: baseRow?.last_name ?? getStringValue(metadata.last_name),
     phoneNumber: baseRow?.phone_number ?? getStringValue(metadata.phone_number),
@@ -88,7 +88,7 @@ export function getDashboardPathForRole(role: UserRole, userId?: string) {
 
 export async function getCurrentUserProfile(): Promise<AuthenticatedProfile | null> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const {
       data: { user },
       error: userError
