@@ -6,9 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 type RouteContext = {
-  params: {
+  params: Promise<{
     surveyId: string;
-  };
+  }>;
 };
 
 function parseSurveyId(value: string) {
@@ -23,14 +23,14 @@ export async function GET(_request: Request, context: RouteContext) {
     return authorized.response;
   }
 
-  const surveyId = parseSurveyId(context.params.surveyId);
+  const surveyId = parseSurveyId((await context.params).surveyId);
 
   if (!surveyId) {
     return NextResponse.json({ error: "Invalid survey id." }, { status: 400 });
   }
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const survey = await getClientSurveyForUser(supabase, surveyId, authorized.profile.id);
 
     if (!survey) {
@@ -51,14 +51,14 @@ export async function DELETE(_request: Request, context: RouteContext) {
     return authorized.response;
   }
 
-  const surveyId = parseSurveyId(context.params.surveyId);
+  const surveyId = parseSurveyId((await context.params).surveyId);
 
   if (!surveyId) {
     return NextResponse.json({ error: "Invalid survey id." }, { status: 400 });
   }
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const survey = await getClientSurveyForUser(supabase, surveyId, authorized.profile.id);
 
     if (!survey) {
