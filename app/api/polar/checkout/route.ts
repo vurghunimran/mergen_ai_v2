@@ -1,3 +1,6 @@
+import { parseCreateSurveyPayload } from "@/lib/survey-checkout-validation";
+import { readJsonObject, RequestError } from "@/lib/security/request";
+import { assertOrderSurvey } from "@/lib/survey-order-verification";
 import { NextResponse } from "next/server";
 import { createPolarCheckout } from "@/lib/polar";
 import { calculateAuthorizedSurveyPricing, SurveyPricingError } from "@/lib/survey-pricing";
@@ -8,18 +11,22 @@ export async function POST(request: Request) {
   try {
     const context = await getClientPricingContext();
     if (!context) return NextResponse.json({ success: false, error: "Client authentication required." }, { status: 401 });
-    const body = await request.json().catch(() => null);
+    const body = await readJsonObject(request, 4_000_000);
     if (!body || typeof body.surveyTitle !== "string" || !body.surveyTitle.trim())
       throw new SurveyPricingError("Invalid checkout payload.");
     const pricing = calculateAuthorizedSurveyPricing({ pricingCategory: body.pricingCategory,
       questionCount: body.questionCount, responseCount: body.respondentCount,
       includeDetailedReport: body.includeDetailedAI }, context.pricingCategory);
+    const { payload: draft, error: draftError } = parseCreateSurveyPayload(body.draft);
+    if (!draft) throw new SurveyPricingError(draftError ?? "A recoverable survey draft is required.");
+    assertOrderSurvey({ question_count: pricing.questionCount, response_count: pricing.responseCount,
+      include_detailed_report: pricing.reportFeeCents > 0 } as Parameters<typeof assertOrderSurvey>[0], draft);
     const admin = createAdminClient();
     const { data: order, error } = await admin.from("survey_orders").insert({
       user_id: context.profile.id, currency: pricing.currency, total_cents: pricing.totalCents,
       question_count: pricing.questionCount, response_count: pricing.responseCount,
       include_detailed_report: pricing.reportFeeCents > 0, pricing_version: pricing.pricingVersion,
-      pricing, status: "pending"
+      pricing, status: "pending", draft_payload: draft
     }).select("id").single();
     if (error) throw error;
     const checkout = await createPolarCheckout({ amountInCents: pricing.totalCents,
@@ -36,6 +43,6 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Polar checkout creation failed.", error);
     return NextResponse.json({ success: false, error: error instanceof Error ? error.message : "Failed to create Polar checkout." },
-      { status: error instanceof SurveyPricingError ? 400 : 500 });
+      { status: error instanceof RequestError ? error.status : error instanceof SurveyPricingError ? 400 : 500 });
   }
 }
