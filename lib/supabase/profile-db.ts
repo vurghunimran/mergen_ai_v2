@@ -70,21 +70,16 @@ export async function upsertProfileRecords(
   userId: string,
   payload: PersistedProfilePayload
 ) {
-  const { error: baseError } = await supabase.from("profiles").upsert(
+  const { error: baseError } = await supabase.from("profiles").update(
     {
-      id: userId,
-      role: payload.role,
-      email: payload.email,
+
       first_name: payload.first_name,
       last_name: payload.last_name,
       phone_number: payload.phone_number || null,
       appearance: payload.appearance,
       two_factor_enabled: payload.two_factor_enabled
-    },
-    {
-      onConflict: "id"
     }
-  );
+  ).eq("id", userId);
 
   if (baseError) {
     throw baseError;
