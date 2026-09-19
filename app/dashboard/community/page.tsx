@@ -28,8 +28,8 @@ function buildSearchString(searchParams?: Record<string, string | string[] | und
 export default async function CommunityDashboardRedirectPage({
   searchParams
 }: {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { profile } = await requireAuthenticatedProfile("community");
-  redirect(`/dashboard/community/${profile.id}${buildSearchString(searchParams)}`);
+  redirect(`/dashboard/community/${profile.id}${buildSearchString(await searchParams)}`);
 }
