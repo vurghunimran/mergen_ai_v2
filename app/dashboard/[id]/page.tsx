@@ -6,26 +6,26 @@ import { getMockUserById } from "@/lib/mock-auth/mock-users";
 
 export const dynamic = "force-dynamic";
 
-export default function MockDashboardPage({
+export default async function MockDashboardPage({
   params
 }: {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }) {
-  const authenticatedUser = getAuthenticatedMockUser();
+  const authenticatedUser = await getAuthenticatedMockUser();
 
   if (!authenticatedUser) {
-    redirect(`/login?next=/dashboard/${params.id}`);
+    redirect(`/login?next=/dashboard/${(await params).id}`);
   }
 
-  const requestedUser = getMockUserById(params.id);
+  const requestedUser = getMockUserById((await params).id);
 
   if (!requestedUser) {
     return (
       <DashboardState
         title="User not found"
-        description={`No dashboard exists for the user ID "${params.id}". Use a valid demo user ID to open a dashboard.`}
+        description={`No dashboard exists for the user ID "${(await params).id}". Use a valid demo user ID to open a dashboard.`}
         primaryHref={`/dashboard/${authenticatedUser.id}`}
         primaryLabel="Open my dashboard"
         secondaryHref="/login"
