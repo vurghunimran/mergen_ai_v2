@@ -29,13 +29,14 @@ function buildSearchString(searchParams?: Record<string, string | string[] | und
 export default async function ClientDashboardRedirectPage({
   searchParams
 }: {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { profile } = await requireAuthenticatedProfile("client");
+  const { profile, user } = await requireAuthenticatedProfile("client");
   const destination = getPostLoginPath({
-    email: profile.email,
+    email: user.email ?? "",
+    emailConfirmed: Boolean(user.email_confirmed_at),
     role: profile.role,
     userId: profile.id
   });
-  redirect(`${destination}${buildSearchString(searchParams)}`);
+  redirect(`${destination}${buildSearchString(await searchParams)}`);
 }
