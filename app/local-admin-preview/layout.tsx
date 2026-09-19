@@ -3,12 +3,12 @@ import { requireLocalPreviewAccess } from "@/lib/local-preview-access";
 
 export const dynamic = "force-dynamic";
 
-export default function LocalAdminPreviewLayout({
+export default async function LocalAdminPreviewLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  requireLocalPreviewAccess();
+  await requireLocalPreviewAccess();
 
   return <LocalAdminPreviewShell>{children}</LocalAdminPreviewShell>;
 }
