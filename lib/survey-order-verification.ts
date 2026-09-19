@@ -16,6 +16,8 @@ export type PersistedSurveyOrder = {
 export type CheckoutEvidence = {
   id: string; status: string; amount: number; currency: string;
   discount_amount?: number;
+  discount_id?: string | null;
+  net_amount?: number;
   external_customer_id: string | null; metadata: Record<string, string>;
 };
 export function assertOrderPayment(order: PersistedSurveyOrder, checkout: CheckoutEvidence, userId: string) {
@@ -25,8 +27,16 @@ export function assertOrderPayment(order: PersistedSurveyOrder, checkout: Checko
     throw new Error("Payment amount or currency does not match the stored order.");
   if (order.pricing_version !== "legacy-polar-v0" && checkout.metadata.order_id !== order.id)
     throw new Error("Payment does not match the stored order reference.");
-  if (order.pricing_version !== "legacy-polar-v0" && (checkout.discount_amount ?? 0) !== 0)
-    throw new Error("Unexpected discount on a fixed-price survey order.");
+  // Evidence is fetched from Polar server-side. Keep the original price check above;
+  // only Polar-applied discounts may reduce what the customer pays.
+  if (order.pricing_version !== "legacy-polar-v0") {
+    const discount = checkout.discount_amount ?? 0;
+    if (!Number.isSafeInteger(discount) || discount < 0 || discount > order.total_cents ||
+        (discount > 0 && (typeof checkout.discount_id !== "string" || !checkout.discount_id.trim() ||
+          checkout.net_amount !== order.total_cents - discount)) ||
+        (checkout.net_amount !== undefined && checkout.net_amount !== order.total_cents - discount))
+      throw new Error("Invalid Polar discount or discounted payment amount.");
+  }
   if (order.refund_status) throw new Error("This payment is under refund review.");
   // Do not recalculate historical prices with the current pricing formula.
   return checkout.status === "succeeded";
