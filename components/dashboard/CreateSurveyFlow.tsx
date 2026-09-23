@@ -401,7 +401,11 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
         setDraft({
           ...restoredDraft
         });
-        setStage(parsedDraft.stage);
+        setStage(
+          parsedDraft.stage === "generate" || parsedDraft.stage === "payment"
+            ? parsedDraft.stage
+            : "define"
+        );
         setDraftNotice(`Draft restored from ${parsedDraft.savedAt}. New formula pricing applies; review the updated receipt before checkout.`);
       }
     } catch {
@@ -420,6 +424,12 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
   }, [launchNotificationError, launchSentEmails]);
 
   const currentStageIndex = stageItems.findIndex((item) => item.id === stage);
+  const defineComplete = Boolean(
+    draft.surveyTitle.trim() && (draft.generalAudience || draft.selectedCountries.length > 0)
+  );
+  const paymentReady = defineComplete && draft.questions.length >= 5 &&
+    draft.questions.length <= draft.questionCount &&
+    draft.questions.every((question) => question.text.trim().length > 0);
   const currentRegion = surveyRegionGroups.includes(draft.targetRegion as SurveyRegion)
     ? (draft.targetRegion as SurveyRegion)
     : surveyRegionGroups[0];
@@ -695,6 +705,12 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
   }
 
   async function handleGenerateFromDefine() {
+    if (!defineComplete) return;
+    if (draft.questions.length > 0) {
+      setStage("generate");
+      return;
+    }
+
     const enrichedDraft = buildEnrichedDraft();
     setGenerationError("");
     setDraftNotice("");
@@ -862,7 +878,11 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
   }
 
   function handleRemoveSurveyDraft() {
-    if (!window.confirm("Remove this survey draft?")) {
+    if (isCompletingPayment || launchComplete || stage === "launch") {
+      return;
+    }
+
+    if (!window.confirm("Delete this unpaid survey draft and all locally saved changes? This cannot be undone.")) {
       return;
     }
 
@@ -873,7 +893,21 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
     setDraftNotice("");
     setAttachmentError("");
     setGenerationError("");
+    setCheckoutError("");
     onBackToDashboard();
+  }
+
+  function canNavigateToStage(nextStage: CreateSurveyStage) {
+    if (isCompletingPayment || stage === "launch") return false;
+    if (nextStage === "generate") return draft.questions.length > 0;
+    if (nextStage === "payment") return paymentReady;
+    return nextStage === "define";
+  }
+
+  function goToStage(nextStage: CreateSurveyStage) {
+    if (!canNavigateToStage(nextStage)) return;
+    setCheckoutError("");
+    setStage(nextStage);
   }
 
   function handleOpenPreview() {
@@ -897,6 +931,11 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
 
   async function handleCompletePayment() {
     if (launchComplete || isCompletingPayment) {
+      return;
+    }
+
+    if (!paymentReady) {
+      setCheckoutError("Review Define and Generate: add a title and audience, then prepare 5 to the selected allowance of nonempty questions.");
       return;
     }
 
@@ -961,8 +1000,21 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
           <h1 className={STEP_TITLE_CLASS_NAME}>Create New Survey</h1>
           <p className="mt-2 text-[16px] text-[#667085]">Build your survey from audience definition to launch.</p>
         </div>
-        <div className="rounded-full bg-[#fff4ea] px-4 py-2 text-sm font-medium text-[#e56a1f]">
-          {draft.surveyTitle || "Untitled survey"}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="rounded-full bg-[#fff4ea] px-4 py-2 text-sm font-medium text-[#e56a1f]">
+            {draft.surveyTitle || "Untitled survey"}
+          </div>
+          {stage !== "launch" ? (
+            <button
+              type="button"
+              onClick={handleRemoveSurveyDraft}
+              disabled={isCompletingPayment}
+              className="inline-flex items-center gap-2 rounded-full border border-[#f1c8d6] bg-[#fff5f8] px-4 py-2 text-sm font-semibold text-[#ad2a62] transition hover:border-[#e89bbc] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete survey
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -975,7 +1027,14 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
               const isComplete = index < currentStageIndex;
 
               return (
-                <div key={item.id} className="relative z-10 flex flex-col items-center text-center">
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => goToStage(item.id)}
+                  disabled={!canNavigateToStage(item.id)}
+                  aria-current={isActive ? "step" : undefined}
+                  className="relative z-10 flex flex-col items-center text-center enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
+                >
                   <div
                     className={`flex h-16 w-16 items-center justify-center rounded-full text-[26px] font-semibold transition ${
                       isActive || isComplete ? "bg-[#ff7a45] text-white shadow-[0_10px_24px_rgba(255,122,69,0.24)]" : "bg-[#eef1f5] text-[#98a2b3]"
@@ -986,7 +1045,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                   <p className={`mt-4 text-[15px] font-semibold uppercase tracking-[0.18em] ${isActive || isComplete ? "text-[#d85d1c]" : "text-[#98a2b3]"}`}>
                     {item.label}
                   </p>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -998,7 +1057,14 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
             const isComplete = index < currentStageIndex;
 
             return (
-              <div key={item.id} className="flex items-center gap-3">
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => goToStage(item.id)}
+                disabled={!canNavigateToStage(item.id)}
+                aria-current={isActive ? "step" : undefined}
+                className="flex items-center gap-3 text-left enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
+              >
                 <div
                   className={`flex h-12 w-12 items-center justify-center rounded-full text-[20px] font-semibold ${
                     isActive || isComplete ? "bg-[#ff7a45] text-white" : "bg-[#eef1f5] text-[#98a2b3]"
@@ -1009,7 +1075,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                 <p className={`text-[14px] font-semibold uppercase tracking-[0.16em] ${isActive || isComplete ? "text-[#d85d1c]" : "text-[#98a2b3]"}`}>
                   {item.label}
                 </p>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -1503,14 +1569,13 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                 type="button"
                 onClick={handleGenerateFromDefine}
                 disabled={
-                  !draft.surveyTitle.trim() ||
-                  (!draft.generalAudience && draft.selectedCountries.length === 0) ||
+                  !defineComplete ||
                   isGeneratingQuestions
                 }
                 className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff7a00_0%,#ea5f2d_100%)] px-7 py-3.5 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(255,106,0,0.22)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Wand2 className="h-4 w-4" />
-                {isGeneratingQuestions ? "Generating..." : "Generate Questions"}
+                {isGeneratingQuestions ? "Generating..." : draft.questions.length > 0 ? "Continue to Generate" : "Generate Questions"}
               </button>
             </div>
           </div>
@@ -1624,14 +1689,6 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                   <Save className="h-4 w-4" />
                   Save Changes
                 </button>
-                <button
-                  type="button"
-                  onClick={handleRemoveSurveyDraft}
-                  className="inline-flex items-center gap-2 rounded-full border border-[#f1c8d6] bg-[#fff5f8] px-4 py-2.5 text-sm font-semibold text-[#ad2a62] transition hover:border-[#e89bbc]"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Remove Survey
-                </button>
               </div>
             </div>
 
@@ -1744,8 +1801,9 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
 
               <button
                 type="button"
-                onClick={() => setStage("payment")}
-                className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff7a00_0%,#ea5f2d_100%)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(255,106,0,0.22)] transition hover:opacity-90"
+                onClick={() => goToStage("payment")}
+                disabled={!paymentReady}
+                className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff7a00_0%,#ea5f2d_100%)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(255,106,0,0.22)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Proceed to Payment
                 <ChevronRight className="h-4 w-4" />
@@ -1829,6 +1887,11 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
                 </select>
               </label>
               <p className="text-xs text-[#667085]">{draft.questions.length} prepared questions. You may prepare 5 up to the selected allowance; pricing uses the selected allowance.</p>
+              {!paymentReady ? (
+                <p role="alert" className="text-sm text-[#ad2a62]">
+                  The draft needs 5 to {draft.questionCount} nonempty questions before checkout. Return to Generate to edit them.
+                </p>
+              ) : null}
               {pricing ? <SurveyPriceBreakdown pricing={pricing} /> : <p role="alert" className="text-sm text-red-700">Choose a supported question allowance and response count. Unsupported saved values are not rounded.</p>}
               <p className="text-xs text-[#667085]">Survey active window: {surveyActiveWindowDays} days</p>
             </div>
@@ -1850,7 +1913,7 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
             <button
               type="button"
               onClick={handleCompletePayment}
-              disabled={isCompletingPayment || !pricing || categoryStatus !== "ready"}
+              disabled={isCompletingPayment || !paymentReady || !pricing || categoryStatus !== "ready"}
               className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,#ff7a00_0%,#ea5f2d_100%)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(255,106,0,0.22)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
             >
               <CreditCard className="h-4 w-4" />
