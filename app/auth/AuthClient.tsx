@@ -398,6 +398,11 @@ export default function AuthClient({
   const [authPending, setAuthPending] = useState<"signup" | "login" | null>(
     null,
   );
+  const [signedInUser, setSignedInUser] = useState<{
+    email: string;
+    dashboardPath: string;
+  } | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
 
   const signUp = useForm<SignUpFormValues>({
     defaultValues: {
@@ -532,14 +537,18 @@ export default function AuthClient({
   useEffect(() => {
     let cancelled = false;
 
-    async function redirectAuthenticatedUser() {
+    async function checkAuthenticatedUser() {
       const supabase = createClient();
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const user = session?.user;
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      if (!user || cancelled) {
+      if (cancelled) {
+        return;
+      }
+
+      if (!user) {
+        setSignedInUser(null);
         return;
       }
 
@@ -565,22 +574,46 @@ export default function AuthClient({
       }
 
       if (!cancelled) {
-        router.replace(
-          postAuthPath && resolvedRole === role
-            ? postAuthPath
-            : getDashboardPath(resolvedRole, user.id)
-        );
+        setSignedInUser({
+          email: user.email ?? "your account",
+          dashboardPath: getDashboardPath(resolvedRole, user.id),
+        });
       }
     }
 
-    void redirectAuthenticatedUser();
+    void checkAuthenticatedUser();
 
     return () => {
       cancelled = true;
     };
-  }, [postAuthPath, router, role]);
+  }, [role]);
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    setSubmitMessage(null);
+
+    try {
+      const { error } = await createClient().auth.signOut({ scope: "local" });
+      if (error) {
+        throw error;
+      }
+      setSignedInUser(null);
+      router.refresh();
+    } catch (error) {
+      setSubmitMessageTone("error");
+      setSubmitMessage(getAuthErrorMessage(error));
+    } finally {
+      setSigningOut(false);
+    }
+  }
 
   async function handleRoleSubmit(values: SignUpFormValues) {
+    if (signedInUser) {
+      setSubmitMessageTone("error");
+      setSubmitMessage("Sign out of your current account before creating another one.");
+      return;
+    }
+
     const normalizedInstitution =
       values.educationalInstitution === "Other"
         ? values.customInstitution.trim()
@@ -591,6 +624,31 @@ export default function AuthClient({
 
     try {
       const supabase = createClient();
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        const metadataRole = currentUser.user_metadata?.role;
+        let currentRole: AuthRole =
+          metadataRole === "client" || metadataRole === "community"
+            ? metadataRole
+            : role;
+        if (!(metadataRole === "client" || metadataRole === "community")) {
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", currentUser.id)
+            .maybeSingle();
+          if (profileData?.role === "client" || profileData?.role === "community") {
+            currentRole = profileData.role;
+          }
+        }
+        setSignedInUser({
+          email: currentUser.email ?? "your account",
+          dashboardPath: getDashboardPath(currentRole, currentUser.id),
+        });
+        setSubmitMessageTone("error");
+        setSubmitMessage("Sign out of your current account before creating another one.");
+        return;
+      }
       let verifiedCommunityCountry: string | null = null;
 
       if (role === "community") {
@@ -891,6 +949,26 @@ export default function AuthClient({
                 Log in
               </button>
             </div>
+
+            {signedInUser ? (
+              <div className="mt-6 rounded-2xl border border-[color:var(--auth-border)] bg-[color:var(--auth-accent-softer-bg)] p-4 text-sm text-slate-700" role="status">
+                <p>You are signed in as <strong>{signedInUser.email}</strong>.</p>
+                <p className="mt-1">Sign out of this browser session to {activeTab === "signup" ? "create a new account" : "log in to another account"}.</p>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    disabled={signingOut}
+                    className="rounded-full bg-[color:var(--auth-accent)] px-4 py-2 font-semibold text-white disabled:opacity-60"
+                  >
+                    {signingOut ? "Signing out..." : "Sign out to continue"}
+                  </button>
+                  <Link href={signedInUser.dashboardPath} className="rounded-full border border-[color:var(--auth-border)] bg-white px-4 py-2 font-semibold text-slate-700">
+                    Open my dashboard
+                  </Link>
+                </div>
+              </div>
+            ) : null}
 
             {activeTab === "signup" ? (
               <form
@@ -2084,7 +2162,7 @@ export default function AuthClient({
 
                 <button
                   type="submit"
-                  disabled={authPending !== null}
+                  disabled={authPending !== null || Boolean(signedInUser) || signingOut}
                   className={submitButtonClassName}
                 >
                   {authPending === "signup"
