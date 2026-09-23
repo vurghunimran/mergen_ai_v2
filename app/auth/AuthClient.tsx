@@ -385,7 +385,9 @@ export default function AuthClient({
     ? "radial-gradient(circle_at_top_left,rgba(216,90,47,0.08),transparent 20%),radial-gradient(circle_at_top_right,rgba(123,147,178,0.12),transparent 20%),linear-gradient(180deg,#fffdf9 0%,#f7f2eb 100%)"
     : "radial-gradient(circle_at_top_left,rgba(124,58,237,0.08),transparent 20%),radial-gradient(circle_at_top_right,rgba(99,102,241,0.08),transparent 22%),linear-gradient(180deg,#fdfbff 0%,#f4f0fb 100%)";
 
-  const [activeTab, setActiveTab] = useState<"signup" | "login">("signup");
+  const [activeTab, setActiveTab] = useState<"signup" | "login">(
+    searchParams.get("mode") === "login" ? "login" : "signup"
+  );
   const [institutionOptions, setInstitutionOptions] =
     useState<InstitutionOption[]>([]);
   const [institutionStatus, setInstitutionStatus] = useState<
@@ -2220,6 +2222,12 @@ export default function AuthClient({
                         {loginErrors.password.message}
                       </p>
                     ) : null}
+                    <Link
+                      href={`/auth/forgot-password?type=${role}`}
+                      className="mt-3 inline-block text-sm font-semibold text-[color:var(--auth-accent)] hover:underline"
+                    >
+                      Forgot password?
+                    </Link>
                   </div>
                 </AuthFormSection>
 
