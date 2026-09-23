@@ -137,6 +137,9 @@ Set these in Supabase Auth:
 - Site URL: `https://mergen-ai.com`
 - Redirect URL: `https://mergen-ai.com/auth/confirm`
 - Local redirect URL: `http://localhost:3000/auth/confirm`
+- Add `https://mergen-ai.com/auth/confirm**` and `http://localhost:3000/auth/confirm**` to Supabase Redirect URLs so the recovery `next` query parameter is allowed.
+- Keep the Supabase **Reset Password** email template using `{{ .ConfirmationURL }}`. If using a custom SSR token-hash template instead, link to `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=recovery` so `/auth/confirm` can verify the link.
+- Configure custom SMTP for production password reset email delivery; the default Supabase sender is rate limited.
 
 ### Domain and email setup
 
