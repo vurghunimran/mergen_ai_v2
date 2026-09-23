@@ -420,6 +420,7 @@ export default function CommunityDashboard({
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createSupabaseClient();
+  const dashboardPath = `/dashboard/community/${initialProfile.id}`;
   const communityAnnouncementStorageKey = getCommunityDashboardAnnouncementStorageKey(initialProfile.id);
   const communitySettingsStorageKey = getCommunityDashboardSettingsStorageKey(initialProfile.id);
   const communityProgressStorageKey = getCommunityDashboardProgressStorageKey(initialProfile.id);
@@ -1476,8 +1477,9 @@ export default function CommunityDashboard({
       <aside className="hidden h-screen w-64 border-r border-gray-100 bg-white shadow-sm lg:block">
         <div className="p-6">
           <Link
-            href="/"
-            aria-label="Go to landing page"
+            href={dashboardPath}
+            onClick={() => setActiveSection("dashboard")}
+            aria-label="Go to dashboard"
             className="mb-8 flex items-center space-x-3 transition-opacity hover:opacity-85"
           >
             <SiteLogo label="MERGEN AI" markClassName="h-11" textClassName="text-[17px] font-semibold text-gray-900 sm:text-[17px]" />
@@ -1511,8 +1513,9 @@ export default function CommunityDashboard({
       <div className="flex flex-1 flex-col">
         <div className="flex h-16 items-center justify-between border-b border-gray-100 bg-white px-6 shadow-sm lg:justify-end">
           <Link
-            href="/"
-            aria-label="Go to landing page"
+            href={dashboardPath}
+            onClick={() => setActiveSection("dashboard")}
+            aria-label="Go to dashboard"
             className="flex items-center space-x-3 transition-opacity hover:opacity-85 lg:hidden"
           >
             <SiteLogo label="MERGEN AI" markClassName="h-10" textClassName="font-semibold text-gray-900 sm:text-lg" />
