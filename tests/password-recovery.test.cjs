@@ -39,13 +39,21 @@ test('recovery links verify before opening the password form; invalid links fail
     assert.equal(code.location, 'https://mergen.example/auth/reset-password?type=community');
     assert.deepEqual(calls[1], ['code', 'one-time-code']);
 
+    const signup = await GET(new Request('https://mergen.example/auth/confirm?next=%2Fdashboard%2Fclient&token_hash=signup-token&type=email'));
+    assert.equal(signup.location, 'https://mergen.example/auth/confirmation?result=success&next=%2Fdashboard%2Fclient');
+    assert.deepEqual(calls[2], ['token', { type: 'email', token_hash: 'signup-token' }]);
+
     authError = new Error('expired');
     const expired = await GET(new Request('https://mergen.example/auth/confirm?token_hash=expired&type=recovery'));
     assert.equal(expired.location, 'https://mergen.example/auth/reset-password?error=invalid-link');
 
     authError = null;
     const external = await GET(new Request('https://mergen.example/auth/confirm?token_hash=valid&type=email&next=https%3A%2F%2Fevil.invalid'));
-    assert.equal(external.location, 'https://mergen.example/auth');
+    assert.equal(external.location, 'https://mergen.example/auth/confirmation?result=success&next=%2Fauth');
+
+    authError = new Error('expired');
+    const invalidSignup = await GET(new Request('https://mergen.example/auth/confirm?token_hash=expired&type=email'));
+    assert.equal(invalidSignup.location, 'https://mergen.example/auth/confirmation?result=invalid');
   } finally {
     mocks.clear();
   }

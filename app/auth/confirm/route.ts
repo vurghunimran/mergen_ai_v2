@@ -25,12 +25,19 @@ export async function GET(request: Request) {
       : await supabase.auth.exchangeCodeForSession(code!);
 
     if (!error) {
-      return NextResponse.redirect(new URL(next, origin));
+      if (isRecovery) {
+        return NextResponse.redirect(new URL(next, origin));
+      }
+
+      const confirmed = new URL("/auth/confirmation", origin);
+      confirmed.searchParams.set("result", "success");
+      confirmed.searchParams.set("next", next);
+      return NextResponse.redirect(confirmed);
     }
   }
 
   return NextResponse.redirect(new URL(
-    isRecovery ? "/auth/reset-password?error=invalid-link" : "/auth",
+    isRecovery ? "/auth/reset-password?error=invalid-link" : "/auth/confirmation?result=invalid",
     origin
   ));
 }
