@@ -36,8 +36,14 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(new URL(
+  const invalid = new URL(
     isRecovery ? "/auth/reset-password?error=invalid-link" : "/auth/confirmation?result=invalid",
     origin
-  ));
+  );
+  if (isRecovery && new URL(next, origin).searchParams.get("type") === "community") {
+    invalid.searchParams.set("type", "community");
+  } else if (!isRecovery && searchParams.has("next")) {
+    invalid.searchParams.set("next", requestedNext);
+  }
+  return NextResponse.redirect(invalid);
 }

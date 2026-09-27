@@ -54,6 +54,12 @@ test('recovery links verify before opening the password form; invalid links fail
     authError = new Error('expired');
     const invalidSignup = await GET(new Request('https://mergen.example/auth/confirm?token_hash=expired&type=email'));
     assert.equal(invalidSignup.location, 'https://mergen.example/auth/confirmation?result=invalid');
+
+    const expiredCommunity = await GET(new Request('https://mergen.example/auth/confirm?token_hash=used&type=recovery&next=%2Fauth%2Freset-password%3Ftype%3Dcommunity'));
+    assert.equal(expiredCommunity.location, 'https://mergen.example/auth/reset-password?error=invalid-link&type=community');
+
+    const expiredCommunitySignup = await GET(new Request('https://mergen.example/auth/confirm?token_hash=used&type=email&next=%2Fdashboard%2Fcommunity'));
+    assert.equal(expiredCommunitySignup.location, 'https://mergen.example/auth/confirmation?result=invalid&next=%2Fdashboard%2Fcommunity');
   } finally {
     mocks.clear();
   }

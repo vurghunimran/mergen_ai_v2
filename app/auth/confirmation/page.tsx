@@ -12,7 +12,10 @@ export default async function ConfirmationPage({ searchParams }: ConfirmationPag
   const confirmed = result === "success";
   const destination = safeVerificationPath(next ?? null);
   const dashboardPath = destination.startsWith("/dashboard/") ? destination : null;
-  const actionHref = confirmed && dashboardPath ? dashboardPath : "/auth?mode=login";
+  const loginPath = new URL(destination, "https://mergen.invalid").pathname === "/dashboard/community"
+    ? "/auth?type=community&mode=login"
+    : "/auth?mode=login";
+  const actionHref = confirmed && dashboardPath ? dashboardPath : loginPath;
   const actionLabel = confirmed && dashboardPath ? "Open dashboard" : "Sign in";
 
   return (
