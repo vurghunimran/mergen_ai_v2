@@ -530,6 +530,9 @@ export default function AuthClient({
   useEffect(() => {
     setSubmitMessage(null);
     setSubmitMessageTone("success");
+  }, [role]);
+
+  useEffect(() => {
     setInterestsOpen(false);
     setLanguageSkillsOpen(false);
     setAuthPending(null);
@@ -930,7 +933,7 @@ export default function AuthClient({
             >
               <button
                 type="button"
-                onClick={() => setActiveTab("signup")}
+                onClick={() => { setSubmitMessage(null); setActiveTab("signup"); }}
                 className={`rounded-full px-4 py-3 text-sm font-semibold transition ${
                   activeTab === "signup"
                     ? activeTabClassName
@@ -941,7 +944,7 @@ export default function AuthClient({
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab("login")}
+                onClick={() => { setSubmitMessage(null); setActiveTab("login"); }}
                 className={`rounded-full px-4 py-3 text-sm font-semibold transition ${
                   activeTab === "login"
                     ? activeTabClassName
@@ -2246,6 +2249,7 @@ export default function AuthClient({
                 message={submitMessage}
                 tone={submitMessageTone}
                 variant="inline"
+                dismissAfterMs={submitMessageTone === "success" ? 30000 : 5000}
                 onDismiss={() => setSubmitMessage(null)}
                 className="mt-5"
               />
