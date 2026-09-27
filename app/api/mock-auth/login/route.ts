@@ -16,6 +16,7 @@ function getStringValue(value: unknown) {
 }
 
 export async function POST(request: Request) {
+  if (process.env.NODE_ENV === "production") return NextResponse.json({ error: "Not found." }, { status: 404 });
   let body: LoginRequestBody;
 
   try {

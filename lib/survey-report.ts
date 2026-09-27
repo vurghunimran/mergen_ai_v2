@@ -229,7 +229,11 @@ export function buildRawDataCsv(survey: ClientSurvey) {
   return allRows
     .map((row) =>
       row
-        .map((cell) => `"${String(cell).replaceAll('"', '""')}"`)
+        .map((cell) => {
+          const value = String(cell);
+          const safeValue = /^[\s\u0000-\u001f]*[=+@-]/.test(value) || /^[\t\r\n]/.test(value) ? `'${value}` : value;
+          return `"${safeValue.replaceAll('"', '""')}"`;
+        })
         .join(",")
     )
     .join("\n");
@@ -265,14 +269,7 @@ export function buildFallbackSurveyReport(survey: ClientSurvey): SurveyReportRes
     futurePredictions:
       responseCount > 0
         ? [
-            `If the current response pace continues, the survey is on track to reach roughly ${clamp(
-              responseCount + Math.round(responseCount * 0.35),
-              responseCount,
-              survey.targetResponses
-            )} responses before the current window closes.`,
-            averageTrustScore >= 75
-              ? "The dataset is likely to remain reliable enough for directional forecasting as more responses arrive."
-              : "Data quality should improve if lower-trust submissions are filtered before final analysis."
+            "This statistical fallback does not predict future response volume or research outcomes. Review the observed results and sample coverage before drawing conclusions."
           ]
         : ["Future prediction is not available until validated raw responses are collected."],
     recommendations:
@@ -288,7 +285,7 @@ export function buildFallbackSurveyReport(survey: ClientSurvey): SurveyReportRes
           ]
         : ["Wait for the first wave of community responses before requesting the paid AI report."],
     methodologyNote:
-      "This report combines respondent trust scores, completion timing, structured-answer distributions, and AI interpretation of open-text responses.",
+      "This is a statistical fallback summary generated without AI interpretation. It uses respondent trust scores, completion timing, and structured-answer distributions. It does not analyze open-text meaning or establish a collection forecast.",
     dataQualityNote:
       responseCount > 0
         ? `Average trust score is ${averageTrustScore}/100 across ${responseCount} validated response records.`

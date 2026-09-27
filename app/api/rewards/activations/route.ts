@@ -6,6 +6,7 @@ import {
 } from "@/lib/reward-activations";
 import { requireAuthorizedProfile } from "@/lib/survey-authorization";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { REWARD_REDEMPTION_ENABLED, REWARD_AVAILABILITY_MESSAGE } from "@/lib/reward-availability";
 
 export const dynamic = "force-dynamic";
 
@@ -89,6 +90,9 @@ export async function GET() {
 export async function POST(request: Request) {
   const authorized = await requireAuthorizedProfile("community");
   if (authorized.response) return authorized.response;
+  if (!REWARD_REDEMPTION_ENABLED) {
+    return NextResponse.json({ error: REWARD_AVAILABILITY_MESSAGE, code: "REWARDS_NOT_AVAILABLE" }, { status: 503 });
+  }
   const body = await request.json().catch(() => null);
   if (!body || typeof body.rewardId !== "string" || !getRewardById(body.rewardId) ||
       typeof body.idempotencyKey !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.idempotencyKey)) {

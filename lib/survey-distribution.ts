@@ -1,3 +1,4 @@
+import { fetchAllRows } from "@/lib/supabase/pagination";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   buildCommunityAudienceProfile,
@@ -179,7 +180,7 @@ function compareOpenAudienceCandidates(
 }
 
 async function loadSurveyResponseReferences(admin: SupabaseClient) {
-  const { data, error } = await admin.from("survey_responses").select("survey_id,respondent_id");
+  const { data, error } = await fetchAllRows(() => admin.from("survey_responses").select("survey_id,respondent_id").order("id", { ascending: true }));
 
   if (error) {
     throw error;
@@ -197,17 +198,17 @@ async function loadDistributionRecipientPool(
     { data: communityRows, error: communityError },
     { data: telegramRows, error: telegramError }
   ] = await Promise.all([
-    admin.from("profiles").select("id,email,first_name,phone_number").eq("role", "community"),
-    admin
+    fetchAllRows(() => admin.from("profiles").select("id,email,first_name,phone_number").eq("role", "community").order("id", { ascending: true })),
+    fetchAllRows(() => admin
       .from("community_profiles")
       .select(
         "id,country,age_span,gender,educational_level,interests,salary_range,place_of_residence,family_status"
-      ),
-    admin
+      ).order("id", { ascending: true })),
+    fetchAllRows(() => admin
       .from("telegram_notification_subscriptions")
       .select(
         "user_id,phone_number_normalized,telegram_chat_id,notifications_enabled"
-      )
+      ).order("user_id", { ascending: true }))
   ]);
 
   if (baseError) {
@@ -417,11 +418,11 @@ export async function previewUpcomingSurveyDelivery(params: {
 }
 
 async function listPublishedSurveyRows(admin: SupabaseClient) {
-  const { data, error } = await admin
+  const { data, error } = await fetchAllRows(() => admin
     .from("surveys")
     .select("*")
     .eq("status", "published")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }).order("id", { ascending: true }));
 
   if (error) {
     throw error;
@@ -431,10 +432,10 @@ async function listPublishedSurveyRows(admin: SupabaseClient) {
 }
 
 async function listSurveyNotifiedRecipientIds(admin: SupabaseClient, surveyId: number) {
-  const { data, error } = await admin
+  const { data, error } = await fetchAllRows(() => admin
     .from("survey_notifications")
     .select("recipient_id")
-    .eq("survey_id", surveyId);
+    .eq("survey_id", surveyId).order("id", { ascending: true }));
 
   if (error) {
     throw error;

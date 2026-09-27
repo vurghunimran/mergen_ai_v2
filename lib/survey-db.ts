@@ -1,3 +1,4 @@
+import { fetchAllRows } from "@/lib/supabase/pagination";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   ClientSurvey,
@@ -342,11 +343,11 @@ async function listSurveyResponses(supabase: SupabaseClient, surveyIds: number[]
     return [] as SurveyResponseRow[];
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await fetchAllRows(() => supabase
     .from("survey_responses")
     .select("*")
     .in("survey_id", surveyIds)
-    .order("submitted_at", { ascending: false });
+    .order("submitted_at", { ascending: false }).order("id", { ascending: true }));
 
   if (error) {
     throw error;
@@ -363,7 +364,8 @@ export async function listWelcomeSurveyCompletionRows(
     return [] as WelcomeSurveyCompletionRow[];
   }
 
-  let query = supabase
+  const createQuery = () => {
+    let query = supabase
     .from("welcome_survey_completions")
     .select("id,respondent_id,submitted_at,completion_time_seconds,earned_credits,summary,answers")
     .order("submitted_at", { ascending: false });
@@ -372,7 +374,9 @@ export async function listWelcomeSurveyCompletionRows(
     query = query.in("respondent_id", respondentIds);
   }
 
-  const { data, error } = await query;
+    return query.order("id", { ascending: true });
+  };
+  const { data, error } = await fetchAllRows(createQuery);
 
   if (error) {
     throw error;
@@ -410,11 +414,11 @@ function groupResponsesBySurveyId(responseRows: SurveyResponseRow[]) {
 }
 
 export async function listClientSurveysForUser(supabase: SupabaseClient, userId: string) {
-  const { data, error } = await supabase
+  const { data, error } = await fetchAllRows(() => supabase
     .from("surveys")
     .select("*")
     .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }).order("id", { ascending: true }));
 
   if (error) {
     throw error;
@@ -459,11 +463,11 @@ export async function getClientSurveyForUser(supabase: SupabaseClient, surveyId:
 }
 
 export async function listPublishedSurveys(supabase: SupabaseClient) {
-  const { data, error } = await supabase
+  const { data, error } = await fetchAllRows(() => supabase
     .from("surveys")
     .select("*")
     .eq("status", "published")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }).order("id", { ascending: true }));
 
   if (error) {
     throw error;
@@ -477,7 +481,7 @@ export async function listPublishedSurveys(supabase: SupabaseClient) {
 export async function listPublishedSurveysForRespondent(supabase: SupabaseClient, respondentId: string) {
   const [surveyRows, responseRows, welcomeCompletion] = await Promise.all([
     listPublishedSurveys(supabase),
-    supabase.from("survey_responses").select("survey_id").eq("respondent_id", respondentId),
+    fetchAllRows(() => supabase.from("survey_responses").select("survey_id").eq("respondent_id", respondentId).order("id", { ascending: true })),
     getWelcomeSurveyCompletion(supabase, respondentId)
   ]);
 
@@ -499,11 +503,11 @@ export async function listPublishedSurveysForRespondent(supabase: SupabaseClient
 
 export async function listCommunityCompletions(supabase: SupabaseClient, respondentId: string) {
   const [{ data, error }, welcomeCompletion] = await Promise.all([
-    supabase
+    fetchAllRows(() => supabase
       .from("survey_responses")
       .select("survey_id,submitted_at,completion_time_seconds,trust_score,earned_credits,summary,surveys(name)")
       .eq("respondent_id", respondentId)
-      .order("submitted_at", { ascending: false }),
+      .order("submitted_at", { ascending: false }).order("id", { ascending: true })),
     getWelcomeSurveyCompletion(supabase, respondentId)
   ]);
 

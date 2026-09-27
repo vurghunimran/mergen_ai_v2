@@ -85,8 +85,9 @@ export default function ContactClient({ initialPurpose }: { initialPurpose: stri
           <section className="rounded-[34px] border border-white/70 bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.07)] backdrop-blur sm:p-8">
             <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Full name</label>
+                <label htmlFor="contact-fullName" className="mb-2 block text-sm font-semibold text-slate-700">Full name</label>
                 <input
+                  id="contact-fullName"
                   {...register("fullName", { required: true })}
                   placeholder="Your name"
                   className="w-full rounded-2xl border border-slate-200 bg-[#fbf7f2] px-4 py-3 text-slate-900 outline-none ring-[#d85a2f] transition focus:ring-2"
@@ -94,8 +95,9 @@ export default function ContactClient({ initialPurpose }: { initialPurpose: stri
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Email address</label>
+                <label htmlFor="contact-email" className="mb-2 block text-sm font-semibold text-slate-700">Email address</label>
                 <input
+                  id="contact-email"
                   {...register("email", { required: true })}
                   type="email"
                   placeholder="your@email.com"
@@ -104,8 +106,9 @@ export default function ContactClient({ initialPurpose }: { initialPurpose: stri
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Purpose of inquiry</label>
+                <label htmlFor="contact-purpose" className="mb-2 block text-sm font-semibold text-slate-700">Purpose of inquiry</label>
                 <select
+                  id="contact-purpose"
                   {...register("purpose", { required: true })}
                   className="w-full rounded-2xl border border-slate-200 bg-[#fbf7f2] px-4 py-3 text-slate-900 outline-none ring-[#d85a2f] transition focus:ring-2"
                 >
@@ -118,8 +121,9 @@ export default function ContactClient({ initialPurpose }: { initialPurpose: stri
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Message</label>
+                <label htmlFor="contact-message" className="mb-2 block text-sm font-semibold text-slate-700">Message</label>
                 <textarea
+                  id="contact-message"
                   {...register("message", { required: true })}
                   rows={7}
                   placeholder="Write your inquiry or problem here"

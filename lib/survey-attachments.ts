@@ -105,10 +105,35 @@ function isValidDataUrl(dataUrl: string) {
 
 export function isSupportedSurveyFileType(fileName: string, mimeType: string) {
   const normalizedMimeType = mimeType.trim().toLowerCase();
+  const expected: Record<string, string[]> = {
+    ".csv": ["text/csv", "text/plain", "application/vnd.ms-excel"],
+    ".txt": ["text/plain"], ".json": ["application/json", "text/plain"],
+    ".pdf": ["application/pdf"], ".doc": ["application/msword"],
+    ".xls": ["application/vnd.ms-excel"], ".ppt": ["application/vnd.ms-powerpoint"],
+    ".docx": ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+    ".xlsx": ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+    ".pptx": ["application/vnd.openxmlformats-officedocument.presentationml.presentation"]
+  };
   return (
-    SUPPORTED_SURVEY_FILE_EXTENSIONS.has(getFileExtension(fileName)) ||
-    SUPPORTED_SURVEY_FILE_MIME_TYPES.has(normalizedMimeType)
+    SUPPORTED_SURVEY_FILE_EXTENSIONS.has(getFileExtension(fileName)) &&
+    (!normalizedMimeType || normalizedMimeType === "application/octet-stream" ||
+      (SUPPORTED_SURVEY_FILE_MIME_TYPES.has(normalizedMimeType) && expected[getFileExtension(fileName)]?.includes(normalizedMimeType)))
   );
+}
+
+function hasExpectedSignature(dataUrl: string, name: string, mimeType: string) {
+  let bytes: string;
+  try { bytes = atob(dataUrl.split(",", 2)[1].replace(/\s/g, "")); } catch { return false; }
+  if (mimeType === "image/png") return bytes.startsWith("\x89PNG\r\n\x1a\n");
+  if (mimeType === "image/jpeg") return bytes.startsWith("\xff\xd8\xff");
+  if (mimeType === "image/webp") return bytes.startsWith("RIFF") && bytes.slice(8, 12) === "WEBP";
+  if (mimeType === "image/gif") return /^GIF8[79]a/.test(bytes);
+  const extension = getFileExtension(name);
+  if (extension === ".pdf") return bytes.startsWith("%PDF-");
+  if ([".docx", ".xlsx", ".pptx"].includes(extension)) return bytes.startsWith("PK\x03\x04");
+  if ([".doc", ".xls", ".ppt"].includes(extension)) return bytes.startsWith("\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1");
+  if (extension === ".json") { try { JSON.parse(bytes); return true; } catch { return false; } }
+  return [".csv", ".txt"].includes(extension) && !bytes.includes("\x00");
 }
 
 export function formatAttachmentSize(value: number) {
@@ -133,13 +158,14 @@ function parseImageAttachment(value: unknown, index: number) {
   const mimeType = getDataUrlMimeType(dataUrl) || getString(value.mimeType).trim().toLowerCase();
   const sizeInBytes = getDataUrlByteSize(dataUrl);
 
-  if (!name || !isValidDataUrl(dataUrl) || !mimeType.startsWith("image/")) {
+  if (!name || !isValidDataUrl(dataUrl) || !["image/png", "image/jpeg", "image/webp", "image/gif"].includes(mimeType)) {
     return null;
   }
 
   if (sizeInBytes <= 0 || sizeInBytes > MAX_SURVEY_IMAGE_BYTES) {
     return null;
   }
+  if (!hasExpectedSignature(dataUrl, name, mimeType)) return null;
 
   return {
     id: getString(value.id) || `survey-image-${index + 1}`,
@@ -167,6 +193,7 @@ function parseSupportingFileAttachment(value: unknown) {
   if (sizeInBytes <= 0 || sizeInBytes > MAX_SURVEY_SUPPORTING_FILE_BYTES) {
     return null;
   }
+  if (!hasExpectedSignature(dataUrl, name, mimeType)) return null;
 
   return {
     name,

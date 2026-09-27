@@ -6,7 +6,7 @@ import { getPolarCheckout } from '@/lib/polar';
 import { verifySurveyOrder } from '@/lib/survey-orders';
 import { fulfillSurveyOrder } from '@/lib/survey-fulfillment';
 export async function POST(request: Request) {
-  const secret = process.env.POLAR_WEBHOOK_SECRET;
+  const secret = process.env.POLAR_WEBHOOK_SECRET || process.env.POLAR_WEBHOOK;
   if (!secret) return NextResponse.json({ error: 'Webhook unavailable.' }, { status: 503 });
   let event: { type?: string; data?: { id?: string; checkout_id?: string; status?: string } };
   try {
