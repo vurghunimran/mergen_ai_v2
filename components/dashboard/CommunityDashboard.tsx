@@ -67,6 +67,7 @@ import {
 } from "@/lib/reward-activations";
 import { hasSurveyAttachments } from "@/lib/survey-attachments";
 import { WELCOME_SURVEY_CREDITS } from "@/lib/welcome-survey";
+import { REWARD_REDEMPTION_ENABLED, REWARD_AVAILABILITY_MESSAGE } from "@/lib/reward-availability";
 
 const navigationItems = [
   { icon: Home, label: "Dashboard", section: "dashboard" },
@@ -76,7 +77,7 @@ const navigationItems = [
 ] as const;
 
 const COMMUNITY_ONBOARDING_ANNOUNCEMENT =
-  "We're working on onboarding our community while we finalize our documentation. Client surveys will be visible starting June 1st. Stay tuned and be among the first to participate!";
+  "Welcome to the MERGEN community. Complete your profile to receive eligible survey matches. Rewards are coming soon; earned credits stay in your account while we finalize our partner agreement.";
 
 type DashboardSection = "dashboard" | "earnings" | "rewards" | "settings" | "take-survey";
 
@@ -681,7 +682,7 @@ export default function CommunityDashboard({
     .reduce((sum, completion) => sum + completion.earnedCredits, 0);
   const rewardsByCategory = useMemo(
     () =>
-      REWARD_CATEGORIES.map((category) => ({
+      (REWARD_REDEMPTION_ENABLED ? REWARD_CATEGORIES : []).map((category) => ({
         ...category,
         rewards: REWARDS.filter((reward) => reward.category === category.id)
       })).filter((category) => category.rewards.length > 0),
@@ -1076,6 +1077,10 @@ export default function CommunityDashboard({
   }
 
   async function handleActivateReward(reward: RewardCatalogItem) {
+    if (!REWARD_REDEMPTION_ENABLED) {
+      setRewardError(REWARD_AVAILABILITY_MESSAGE);
+      return;
+    }
     setRewardError(null);
     setRewardNotice(null);
 
@@ -1612,7 +1617,7 @@ export default function CommunityDashboard({
                   <div className="relative z-10 flex h-full items-center px-8">
                     <div className="text-white">
                       <h1 className="mb-2 text-3xl font-bold">Welcome back, {displayFirstName}! ✨</h1>
-                      <p className="text-lg text-violet-100">Find matched surveys, grow your trust score, and turn your input into rewards.</p>
+                      <p className="text-lg text-violet-100">Find matched surveys, grow your trust score, and earn credits. Rewards are coming soon.</p>
                     </div>
                   </div>
                 </div>
@@ -2007,7 +2012,8 @@ export default function CommunityDashboard({
               <section className="max-w-5xl space-y-6">
                 <div>
                   <h1 className={sectionTitleClassName}>Rewards</h1>
-                  <p className="mt-3 text-[15px] uppercase tracking-[0.18em] text-[#8a94a6]">Redeem credits through reward partners</p>
+                  <p className="mt-3 text-[15px] uppercase tracking-[0.18em] text-[#64748b]">Rewards coming soon</p>
+                  <p className="mt-4 rounded-2xl border border-purple-200 bg-purple-50 p-5 text-base leading-7 text-purple-950">{REWARD_AVAILABILITY_MESSAGE}</p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -2015,8 +2021,7 @@ export default function CommunityDashboard({
                     <p className="text-sm font-medium text-[#8a94a6]">Available credit</p>
                     <p className="mt-2 text-[34px] font-bold tracking-[-0.03em] text-[#4f2a78]">{totalCredits}</p>
                     <p className="mt-2 text-sm text-[#667085]">
-                      Earned {totalEarnedCredits}, redeemed {redeemedCredits}, remaining available for
-                      new rewards.
+                      Earned {totalEarnedCredits}, redeemed {redeemedCredits}. Your remaining credits are saved in your account.
                     </p>
                   </div>
 

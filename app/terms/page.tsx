@@ -207,6 +207,7 @@ export default function TermsPage() {
               <BulletList
                 items={[
                   "Community members must provide truthful, good-faith responses and must not use bots, scripts, multiple accounts, or misleading behavior to influence rewards or research outcomes.",
+                  "Reward redemption and cash withdrawals are not currently available. We plan to introduce rewards after the partner agreement and fulfillment setup are complete. Earned credits remain in your account; the available catalog, credit requirements, and opening date will be announced before redemption begins.",
                   "Eligibility for participation in a survey may depend on profile details, quality checks, audience matching rules, and trust or fraud review systems.",
                   "MERGEN may reduce, delay, reject, or reverse incentives or participation access where abuse, manipulation, fake accounts, or low-quality participation is reasonably suspected.",
                   "Community members remain responsible for complying with survey instructions and for avoiding the submission of unlawful or infringing content."

@@ -130,12 +130,12 @@ const roleCopy = {
   },
   community: {
     badge: "Community member sign up",
-    summary: "Share your opinion. Earn rewards.",
+    summary: "Share your opinion. Earn credits.",
     benefits: [
       {
         icon: "rewards",
-        title: "Earn real rewards",
-        description: "Convert your time into cash, gift cards, or discounts",
+        title: "Earn survey credits",
+        description: "Rewards are coming soon, after our partner agreement and fulfillment setup are complete. Earned credits stay in your account.",
       },
       {
         icon: "global",

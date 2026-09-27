@@ -1,3 +1,4 @@
+import { fetchAllRows } from "@/lib/supabase/pagination";
 import "server-only";
 import { requireAdminProfile } from "@/lib/admin-access";
 import { ageSpanOptions, genderOptions } from "@/lib/auth-options";
@@ -346,17 +347,17 @@ export async function getAdminSurveyOverview(): Promise<AdminSurveyOverview> {
     { data: communityProfileData, error: communityProfileError },
     { data: notificationData, error: notificationError }
   ] = await Promise.all([
-    admin.from("surveys").select("*").order("created_at", { ascending: false }),
-    admin
+    fetchAllRows(() => admin.from("surveys").select("*").order("created_at", { ascending: false }).order("id", { ascending: true })),
+    fetchAllRows(() => admin
       .from("survey_responses")
-      .select("survey_id,respondent_id,trust_score,earned_credits,completion_time_seconds,submitted_at"),
-    admin.from("profiles").select("id,role,email,first_name,last_name,created_at"),
-    admin.from("client_profiles").select("id,country,educational_institution,position"),
-    admin.from("community_profiles").select("id,country,age_span,gender"),
-    admin
+      .select("survey_id,respondent_id,trust_score,earned_credits,completion_time_seconds,submitted_at").order("id", { ascending: true })),
+    fetchAllRows(() => admin.from("profiles").select("id,role,email,first_name,last_name,created_at").order("id", { ascending: true })),
+    fetchAllRows(() => admin.from("client_profiles").select("id,country,educational_institution,position").order("id", { ascending: true })),
+    fetchAllRows(() => admin.from("community_profiles").select("id,country,age_span,gender").order("id", { ascending: true })),
+    fetchAllRows(() => admin
       .from("survey_notifications")
       .select("survey_id,recipient_id,recipient_email,stage,sent_at")
-      .order("sent_at", { ascending: false })
+      .order("sent_at", { ascending: false }).order("id", { ascending: true }))
   ]);
 
   if (surveyError) {
@@ -515,22 +516,22 @@ export async function getAdminCommunityOverview(): Promise<AdminCommunityOvervie
     { data: welcomeData, error: welcomeError },
     { data: rewardData, error: rewardError }
   ] = await Promise.all([
-    admin.from("profiles").select("id,role,email,first_name,last_name,created_at"),
-    admin
+    fetchAllRows(() => admin.from("profiles").select("id,role,email,first_name,last_name,created_at").order("id", { ascending: true })),
+    fetchAllRows(() => admin
       .from("community_profiles")
       .select(
         "id,country,age_span,gender,employment_status,industry,salary_range,educational_level,field_of_study,language_skills,english_proficiency,place_of_residence,family_status,household_size,children_count,interests,car_count"
-      ),
-    admin
+      ).order("id", { ascending: true })),
+    fetchAllRows(() => admin
       .from("survey_responses")
-      .select("survey_id,respondent_id,trust_score,earned_credits,completion_time_seconds,submitted_at"),
-    admin
+      .select("survey_id,respondent_id,trust_score,earned_credits,completion_time_seconds,submitted_at").order("id", { ascending: true })),
+    fetchAllRows(() => admin
       .from("welcome_survey_completions")
-      .select("id,respondent_id,submitted_at,completion_time_seconds,earned_credits,summary,answers"),
-    admin
+      .select("id,respondent_id,submitted_at,completion_time_seconds,earned_credits,summary,answers").order("id", { ascending: true })),
+    fetchAllRows(() => admin
       .from("reward_activations")
       .select("id,member_id,reward_id,reward_company,reward_subtitle,activation_email,credits,status,activated_at")
-      .order("activated_at", { ascending: false })
+      .order("activated_at", { ascending: false }).order("id", { ascending: true }))
   ]);
 
   if (profileError) {

@@ -1,0 +1,8 @@
+/.env*
+/Design samples/
+/outputs/
+/*.mp4
+/*.png
+/docs/
+/tests/
+/scripts/

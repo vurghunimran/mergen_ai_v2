@@ -12,6 +12,7 @@ export default async function LoginPage({
     next?: string;
   }>;
 }) {
+  if (process.env.NODE_ENV === "production") redirect("/auth?type=client");
   const authenticatedUser = await getAuthenticatedMockUser();
 
   if (authenticatedUser) {

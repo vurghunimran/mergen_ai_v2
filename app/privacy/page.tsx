@@ -179,9 +179,8 @@ export default function PrivacyPage() {
           <article className="space-y-6">
             <PrivacySection id="summary" eyebrow="Summary" title="Summary of key points">
               <p>
-                This page is a styled website version of the privacy notice you supplied. It covers the main privacy topics users
-                usually need first: what MERGEN collects, why it is processed, how long it is kept, which vendors help operate the
-                service, and how users can exercise privacy rights.
+                This notice explains what MERGEN collects, why it is processed, how long it is kept, which vendors help operate
+                the service, and how you can exercise your privacy rights.
               </p>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-[24px] border border-[#eadfce] bg-[#fff9f3] p-5">

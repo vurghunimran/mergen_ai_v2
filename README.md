@@ -1,10 +1,10 @@
 # MERGEN AI
 
-Next.js 14 App Router project for the MERGEN landing page, auth flows, client dashboard, and community dashboard.
+Next.js 15 App Router project for the MERGEN landing page, auth flows, client dashboard, and community dashboard.
 
 ## Stack
 
-- Next.js 14
+- Next.js 15.5.25
 - React 18
 - TypeScript
 - Tailwind CSS
@@ -230,3 +230,9 @@ npm run build
 ## Client survey pricing
 
 New student and institution/business survey prices use a shared integer-cent formula. See [survey pricing and migration notes](docs/SURVEY_PRICING.md) and the public `/pricing` calculator. Apply `supabase/migrate-survey-pricing-orders.sql` before enabling the new checkout flow. Run `npm test` for pricing/payment regression tests. This change does not alter community rewards.
+
+## Reward rollout
+
+Community members earn credits, but reward redemption and cash withdrawals are disabled until the partner contract and fulfillment setup are ready. The dashboard hides the illustrative catalog and the server rejects redemption without debiting credits. `lib/reward-availability.ts` controls the release gate; enable it only with a confirmed catalog, terms, support process, and verified fulfillment. Historical credits and activations remain intact.
+
+`POLAR_WEBHOOK_SECRET` is the preferred signing-secret variable; `POLAR_WEBHOOK` is accepted for compatibility with the existing Vercel configuration. Configure the dedicated admin using `ADMIN_EMAIL` or immutable `ADMIN_USER_IDS`; an email-based admin must confirm the account email. The staged invitation route needs an authenticated external scheduler, including the five-hour second stage; `vercel.json` does not configure one.
