@@ -71,3 +71,61 @@ export async function listTremendousSandboxProducts(countryCode: string) {
   if (!Array.isArray(body.products)) throw new Error("Tremendous sandbox returned an invalid catalog.");
   return body.products.map(parseProduct).filter((product): product is TremendousSandboxProduct => product !== null);
 }
+
+// Internal test helper only. This does not reserve or debit MERGEN member credits.
+export async function sendTremendousSandboxEmailTest(input: {
+  countryCode: string;
+  productId: string;
+  recipientName: string;
+  recipientEmail: string;
+  externalId: string;
+}) {
+  const { countryCode, productId, recipientName, recipientEmail, externalId } = input;
+  if (!/^[A-Z]{2}$/.test(countryCode) || !/^[A-Z0-9]{4,20}$/.test(productId) ||
+      !recipientName.trim() || recipientName.length > 100 ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail) ||
+      !/^[A-Za-z0-9_-]{1,80}$/.test(externalId)) {
+    throw new Error("Invalid sandbox test reward details.");
+  }
+  const key = sandboxKey();
+  if (!key) throw new Error("Tremendous sandbox API key is not configured.");
+  const product = (await listTremendousSandboxProducts(countryCode)).find((entry) => entry.id === productId);
+  if (!product?.countries.includes(countryCode) ||
+      !product.denominations.some((sku) => sku.currencyCode === "USD" && sku.min <= 5 && sku.max >= 5)) {
+    throw new Error("This product is not listed for the country at $5 USD.");
+  }
+
+  const response = await fetch(`${SANDBOX_API_BASE}/orders`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, Accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify({
+      external_id: externalId,
+      payment: { funding_source_id: "BALANCE" },
+      reward: {
+        value: { denomination: 5, currency_code: "USD" },
+        delivery: {
+          method: "EMAIL",
+          meta: {
+            subject_line: "Your MERGEN community reward test",
+            message: "This is a sandbox preview of a MERGEN community reward. It has no real monetary value. Thank you for helping us test the experience."
+          }
+        },
+        recipient: { name: recipientName.trim(), email: recipientEmail.trim() },
+        products: [productId]
+      }
+    }),
+    cache: "no-store",
+    signal: AbortSignal.timeout(15000)
+  });
+  if (!response.ok) throw new Error(`Tremendous sandbox order failed (${response.status}).`);
+  const order = asRecord(asRecord(await response.json()).order);
+  if (typeof order.id !== "string") throw new Error("Tremendous sandbox returned an invalid order.");
+  const reward = Array.isArray(order.rewards) ? asRecord(order.rewards[0]) : {};
+  const delivery = asRecord(reward.delivery);
+  return {
+    orderId: order.id,
+    status: typeof order.status === "string" ? order.status : null,
+    rewardId: typeof reward.id === "string" ? reward.id : null,
+    deliveryStatus: typeof delivery.status === "string" ? delivery.status : null
+  };
+}

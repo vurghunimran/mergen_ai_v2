@@ -14,6 +14,8 @@ The approved **test** conversion is 500 MERGEN credits = a $5 reward. For gift c
 
 On 2026-10-02, a direct $5 USD Razer Gold sandbox order for Azerbaijan succeeded with `LINK` delivery and a MERGEN-controlled test recipient. Tremendous returned order `V7W88CRMXJNB` as `EXECUTED`. Repeating the exact request with external ID `MERGEN-SANDBOX-AZ-500C-20261002` returned the same order with HTTP 201, confirming idempotency. No reward email was sent; member credit debiting, member delivery, and merchant redemption were not tested.
 
+An owner-requested follow-up used MERGEN's server-side sandbox helper to create another $5 USD Razer Gold order with `EMAIL` delivery to an owner-controlled Gmail inbox. Order `ZGCXWT5Z786C` was `EXECUTED`; reward `YXHH985VFXNR` subsequently reported delivery `SUCCEEDED`. This proves Tremendous accepted and delivered the sandbox email, but does not verify inbox placement or merchant redemption. No member credits were debited; the public redemption flow remains closed.
+
 ## Production boundary
 
 The production account, funding balance, production API approval, partner agreements, and live credit pricing are separate decisions. Never use a `PROD_` key in the sandbox preview. Keep `REWARD_REDEMPTION_ENABLED` false until verified products and fulfillment are in place. A successful Tremendous order is not proof that the recipient has used the merchant code; email delivery and merchant redemption are different states.
