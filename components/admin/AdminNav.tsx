@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, Users } from "lucide-react";
+import { ClipboardList, Gift, Users } from "lucide-react";
 
 const navItems = [
   {
@@ -16,6 +16,12 @@ const navItems = [
     label: "Community stats",
     description: "Rewards, members, and demographic signals",
     icon: Users
+  },
+  {
+    href: "/rewards",
+    label: "Reward catalog",
+    description: "Review local sandbox gift cards",
+    icon: Gift
   }
 ];
 
@@ -23,7 +29,7 @@ export default function AdminNav({ basePath = "/dashboard/admin" }: { basePath?:
   const pathname = usePathname();
 
   return (
-    <div className="grid gap-3 md:grid-cols-2">
+    <div className="grid gap-3 md:grid-cols-3">
       {navItems.map((item) => {
         const Icon = item.icon;
         const href = `${basePath}${item.href}`;

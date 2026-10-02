@@ -2014,6 +2014,9 @@ export default function CommunityDashboard({
                   <h1 className={sectionTitleClassName}>Rewards</h1>
                   <p className="mt-3 text-[15px] uppercase tracking-[0.18em] text-[#64748b]">Rewards coming soon</p>
                   <p className="mt-4 rounded-2xl border border-purple-200 bg-purple-50 p-5 text-base leading-7 text-purple-950">{REWARD_AVAILABILITY_MESSAGE}</p>
+                  <p className="mt-3 text-sm leading-6 text-[#64748b]">
+                    Reward options will be matched to your country{profileSnapshot.country ? ` (${profileSnapshot.country})` : ""}. We will show a brand only after its local availability and credit price are confirmed.
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

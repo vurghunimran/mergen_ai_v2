@@ -165,7 +165,9 @@ Resend domain verification checklist:
 - Add the DKIM and SPF records Resend returns at your registrar
 - Verify the domain in Resend
 - Set `RESEND_FROM_EMAIL=MERGEN AI <hello@mergen-ai.com>`
-- Set `CONTACT_TO_EMAIL` to the mailbox that should receive contact inquiries
+- Set `CONTACT_TO_EMAIL=team@mergen-ai.com` only after that address can receive messages
+
+Receiving at `team@mergen-ai.com` is a separate Resend Inbound setup. Enable receiving for the custom domain in Resend and add the **inbound MX records shown for that domain** at the DNS provider. The MX record Resend uses for its `send` return-path subdomain authorizes outgoing mail and does not create a `team@` inbox. Resend stores received messages in its dashboard; an inbound webhook is optional if the application needs to process them automatically. Verify reception with a test from an external account before using `team@mergen-ai.com` for third-party account signup or as the contact-form destination. Do not change `CONTACT_TO_EMAIL` in production until that test succeeds.
 
 The app now uses:
 
