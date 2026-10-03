@@ -1,0 +1,3194 @@
+{
+  "version": 1,
+  "catalogDate": "2026-10-03",
+  "fxDate": "2026-10-03",
+  "pricingStatus": "draft",
+  "minimumGiftCredits": 420,
+  "giftUsdValue": 5,
+  "cashCredits": 920,
+  "cashUsdValue": 10,
+  "maxRewardsPerCountry": 12,
+  "sources": {
+    "catalog": "https://www.tremendous.com/catalog/",
+    "values": "https://api.tremendous.com/catalog-file.csv?charities=true",
+    "exchangeRates": "https://www.exchangerate-api.com",
+    "popularityMeaning": "Provider catalog popularity proxy; not member usage statistics"
+  },
+  "countries": [
+    {
+      "name": "United States",
+      "code": "US",
+      "rewards": [
+        {
+          "id": "OKMHM2X2OHYV:US:USD",
+          "productId": "OKMHM2X2OHYV",
+          "company": "Amazon.com",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/OKMHM2X2OHYV/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 99.9624,
+          "providerPopularity": 99.953
+        },
+        {
+          "id": "SRDHFATO9KHN:US:USD",
+          "productId": "SRDHFATO9KHN",
+          "company": "Target",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/SRDHFATO9KHN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 99.2793,
+          "providerPopularity": 99.0991
+        },
+        {
+          "id": "2XG0FLQXBDCZ:US:USD",
+          "productId": "2XG0FLQXBDCZ",
+          "company": "Starbucks US",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/2XG0FLQXBDCZ/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 99.2291,
+          "providerPopularity": 99.0364
+        },
+        {
+          "id": "DPIPLH0SRBO6:US:USD",
+          "productId": "DPIPLH0SRBO6",
+          "company": "Walmart",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/DPIPLH0SRBO6/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 99.179,
+          "providerPopularity": 98.9738
+        },
+        {
+          "id": "SUCNT639A6H9:US:USD",
+          "productId": "SUCNT639A6H9",
+          "company": "Google Play",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/SUCNT639A6H9/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 98.1198,
+          "providerPopularity": 97.6498
+        },
+        {
+          "id": "C9N9S97PA7QL:US:USD",
+          "productId": "C9N9S97PA7QL",
+          "company": "Best Buy USA",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/C9N9S97PA7QL/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 97.8065,
+          "providerPopularity": 97.2581
+        },
+        {
+          "id": "VKURYR906AG9:US:USD",
+          "productId": "VKURYR906AG9",
+          "company": "Barnes & Noble",
+          "category": "education_and_learning_platforms",
+          "imageUrl": "https://api.tremendous.com/product_images/VKURYR906AG9/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 97.3427,
+          "providerPopularity": 96.6784
+        },
+        {
+          "id": "7LTZASQ2T7T1:US:USD",
+          "productId": "7LTZASQ2T7T1",
+          "company": "Xbox",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/7LTZASQ2T7T1/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 96.3964,
+          "providerPopularity": 95.4955
+        },
+        {
+          "id": "VPPWHVR7JQ7W:US:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:US:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Canada",
+      "code": "CA",
+      "rewards": [
+        {
+          "id": "P6CG5IZOCVV7:CA:CAD",
+          "productId": "P6CG5IZOCVV7",
+          "company": "Amazon.ca",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/P6CG5IZOCVV7/card",
+          "value": 7.12,
+          "currency": "CAD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 99.4359,
+          "providerPopularity": 99.2949
+        },
+        {
+          "id": "RZSG610PUVU2:CA:CAD",
+          "productId": "RZSG610PUVU2",
+          "company": "Walmart CA",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/RZSG610PUVU2/card",
+          "value": 7.12,
+          "currency": "CAD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 93.4885,
+          "providerPopularity": 91.8606
+        },
+        {
+          "id": "VPPWHVR7JQ7W:CA:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "BENPVGDCD4DI:CA:CAD",
+          "productId": "BENPVGDCD4DI",
+          "company": "Starbucks CA",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/BENPVGDCD4DI/card",
+          "value": 7.12,
+          "currency": "CAD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 83.9874,
+          "providerPopularity": 79.9843
+        },
+        {
+          "id": "Z62EWVA7QHZP:CA:CAD",
+          "productId": "Z62EWVA7QHZP",
+          "company": "DoorDash CA",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/Z62EWVA7QHZP/card",
+          "value": 7.12,
+          "currency": "CAD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 82.8594,
+          "providerPopularity": 78.5742
+        },
+        {
+          "id": "6VJK3QFQ6E40:CA:CAD",
+          "productId": "6VJK3QFQ6E40",
+          "company": "Apple",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/6VJK3QFQ6E40/card",
+          "value": 7.12,
+          "currency": "CAD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 82.3204,
+          "providerPopularity": 77.9005
+        },
+        {
+          "id": "28JYJ7X11SRN:CA:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Brazil",
+      "code": "BR",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:BR:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:BR:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Mexico",
+      "code": "MX",
+      "rewards": [
+        {
+          "id": "XIYZ483Q0K88:MX:MXN",
+          "productId": "XIYZ483Q0K88",
+          "company": "Amazon.com.mx",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/XIYZ483Q0K88/card",
+          "value": 91.07,
+          "currency": "MXN",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 98.5084,
+          "providerPopularity": 98.1355
+        },
+        {
+          "id": "VPPWHVR7JQ7W:MX:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "0EHW1DFW6Q72:MX:MXN",
+          "productId": "0EHW1DFW6Q72",
+          "company": "Google Play MX",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/0EHW1DFW6Q72/card",
+          "value": 91.07,
+          "currency": "MXN",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 70.3753,
+          "providerPopularity": 62.9691
+        },
+        {
+          "id": "32DCA8WS9VIE:MX:MXN",
+          "productId": "32DCA8WS9VIE",
+          "company": "App Store & iTunes",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/32DCA8WS9VIE/card",
+          "value": 91.07,
+          "currency": "MXN",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 42.3658,
+          "providerPopularity": 52.9573
+        },
+        {
+          "id": "28JYJ7X11SRN:MX:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Argentina",
+      "code": "AR",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:AR:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "RFQWR1WOWE8A:AR:ARS",
+          "productId": "RFQWR1WOWE8A",
+          "company": "Frávega",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/RFQWR1WOWE8A/card",
+          "value": 7615.43,
+          "currency": "ARS",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 44.0454,
+          "providerPopularity": 55.0568
+        },
+        {
+          "id": "VB6TKR6X3M4C:AR:ARS",
+          "productId": "VB6TKR6X3M4C",
+          "company": "Todomoda",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/VB6TKR6X3M4C/card",
+          "value": 7615.43,
+          "currency": "ARS",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 42.253,
+          "providerPopularity": 52.8163
+        },
+        {
+          "id": "ANOBOKXJO0WV:AR:ARS",
+          "productId": "ANOBOKXJO0WV",
+          "company": "EQUUS",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/ANOBOKXJO0WV/card",
+          "value": 7615.43,
+          "currency": "ARS",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 40.1034,
+          "providerPopularity": 50.1293
+        },
+        {
+          "id": "28JYJ7X11SRN:AR:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        },
+        {
+          "id": "B961L8PPAAWZ:AR:ARS",
+          "productId": "B961L8PPAAWZ",
+          "company": "Frappé",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/B961L8PPAAWZ/card",
+          "value": 7615.43,
+          "currency": "ARS",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 38.217,
+          "providerPopularity": 47.7712
+        }
+      ]
+    },
+    {
+      "name": "Chile",
+      "code": "CL",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:CL:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:CL:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Uruguay",
+      "code": "UY",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:UY:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:UY:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Colombia",
+      "code": "CO",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:CO:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:CO:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "United Kingdom",
+      "code": "GB",
+      "rewards": [
+        {
+          "id": "O70KWIICH1ZU:GB:GBP",
+          "productId": "O70KWIICH1ZU",
+          "company": "adidas UK",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/O70KWIICH1ZU/card",
+          "value": 3.78,
+          "currency": "GBP",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 96.7286,
+          "providerPopularity": 95.9107
+        },
+        {
+          "id": "TV4B990V0XC5:GB:GBP",
+          "productId": "TV4B990V0XC5",
+          "company": "Google Play UK",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/TV4B990V0XC5/card",
+          "value": 3.78,
+          "currency": "GBP",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 92.9306,
+          "providerPopularity": 91.1633
+        },
+        {
+          "id": "1IH82VRBJ1U4:GB:GBP",
+          "productId": "1IH82VRBJ1U4",
+          "company": "Decathlon GB",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/1IH82VRBJ1U4/card",
+          "value": 3.78,
+          "currency": "GBP",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 90.5554,
+          "providerPopularity": 88.1943
+        },
+        {
+          "id": "VPPWHVR7JQ7W:GB:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "X9XJ4FK024PE:GB:GBP",
+          "productId": "X9XJ4FK024PE",
+          "company": "Apple",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/X9XJ4FK024PE/card",
+          "value": 3.78,
+          "currency": "GBP",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 83.2354,
+          "providerPopularity": 79.0443
+        },
+        {
+          "id": "7J6QL7FE049P:GB:GBP",
+          "productId": "7J6QL7FE049P",
+          "company": "IKEA UK",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/7J6QL7FE049P/card",
+          "value": 3.78,
+          "currency": "GBP",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 82.4896,
+          "providerPopularity": 78.112
+        },
+        {
+          "id": "3K6EIXS1IFQT:GB:GBP",
+          "productId": "3K6EIXS1IFQT",
+          "company": "National Book Tokens UK",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/3K6EIXS1IFQT/card",
+          "value": 3.78,
+          "currency": "GBP",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 76.0266,
+          "providerPopularity": 95.0333
+        },
+        {
+          "id": "28JYJ7X11SRN:GB:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Germany",
+      "code": "DE",
+      "rewards": [
+        {
+          "id": "G5P6YBTQUNPM:DE:EUR",
+          "productId": "G5P6YBTQUNPM",
+          "company": "adidas DE",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/G5P6YBTQUNPM/card",
+          "value": 4.44,
+          "currency": "EUR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 91.8715,
+          "providerPopularity": 89.8394
+        },
+        {
+          "id": "VPPWHVR7JQ7W:DE:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "R1RNYGVEV295:DE:EUR",
+          "productId": "R1RNYGVEV295",
+          "company": "Apple",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/R1RNYGVEV295/card",
+          "value": 4.44,
+          "currency": "EUR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 81.0482,
+          "providerPopularity": 76.3102
+        },
+        {
+          "id": "RZ2D717RGMK8:DE:EUR",
+          "productId": "RZ2D717RGMK8",
+          "company": "Google Play",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/RZ2D717RGMK8/card",
+          "value": 4.44,
+          "currency": "EUR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 79.168,
+          "providerPopularity": 73.96
+        },
+        {
+          "id": "CS9TYIDSM3QP:DE:EUR",
+          "productId": "CS9TYIDSM3QP",
+          "company": "TK Maxx DE",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/CS9TYIDSM3QP/card",
+          "value": 4.44,
+          "currency": "EUR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 60.7975,
+          "providerPopularity": 75.9969
+        },
+        {
+          "id": "N73BMG6WQN0I:DE:EUR",
+          "productId": "N73BMG6WQN0I",
+          "company": "Inspire Travel DE",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/N73BMG6WQN0I/card",
+          "value": 4.44,
+          "currency": "EUR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 55.7838,
+          "providerPopularity": 69.7297
+        },
+        {
+          "id": "28JYJ7X11SRN:DE:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "France",
+      "code": "FR",
+      "rewards": [
+        {
+          "id": "F4CVG2KJ7JGV:FR:EUR",
+          "productId": "F4CVG2KJ7JGV",
+          "company": "adidas FR",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/F4CVG2KJ7JGV/card",
+          "value": 4.44,
+          "currency": "EUR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 89.421,
+          "providerPopularity": 86.7763
+        },
+        {
+          "id": "VPPWHVR7JQ7W:FR:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "TTCR6ZZGA15N:FR:EUR",
+          "productId": "TTCR6ZZGA15N",
+          "company": "Apple",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/TTCR6ZZGA15N/card",
+          "value": 4.44,
+          "currency": "EUR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 76.8994,
+          "providerPopularity": 71.1242
+        },
+        {
+          "id": "8QDLW1XONFA6:FR:EUR",
+          "productId": "8QDLW1XONFA6",
+          "company": "Google Play",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/8QDLW1XONFA6/card",
+          "value": 4.44,
+          "currency": "EUR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 74.7497,
+          "providerPopularity": 68.4371
+        },
+        {
+          "id": "Y838G55FEJBG:FR:EUR",
+          "productId": "Y838G55FEJBG",
+          "company": "MATY FR",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/Y838G55FEJBG/card",
+          "value": 4.44,
+          "currency": "EUR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 56.5484,
+          "providerPopularity": 70.6855
+        },
+        {
+          "id": "KUOFUXSL6KZK:FR:EUR",
+          "productId": "KUOFUXSL6KZK",
+          "company": "Inspire Travel FR",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/KUOFUXSL6KZK/card",
+          "value": 4.44,
+          "currency": "EUR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 55.6585,
+          "providerPopularity": 69.5731
+        },
+        {
+          "id": "28JYJ7X11SRN:FR:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Netherlands",
+      "code": "NL",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:NL:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "CPY6YGZPZPU9:NL:EUR",
+          "productId": "CPY6YGZPZPU9",
+          "company": "adidas NL",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/CPY6YGZPZPU9/card",
+          "value": 4.44,
+          "currency": "EUR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 80.8664,
+          "providerPopularity": 76.083
+        },
+        {
+          "id": "V5M0VUMV3QHA:NL:EUR",
+          "productId": "V5M0VUMV3QHA",
+          "company": "Apple",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/V5M0VUMV3QHA/card",
+          "value": 4.44,
+          "currency": "EUR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 77.5073,
+          "providerPopularity": 71.8841
+        },
+        {
+          "id": "8Y5H7YM90OYO:NL:EUR",
+          "productId": "8Y5H7YM90OYO",
+          "company": "TK Maxx NL",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/8Y5H7YM90OYO/card",
+          "value": 4.44,
+          "currency": "EUR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 51.215,
+          "providerPopularity": 64.0188
+        },
+        {
+          "id": "28JYJ7X11SRN:NL:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        },
+        {
+          "id": "9R4WMEGN139T:NL:EUR",
+          "productId": "9R4WMEGN139T",
+          "company": "Inspire Travel NL",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/9R4WMEGN139T/card",
+          "value": 4.44,
+          "currency": "EUR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 25.9835,
+          "providerPopularity": 32.4794
+        },
+        {
+          "id": "7G5HS8FBX43W:NL:EUR",
+          "productId": "7G5HS8FBX43W",
+          "company": "Google Play",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/7G5HS8FBX43W/card",
+          "value": 4.44,
+          "currency": "EUR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 22.4442,
+          "providerPopularity": 3.0552
+        }
+      ]
+    },
+    {
+      "name": "Belgium",
+      "code": "BE",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:BE:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "TJBSCHFA2LNY:BE:EUR",
+          "productId": "TJBSCHFA2LNY",
+          "company": "adidas BE",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/TJBSCHFA2LNY/card",
+          "value": 4.44,
+          "currency": "EUR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 84.2695,
+          "providerPopularity": 80.3369
+        },
+        {
+          "id": "28JYJ7X11SRN:BE:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        },
+        {
+          "id": "6ZYQQK499ZZT:BE:EUR",
+          "productId": "6ZYQQK499ZZT",
+          "company": "Google Play",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/6ZYQQK499ZZT/card",
+          "value": 4.44,
+          "currency": "EUR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 22.4567,
+          "providerPopularity": 3.0709
+        }
+      ]
+    },
+    {
+      "name": "Poland",
+      "code": "PL",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:PL:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "U4GZX629X67L:PL:PLN",
+          "productId": "U4GZX629X67L",
+          "company": "TK Maxx PL",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/U4GZX629X67L/card",
+          "value": 19.45,
+          "currency": "PLN",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 61.913,
+          "providerPopularity": 77.3913
+        },
+        {
+          "id": "28JYJ7X11SRN:PL:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Czech Republic",
+      "code": "CZ",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:CZ:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:CZ:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Hungary",
+      "code": "HU",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:HU:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "IYJ29O4L1F57:HU:HUF",
+          "productId": "IYJ29O4L1F57",
+          "company": "H&M",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/IYJ29O4L1F57/card",
+          "value": 1637.34,
+          "currency": "HUF",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 75.6208,
+          "providerPopularity": 69.526
+        },
+        {
+          "id": "28JYJ7X11SRN:HU:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Romania",
+      "code": "RO",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:RO:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "KPNHQ6DARAR0:RO:RON",
+          "productId": "KPNHQ6DARAR0",
+          "company": "H&M Romania",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/KPNHQ6DARAR0/card",
+          "value": 23.7,
+          "currency": "RON",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 83.4422,
+          "providerPopularity": 79.3028
+        },
+        {
+          "id": "28JYJ7X11SRN:RO:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Slovenia",
+      "code": "SI",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:SI:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:SI:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Serbia",
+      "code": "RS",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:RS:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:RS:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Ukraine",
+      "code": "UA",
+      "rewards": []
+    },
+    {
+      "name": "Sweden",
+      "code": "SE",
+      "rewards": [
+        {
+          "id": "34ZQ8J36I1R7:SE:SEK",
+          "productId": "34ZQ8J36I1R7",
+          "company": "Amazon.se",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/34ZQ8J36I1R7/card",
+          "value": 50.21,
+          "currency": "SEK",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 98.5022,
+          "providerPopularity": 98.1277
+        },
+        {
+          "id": "VPPWHVR7JQ7W:SE:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "8RDOTNUI86DN:SE:SEK",
+          "productId": "8RDOTNUI86DN",
+          "company": "H&M Sweden",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/8RDOTNUI86DN/card",
+          "value": 50.21,
+          "currency": "SEK",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 84.7959,
+          "providerPopularity": 80.9949
+        },
+        {
+          "id": "43BRD4T4M8ED:SE:SEK",
+          "productId": "43BRD4T4M8ED",
+          "company": "adidas SE",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/43BRD4T4M8ED/card",
+          "value": 50.21,
+          "currency": "SEK",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 83.5174,
+          "providerPopularity": 79.3968
+        },
+        {
+          "id": "VFUB4XKKWQGW:SE:SEK",
+          "productId": "VFUB4XKKWQGW",
+          "company": "McDonalds SE",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/VFUB4XKKWQGW/card",
+          "value": 50.21,
+          "currency": "SEK",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 79.1242,
+          "providerPopularity": 73.9052
+        },
+        {
+          "id": "RT8E7IVUAOFT:SE:SEK",
+          "productId": "RT8E7IVUAOFT",
+          "company": "Apple App Store & iTunes Sweden",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/RT8E7IVUAOFT/card",
+          "value": 50.21,
+          "currency": "SEK",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 73.9851,
+          "providerPopularity": 67.4814
+        },
+        {
+          "id": "28JYJ7X11SRN:SE:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Norway",
+      "code": "NO",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:NO:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "ZWNQR6U9LYIR:NO:NOK",
+          "productId": "ZWNQR6U9LYIR",
+          "company": "adidas NO",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/ZWNQR6U9LYIR/card",
+          "value": 48.11,
+          "currency": "NOK",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 84.5327,
+          "providerPopularity": 80.6659
+        },
+        {
+          "id": "VKDR7HUVF8BB:NO:NOK",
+          "productId": "VKDR7HUVF8BB",
+          "company": "Apple",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/VKDR7HUVF8BB/card",
+          "value": 48.11,
+          "currency": "NOK",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 75.0318,
+          "providerPopularity": 68.7897
+        },
+        {
+          "id": "28JYJ7X11SRN:NO:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Denmark",
+      "code": "DK",
+      "rewards": [
+        {
+          "id": "1H6WRGWU8Z85:DK:DKK",
+          "productId": "1H6WRGWU8Z85",
+          "company": "adidas DK",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/1H6WRGWU8Z85/card",
+          "value": 33.24,
+          "currency": "DKK",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.7298,
+          "providerPopularity": 82.1622
+        },
+        {
+          "id": "VPPWHVR7JQ7W:DK:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "7EZ097P3RRL8:DK:DKK",
+          "productId": "7EZ097P3RRL8",
+          "company": "Apple",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/7EZ097P3RRL8/card",
+          "value": 33.24,
+          "currency": "DKK",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 66.1512,
+          "providerPopularity": 57.689
+        },
+        {
+          "id": "TNGRZQLVZSR1:DK:DKK",
+          "productId": "TNGRZQLVZSR1",
+          "company": "Circle K Denmark",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/TNGRZQLVZSR1/card",
+          "value": 33.24,
+          "currency": "DKK",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 54.7998,
+          "providerPopularity": 68.4998
+        },
+        {
+          "id": "28JYJ7X11SRN:DK:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Finland",
+      "code": "FI",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:FI:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "03QIRL43WRLM:FI:EUR",
+          "productId": "03QIRL43WRLM",
+          "company": "Apple Finland",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/03QIRL43WRLM/card",
+          "value": 4.44,
+          "currency": "EUR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 80.4654,
+          "providerPopularity": 75.5817
+        },
+        {
+          "id": "28JYJ7X11SRN:FI:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Turkey",
+      "code": "TR",
+      "rewards": [
+        {
+          "id": "LBVVBULC3CL8:TR:TRY",
+          "productId": "LBVVBULC3CL8",
+          "company": "Amazon.com.tr",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/LBVVBULC3CL8/card",
+          "value": 245.67,
+          "currency": "TRY",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 69.4916,
+          "providerPopularity": 61.8645
+        }
+      ]
+    },
+    {
+      "name": "Azerbaijan",
+      "code": "AZ",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:AZ:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:AZ:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Georgia",
+      "code": "GE",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:GE:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:GE:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Armenia",
+      "code": "AM",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:AM:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:AM:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Saudi Arabia",
+      "code": "SA",
+      "rewards": [
+        {
+          "id": "53KOSV8M1HZ4:SA:SAR",
+          "productId": "53KOSV8M1HZ4",
+          "company": "Amazon.sa",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/53KOSV8M1HZ4/card",
+          "value": 18.75,
+          "currency": "SAR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 92.6988,
+          "providerPopularity": 90.8735
+        },
+        {
+          "id": "VPPWHVR7JQ7W:SA:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "7GO3JYT3DZ3H:SA:SAR",
+          "productId": "7GO3JYT3DZ3H",
+          "company": "Noon",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/7GO3JYT3DZ3H/card",
+          "value": 18.75,
+          "currency": "SAR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 78.0775,
+          "providerPopularity": 72.5969
+        },
+        {
+          "id": "OXB91UJDGU0P:SA:SAR",
+          "productId": "OXB91UJDGU0P",
+          "company": "Lulu Hypermarket KSA",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/OXB91UJDGU0P/card",
+          "value": 18.75,
+          "currency": "SAR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 61.5245,
+          "providerPopularity": 76.9056
+        },
+        {
+          "id": "28JYJ7X11SRN:SA:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "United Arab Emirates",
+      "code": "AE",
+      "rewards": [
+        {
+          "id": "TXSJV1A3F6GX:AE:AED",
+          "productId": "TXSJV1A3F6GX",
+          "company": "Amazon.ae",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/TXSJV1A3F6GX/card",
+          "value": 18.36,
+          "currency": "AED",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 96.5782,
+          "providerPopularity": 95.7227
+        },
+        {
+          "id": "VPPWHVR7JQ7W:AE:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "B2WUH2P5P4WG:AE:AED",
+          "productId": "B2WUH2P5P4WG",
+          "company": "Noon eVoucher for UAE",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/B2WUH2P5P4WG/card",
+          "value": 18.36,
+          "currency": "AED",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 80.4466,
+          "providerPopularity": 75.5582
+        },
+        {
+          "id": "28JYJ7X11SRN:AE:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Israel",
+      "code": "IL",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:IL:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:IL:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Jordan",
+      "code": "JO",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:JO:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:JO:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Lebanon",
+      "code": "LB",
+      "rewards": []
+    },
+    {
+      "name": "Iraq",
+      "code": "IQ",
+      "rewards": []
+    },
+    {
+      "name": "Iran",
+      "code": "IR",
+      "rewards": []
+    },
+    {
+      "name": "Kazakhstan",
+      "code": "KZ",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:KZ:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:KZ:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Uzbekistan",
+      "code": "UZ",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:UZ:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:UZ:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Kyrgyzstan",
+      "code": "KG",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:KG:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        }
+      ]
+    },
+    {
+      "name": "India",
+      "code": "IN",
+      "rewards": [
+        {
+          "id": "D7B20WMF9JJS:IN:INR",
+          "productId": "D7B20WMF9JJS",
+          "company": "Amazon India Shopping Voucher",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/D7B20WMF9JJS/card",
+          "value": 481.86,
+          "currency": "INR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 98.8469,
+          "providerPopularity": 98.5586
+        },
+        {
+          "id": "TRI1BRZSKN7P:IN:INR",
+          "productId": "TRI1BRZSKN7P",
+          "company": "Flipkart",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/TRI1BRZSKN7P/card",
+          "value": 481.86,
+          "currency": "INR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 96.8915,
+          "providerPopularity": 96.1144
+        },
+        {
+          "id": "QUKRK3MYO24H:IN:INR",
+          "productId": "QUKRK3MYO24H",
+          "company": "Uber IN",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/QUKRK3MYO24H/card",
+          "value": 481.86,
+          "currency": "INR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 93.0058,
+          "providerPopularity": 91.2573
+        },
+        {
+          "id": "YN7MKB1ZHKBH:IN:INR",
+          "productId": "YN7MKB1ZHKBH",
+          "company": "Google Play IN",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/YN7MKB1ZHKBH/card",
+          "value": 481.86,
+          "currency": "INR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 89.6592,
+          "providerPopularity": 87.074
+        },
+        {
+          "id": "6YO41MLDMKQG:IN:INR",
+          "productId": "6YO41MLDMKQG",
+          "company": "Bigbasket",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/6YO41MLDMKQG/card",
+          "value": 481.86,
+          "currency": "INR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 87.5158,
+          "providerPopularity": 84.3948
+        }
+      ]
+    },
+    {
+      "name": "Pakistan",
+      "code": "PK",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:PK:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:PK:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Bangladesh",
+      "code": "BD",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:BD:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:BD:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Indonesia",
+      "code": "ID",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:ID:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "SFAGEAXB2RL3:ID:IDR",
+          "productId": "SFAGEAXB2RL3",
+          "company": "Zalora IDR",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/SFAGEAXB2RL3/card",
+          "value": 89415.23,
+          "currency": "IDR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 58.5726,
+          "providerPopularity": 73.2158
+        }
+      ]
+    },
+    {
+      "name": "Malaysia",
+      "code": "MY",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:MY:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "AZ4Q4ZP2SO9R:MY:MYR",
+          "productId": "AZ4Q4ZP2SO9R",
+          "company": "Zalora Malaysia gift voucher",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/AZ4Q4ZP2SO9R/card",
+          "value": 20.42,
+          "currency": "MYR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 67.2714,
+          "providerPopularity": 84.0893
+        },
+        {
+          "id": "C7FH5V53FX5C:MY:MYR",
+          "productId": "C7FH5V53FX5C",
+          "company": "Mydin MY",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/C7FH5V53FX5C/card",
+          "value": 20.42,
+          "currency": "MYR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 53.7156,
+          "providerPopularity": 67.1445
+        },
+        {
+          "id": "XRSFPAUBCXTO:MY:MYR",
+          "productId": "XRSFPAUBCXTO",
+          "company": "Foodpanda MY",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/XRSFPAUBCXTO/card",
+          "value": 20.42,
+          "currency": "MYR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 50.5069,
+          "providerPopularity": 63.1336
+        },
+        {
+          "id": "28JYJ7X11SRN:MY:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        },
+        {
+          "id": "8TD25M3QPK3I:MY:MYR",
+          "productId": "8TD25M3QPK3I",
+          "company": "Decathlon MY E-Gift Card - EGCGBDCTN002",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/8TD25M3QPK3I/card",
+          "value": 20.42,
+          "currency": "MYR",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 29.7767,
+          "providerPopularity": 12.2209
+        }
+      ]
+    },
+    {
+      "name": "Singapore",
+      "code": "SG",
+      "rewards": [
+        {
+          "id": "G8C0RDYYQZSM:SG:SGD",
+          "productId": "G8C0RDYYQZSM",
+          "company": "Amazon.sg",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/G8C0RDYYQZSM/card",
+          "value": 6.4,
+          "currency": "SGD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 93.6013,
+          "providerPopularity": 92.0016
+        },
+        {
+          "id": "VPPWHVR7JQ7W:SG:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "20VF7G0T6OKI:SG:SGD",
+          "productId": "20VF7G0T6OKI",
+          "company": "Lazada SG",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/20VF7G0T6OKI/card",
+          "value": 6.4,
+          "currency": "SGD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 79.074,
+          "providerPopularity": 73.8425
+        },
+        {
+          "id": "IQJ1ZC7OJ7PF:SG:SGD",
+          "productId": "IQJ1ZC7OJ7PF",
+          "company": "Marche Movenpick",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/IQJ1ZC7OJ7PF/card",
+          "value": 6.4,
+          "currency": "SGD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 64.1066,
+          "providerPopularity": 80.1332
+        },
+        {
+          "id": "B1KRQ6X6E6U5:SG:SGD",
+          "productId": "B1KRQ6X6E6U5",
+          "company": "Cold Storage SGD",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/B1KRQ6X6E6U5/card",
+          "value": 6.4,
+          "currency": "SGD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 59.2245,
+          "providerPopularity": 74.0306
+        },
+        {
+          "id": "28JYJ7X11SRN:SG:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Thailand",
+      "code": "TH",
+      "rewards": [
+        {
+          "id": "7YZFMMCN9JJ2:TH:THB",
+          "productId": "7YZFMMCN9JJ2",
+          "company": "Lazada TH",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/7YZFMMCN9JJ2/card",
+          "value": 167.78,
+          "currency": "THB",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 95.2495,
+          "providerPopularity": 94.0619
+        },
+        {
+          "id": "VPPWHVR7JQ7W:TH:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "A7B2Q53M0U22:TH:THB",
+          "productId": "A7B2Q53M0U22",
+          "company": "Decathlon Thailand",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/A7B2Q53M0U22/card",
+          "value": 167.78,
+          "currency": "THB",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 75.6459,
+          "providerPopularity": 69.5574
+        },
+        {
+          "id": "28JYJ7X11SRN:TH:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Vietnam",
+      "code": "VN",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:VN:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:VN:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        },
+        {
+          "id": "7UFGO4YDE1JU:VN:VND",
+          "productId": "7UFGO4YDE1JU",
+          "company": "Aligro",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/7UFGO4YDE1JU/card",
+          "value": 129770.0,
+          "currency": "VND",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 32.4324,
+          "providerPopularity": 40.5405
+        },
+        {
+          "id": "M5SQ5Z3MQDGT:VN:VND",
+          "productId": "M5SQ5Z3MQDGT",
+          "company": "Trip.com",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/M5SQ5Z3MQDGT/card",
+          "value": 129770.0,
+          "currency": "VND",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 1.454,
+          "providerPopularity": 1.8175
+        }
+      ]
+    },
+    {
+      "name": "Philippines",
+      "code": "PH",
+      "rewards": [
+        {
+          "id": "5BLERCMB5LRE:PH:PHP",
+          "productId": "5BLERCMB5LRE",
+          "company": "Nike PH",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/5BLERCMB5LRE/card",
+          "value": 313.04,
+          "currency": "PHP",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 92.6361,
+          "providerPopularity": 90.7951
+        },
+        {
+          "id": "VPPWHVR7JQ7W:PH:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "FGGH73W89FK9:PH:PHP",
+          "productId": "FGGH73W89FK9",
+          "company": "KFC",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/FGGH73W89FK9/card",
+          "value": 313.04,
+          "currency": "PHP",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 83.7994,
+          "providerPopularity": 79.7493
+        },
+        {
+          "id": "3USYJ8W9Z2AQ:PH:PHP",
+          "productId": "3USYJ8W9Z2AQ",
+          "company": "Jollibee PHP",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/3USYJ8W9Z2AQ/card",
+          "value": 313.04,
+          "currency": "PHP",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 77.9271,
+          "providerPopularity": 72.4089
+        },
+        {
+          "id": "40B1W4ZU3NAJ:PH:PHP",
+          "productId": "40B1W4ZU3NAJ",
+          "company": "Pancake House",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/40B1W4ZU3NAJ/card",
+          "value": 313.04,
+          "currency": "PHP",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 70.4802,
+          "providerPopularity": 88.1003
+        },
+        {
+          "id": "28JYJ7X11SRN:PH:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Japan",
+      "code": "JP",
+      "rewards": [
+        {
+          "id": "Z2EDFCZV0WDL:JP:JPY",
+          "productId": "Z2EDFCZV0WDL",
+          "company": "Amazon.jp",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/Z2EDFCZV0WDL/card",
+          "value": 789.0,
+          "currency": "JPY",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 99.5613,
+          "providerPopularity": 99.4516
+        },
+        {
+          "id": "VPPWHVR7JQ7W:JP:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "V1BD80PQNQAQ:JP:JPY",
+          "productId": "V1BD80PQNQAQ",
+          "company": "Uber Eats Japan",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/V1BD80PQNQAQ/card",
+          "value": 789.0,
+          "currency": "JPY",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 80.0454,
+          "providerPopularity": 75.0568
+        },
+        {
+          "id": "28JYJ7X11SRN:JP:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "South Korea",
+      "code": "KR",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:KR:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:KR:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Taiwan",
+      "code": "TW",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:TW:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:TW:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Hong Kong",
+      "code": "HK",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:HK:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:HK:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Australia",
+      "code": "AU",
+      "rewards": [
+        {
+          "id": "GR7PKQA4WH4L:AU:AUD",
+          "productId": "GR7PKQA4WH4L",
+          "company": "Amazon.com.au",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/GR7PKQA4WH4L/card",
+          "value": 7.19,
+          "currency": "AUD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 98.8469,
+          "providerPopularity": 98.5586
+        },
+        {
+          "id": "CJBJRS90EIMR:AU:AUD",
+          "productId": "CJBJRS90EIMR",
+          "company": "Apple AU",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/CJBJRS90EIMR/card",
+          "value": 7.19,
+          "currency": "AUD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 88.7066,
+          "providerPopularity": 85.8833
+        },
+        {
+          "id": "VPPWHVR7JQ7W:AU:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "1YQ9TQZK5Y8U:AU:AUD",
+          "productId": "1YQ9TQZK5Y8U",
+          "company": "Uber Eats Australia",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/1YQ9TQZK5Y8U/card",
+          "value": 7.19,
+          "currency": "AUD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 84.8273,
+          "providerPopularity": 81.0341
+        },
+        {
+          "id": "RG0AHV5JA7WV:AU:AUD",
+          "productId": "RG0AHV5JA7WV",
+          "company": "IKEA",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/RG0AHV5JA7WV/card",
+          "value": 7.19,
+          "currency": "AUD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 75.0254,
+          "providerPopularity": 68.7818
+        },
+        {
+          "id": "8AGW24FH3JZG:AU:AUD",
+          "productId": "8AGW24FH3JZG",
+          "company": "H&M",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/8AGW24FH3JZG/card",
+          "value": 7.19,
+          "currency": "AUD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 72.669,
+          "providerPopularity": 65.8363
+        },
+        {
+          "id": "1IJ7Y1M32JKS:AU:AUD",
+          "productId": "1IJ7Y1M32JKS",
+          "company": "Google Play Gift Code Australia",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/1IJ7Y1M32JKS/card",
+          "value": 7.19,
+          "currency": "AUD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 58.4677,
+          "providerPopularity": 48.0846
+        },
+        {
+          "id": "28JYJ7X11SRN:AU:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        },
+        {
+          "id": "4RJRUG3BD7XD:AU:AUD",
+          "productId": "4RJRUG3BD7XD",
+          "company": "Twitch Australia",
+          "category": "streaming_and_digital_services",
+          "imageUrl": "https://api.tremendous.com/product_images/4RJRUG3BD7XD/card",
+          "value": 7.19,
+          "currency": "AUD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 13.5871,
+          "providerPopularity": 16.9839
+        }
+      ]
+    },
+    {
+      "name": "New Zealand",
+      "code": "NZ",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:NZ:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "GFSBP7QCY43U:NZ:NZD",
+          "productId": "GFSBP7QCY43U",
+          "company": "Apple",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/GFSBP7QCY43U/card",
+          "value": 8.91,
+          "currency": "NZD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 65.067,
+          "providerPopularity": 56.3337
+        },
+        {
+          "id": "5U0PX733IZQD:NZ:NZD",
+          "productId": "5U0PX733IZQD",
+          "company": "JB Hi-Fi NZ",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/5U0PX733IZQD/card",
+          "value": 8.91,
+          "currency": "NZD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 64.7521,
+          "providerPopularity": 80.9401
+        },
+        {
+          "id": "EB0FJKXRVA1B:NZ:NZD",
+          "productId": "EB0FJKXRVA1B",
+          "company": "Kathmandu",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/EB0FJKXRVA1B/card",
+          "value": 8.91,
+          "currency": "NZD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 50.0118,
+          "providerPopularity": 62.5147
+        },
+        {
+          "id": "MTG8BZQMIX0E:NZ:NZD",
+          "productId": "MTG8BZQMIX0E",
+          "company": "Just Jeans",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/MTG8BZQMIX0E/card",
+          "value": 8.91,
+          "currency": "NZD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 43.0866,
+          "providerPopularity": 53.8582
+        },
+        {
+          "id": "28JYJ7X11SRN:NZ:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        },
+        {
+          "id": "OY1I7JO5G3GE:NZ:NZD",
+          "productId": "OY1I7JO5G3GE",
+          "company": "Just Jeans New Zealand",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/OY1I7JO5G3GE/card",
+          "value": 8.91,
+          "currency": "NZD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 36.6314,
+          "providerPopularity": 45.7893
+        }
+      ]
+    },
+    {
+      "name": "Egypt",
+      "code": "EG",
+      "rewards": [
+        {
+          "id": "UFZTA3HJ0ORF:EG:EGP",
+          "productId": "UFZTA3HJ0ORF",
+          "company": "Amazon.eg",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/UFZTA3HJ0ORF/card",
+          "value": 261.42,
+          "currency": "EGP",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 93.7141,
+          "providerPopularity": 92.1426
+        },
+        {
+          "id": "VPPWHVR7JQ7W:EG:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "K2Q9RZDS5PL1:EG:EGP",
+          "productId": "K2Q9RZDS5PL1",
+          "company": "Home Centre EGP",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/K2Q9RZDS5PL1/card",
+          "value": 261.42,
+          "currency": "EGP",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 46.4332,
+          "providerPopularity": 58.0415
+        },
+        {
+          "id": "QE6NM7K7CMXL:EG:EGP",
+          "productId": "QE6NM7K7CMXL",
+          "company": "Max EGP",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/QE6NM7K7CMXL/card",
+          "value": 261.42,
+          "currency": "EGP",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 41.8143,
+          "providerPopularity": 52.2679
+        },
+        {
+          "id": "28JYJ7X11SRN:EG:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Morocco",
+      "code": "MA",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:MA:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:MA:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Algeria",
+      "code": "DZ",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:DZ:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:DZ:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Nigeria",
+      "code": "NG",
+      "rewards": [
+        {
+          "id": "MY3CWS6ZWASY:NG:NGN",
+          "productId": "MY3CWS6ZWASY",
+          "company": "Prince Ebeano",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/MY3CWS6ZWASY/card",
+          "value": 6653.18,
+          "currency": "NGN",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 49.7674,
+          "providerPopularity": 62.2092
+        },
+        {
+          "id": "G7CLU8A0XU1B:NG:NGN",
+          "productId": "G7CLU8A0XU1B",
+          "company": "Justrite",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/G7CLU8A0XU1B/card",
+          "value": 6653.18,
+          "currency": "NGN",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 47.9248,
+          "providerPopularity": 59.906
+        },
+        {
+          "id": "CBXO4VMR04RE:NG:NGN",
+          "productId": "CBXO4VMR04RE",
+          "company": "Jendol Superstores",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/CBXO4VMR04RE/card",
+          "value": 6653.18,
+          "currency": "NGN",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 47.8057,
+          "providerPopularity": 59.7571
+        },
+        {
+          "id": "XYU5PKOQ1856:NG:NGN",
+          "productId": "XYU5PKOQ1856",
+          "company": "Market Square",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/XYU5PKOQ1856/card",
+          "value": 6653.18,
+          "currency": "NGN",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 46.2326,
+          "providerPopularity": 57.7908
+        },
+        {
+          "id": "U7TVI2LE8ODI:NG:NGN",
+          "productId": "U7TVI2LE8ODI",
+          "company": "Samsung Nigeria",
+          "category": "tech_and_software",
+          "imageUrl": "https://api.tremendous.com/product_images/U7TVI2LE8ODI/card",
+          "value": 6653.18,
+          "currency": "NGN",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 40.3039,
+          "providerPopularity": 50.3799
+        }
+      ]
+    },
+    {
+      "name": "Ghana",
+      "code": "GH",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:GH:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:GH:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Senegal",
+      "code": "SN",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:SN:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:SN:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Kenya",
+      "code": "KE",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:KE:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "U7RQKWAN2PCN:KE:KES",
+          "productId": "U7RQKWAN2PCN",
+          "company": "Suregifts Kenya",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/U7RQKWAN2PCN/card",
+          "value": 647.8,
+          "currency": "KES",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 49.5166,
+          "providerPopularity": 61.8958
+        },
+        {
+          "id": "IVQGTNZI06N9:KE:KES",
+          "productId": "IVQGTNZI06N9",
+          "company": "Beauty Click",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/IVQGTNZI06N9/card",
+          "value": 647.8,
+          "currency": "KES",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 37.2142,
+          "providerPopularity": 46.5178
+        },
+        {
+          "id": "D00D8IF52ELE:KE:KES",
+          "productId": "D00D8IF52ELE",
+          "company": "Cake City",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/D00D8IF52ELE/card",
+          "value": 647.8,
+          "currency": "KES",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 34.369,
+          "providerPopularity": 42.9612
+        },
+        {
+          "id": "WU1797DK96OY:KE:KES",
+          "productId": "WU1797DK96OY",
+          "company": "Wama Africa",
+          "category": "lifestyle_and_everyday_brands",
+          "imageUrl": "https://api.tremendous.com/product_images/WU1797DK96OY/card",
+          "value": 647.8,
+          "currency": "KES",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 9.8018,
+          "providerPopularity": 12.2523
+        }
+      ]
+    },
+    {
+      "name": "Tanzania",
+      "code": "TZ",
+      "rewards": [
+        {
+          "id": "VPPWHVR7JQ7W:TZ:USD",
+          "productId": "VPPWHVR7JQ7W",
+          "company": "Razer Gold USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/VPPWHVR7JQ7W/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 85.3036,
+          "providerPopularity": 81.6295
+        },
+        {
+          "id": "28JYJ7X11SRN:TZ:USD",
+          "productId": "28JYJ7X11SRN",
+          "company": "FreeFire USD",
+          "category": "gaming_companies",
+          "imageUrl": "https://api.tremendous.com/product_images/28JYJ7X11SRN/card",
+          "value": 5,
+          "currency": "USD",
+          "usdValue": 5,
+          "credits": 420,
+          "selectionScore": 39.2902,
+          "providerPopularity": 24.1128
+        }
+      ]
+    },
+    {
+      "name": "Ethiopia",
+      "code": "ET",
+      "rewards": []
+    }
+  ]
+}

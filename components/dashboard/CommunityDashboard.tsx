@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
 import CashWithdrawalPanel from "@/components/dashboard/CashWithdrawalPanel";
+import RewardsCatalog from "@/components/dashboard/RewardsCatalog";
+import type { MemberRewardCatalog } from "@/lib/member-reward-catalog";
 import ProfileAvatarPicker from "@/components/dashboard/ProfileAvatarPicker";
 import SurveyAttachmentShowcase from "@/components/dashboard/SurveyAttachmentShowcase";
 import SiteLogo from "@/components/SiteLogo";
@@ -60,15 +62,10 @@ import {
   buildAudienceForDistributionStage,
   normalizeSurveyDistributionStage
 } from "@/lib/survey-rollout";
-import {
-  REWARD_CATEGORIES,
-  REWARDS,
-  type RewardActivation,
-  type RewardCatalogItem
-} from "@/lib/reward-activations";
+import { type RewardActivation } from "@/lib/reward-activations";
 import { hasSurveyAttachments } from "@/lib/survey-attachments";
 import { WELCOME_SURVEY_CREDITS } from "@/lib/welcome-survey";
-import { REWARD_REDEMPTION_ENABLED, REWARD_AVAILABILITY_MESSAGE } from "@/lib/reward-availability";
+import { REWARD_AVAILABILITY_MESSAGE } from "@/lib/reward-availability";
 
 const navigationItems = [
   { icon: Home, label: "Dashboard", section: "dashboard" },
@@ -192,14 +189,6 @@ function getCompletionScoreLabel(completion: CommunityCompletion) {
   }
 
   return `${completion.score}/100`;
-}
-
-function buildRewardLogoFallbackDataUri(reward: RewardCatalogItem) {
-  const label = encodeURIComponent((reward.mark || reward.company.charAt(0) || "?").slice(0, 2));
-  const backgroundColor = reward.id === "withdraw-cash" ? "14532d" : "111827";
-  const textColor = "ffffff";
-
-  return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='112' height='112' viewBox='0 0 112 112'><rect width='112' height='112' rx='24' fill='%23${backgroundColor}'/><text x='56' y='64' text-anchor='middle' font-size='40' font-family='Arial, Helvetica, sans-serif' font-weight='700' fill='%23${textColor}'>${label}</text></svg>`;
 }
 
 function matchesSurveyToMember(survey: ClientSurvey, memberProfile: ReturnType<typeof buildMemberProfile>) {
@@ -414,10 +403,12 @@ function readLocalAvatarSettings(storageKey: string) {
 
 export default function CommunityDashboard({
   initialProfile,
-  adminHref
+  adminHref,
+  rewardCatalog
 }: {
   initialProfile: UserProfile;
   adminHref?: string | null;
+  rewardCatalog: MemberRewardCatalog;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -444,12 +435,9 @@ export default function CommunityDashboard({
   const [isLoadingTelegramStatus, setIsLoadingTelegramStatus] = useState(true);
   const [isStartingTelegramLink, setIsStartingTelegramLink] = useState(false);
   const [isDisconnectingTelegram, setIsDisconnectingTelegram] = useState(false);
-  const [isActivatingRewardId, setIsActivatingRewardId] = useState<string | null>(null);
   const [telegramMessage, setTelegramMessage] = useState("");
   const [telegramError, setTelegramError] = useState("");
   const [trustScoreOpen, setTrustScoreOpen] = useState(false);
-  const [activatedRewardId, setActivatedRewardId] = useState<string | null>(null);
-  const [rewardNotice, setRewardNotice] = useState<string | null>(null);
   const [rewardError, setRewardError] = useState<string | null>(null);
   const [rewardActivations, setRewardActivations] = useState<RewardActivation[]>([]);
   const [surveyNotice, setSurveyNotice] = useState<string | null>(null);
@@ -681,15 +669,6 @@ export default function CommunityDashboard({
   const creditsToday = completedSurveys
     .filter((completion) => new Date(completion.completedAt).toDateString() === new Date().toDateString())
     .reduce((sum, completion) => sum + completion.earnedCredits, 0);
-  const rewardsByCategory = useMemo(
-    () =>
-      (REWARD_REDEMPTION_ENABLED ? REWARD_CATEGORIES : []).map((category) => ({
-        ...category,
-        rewards: REWARDS.filter((reward) => reward.category === category.id)
-      })).filter((category) => category.rewards.length > 0),
-    []
-  );
-
   const recentNotifications = useMemo(() => {
     const items: Array<{
       id: string;
@@ -725,17 +704,6 @@ export default function CommunityDashboard({
       });
     }
 
-    if (rewardNotice) {
-      items.push({
-        id: "reward-notice",
-        title: rewardNotice,
-        time: "Moments ago",
-        icon: Gift,
-        iconBg: "bg-[#f4efff]",
-        iconColor: "text-[#7c3aed]"
-      });
-    }
-
     if (rewardError) {
       items.push({
         id: "reward-error",
@@ -759,7 +727,7 @@ export default function CommunityDashboard({
     }
 
     return items;
-  }, [availableSurveys, rewardError, rewardNotice, surveyNotice]);
+  }, [availableSurveys, rewardError, surveyNotice]);
 
   const displayName = `${savedSettings.firstName} ${savedSettings.lastName}`.trim() || "Community member";
   const displayFirstName = savedSettings.firstName.trim() || "Member";
@@ -1074,65 +1042,6 @@ export default function CommunityDashboard({
       setSettingsError(getSettingsErrorMessage(error));
     } finally {
       setIsSavingSettings(false);
-    }
-  }
-
-  async function handleActivateReward(reward: RewardCatalogItem) {
-    if (!REWARD_REDEMPTION_ENABLED) {
-      setRewardError(REWARD_AVAILABILITY_MESSAGE);
-      return;
-    }
-    setRewardError(null);
-    setRewardNotice(null);
-
-    if (totalCredits < reward.credits) {
-      setActivatedRewardId(null);
-      setRewardError(`Your credit is not enough for ${reward.company}.`);
-      return;
-    }
-
-    try {
-      setIsActivatingRewardId(reward.id);
-
-      const response = await fetch("/api/rewards/activations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          rewardId: reward.id,
-          idempotencyKey: (() => {
-            const key = `mergen-reward-request:${profileSnapshot.id}:${reward.id}`;
-            const id = window.localStorage.getItem(key) ?? crypto.randomUUID();
-            window.localStorage.setItem(key, id);
-            return id;
-          })()
-        })
-      });
-      const data = (await response.json().catch(() => ({}))) as {
-        activation?: RewardActivation;
-        message?: string;
-        error?: string;
-      };
-
-      if (!response.ok || !data.activation) {
-        throw new Error(data.error ?? "Could not activate reward.");
-      }
-
-      window.localStorage.removeItem(`mergen-reward-request:${profileSnapshot.id}:${reward.id}`);
-      setRewardActivations((currentActivations) => [data.activation as RewardActivation, ...currentActivations.filter(item => item.id !== data.activation?.id)]);
-      setActivatedRewardId(reward.id);
-      setRewardNotice(
-        data.message ??
-          (reward.id === "withdraw-cash"
-            ? `Cash withdrawal request has been sent to ${savedSettings.email}.`
-            : `${reward.company} reward has been sent to ${savedSettings.email}.`)
-      );
-    } catch (error) {
-      setActivatedRewardId(null);
-      setRewardError(error instanceof Error ? error.message : "Could not activate reward.");
-    } finally {
-      setIsActivatingRewardId(null);
     }
   }
 
@@ -2016,7 +1925,7 @@ export default function CommunityDashboard({
                   <p className="mt-3 text-[15px] uppercase tracking-[0.18em] text-[#64748b]">Rewards coming soon</p>
                   <p className="mt-4 rounded-2xl border border-purple-200 bg-purple-50 p-5 text-base leading-7 text-purple-950">{REWARD_AVAILABILITY_MESSAGE}</p>
                   <p className="mt-3 text-sm leading-6 text-[#64748b]">
-                    Reward options will be matched to your country{profileSnapshot.country ? ` (${profileSnapshot.country})` : ""}. We will show a brand only after its local availability and credit price are confirmed.
+                    Browse selected gift rewards for your country{profileSnapshot.country ? ` (${profileSnapshot.country})` : ""} by category or search. Gift values are $5 USD, with prices starting at 420 credits.
                   </p>
                 </div>
 
@@ -2056,74 +1965,7 @@ export default function CommunityDashboard({
                   />
                 ) : null}
 
-                {rewardNotice ? (
-                  <AutoDismissNotice
-                    title="Reward activated"
-                    message={rewardNotice}
-                    tone="success"
-                    onDismiss={() => setRewardNotice(null)}
-                  />
-                ) : null}
-
-                <div className="space-y-8">
-                  {rewardsByCategory.map((category) => (
-                    <div key={category.id} className="space-y-4">
-                      <div className="flex flex-wrap items-end justify-between gap-3">
-                        <div>
-                          <h2 className="text-[22px] font-bold tracking-[-0.03em] text-[#1f2937]">{category.label}</h2>
-                          <p className="mt-1 text-sm text-[#8a94a6]">
-                            {category.rewards.length} reward{category.rewards.length === 1 ? "" : "s"} available in this category
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-                        {category.rewards.map((reward) => (
-                          <div
-                            key={reward.id}
-                            className="rounded-[24px] border border-gray-200 bg-white p-6 shadow-[0_18px_44px_rgba(15,23,42,0.04)]"
-                          >
-                            <div
-                              className={`flex h-16 w-16 items-center justify-center rounded-[22px] border border-gray-200 p-3 shadow-sm ${
-                                reward.logoBackgroundClassName ?? "bg-white"
-                              }`}
-                            >
-                              {reward.logoSrc ? (
-                                <ImageWithFallback
-                                  src={reward.logoSrc}
-                                  fallbackSrc={buildRewardLogoFallbackDataUri(reward)}
-                                  alt={reward.logoAlt ?? `${reward.company} logo`}
-                                  className="h-full w-full object-contain"
-                                  loading="lazy"
-                                  referrerPolicy="no-referrer"
-                                />
-                              ) : (
-                                <span className="text-xl font-bold text-white">{reward.mark ?? reward.company.charAt(0)}</span>
-                              )}
-                            </div>
-                            <h3 className="mt-5 text-[22px] font-bold tracking-[-0.03em] text-[#1f2937]">{reward.company}</h3>
-                            <p className="mt-2 min-h-[48px] text-[15px] text-[#8a94a6]">{reward.subtitle}</p>
-                            <p className="mt-5 text-sm font-medium text-[#8a94a6]">Required credits</p>
-                            <p className="mt-1 text-[28px] font-bold text-[#4f2a78]">{reward.credits}</p>
-
-                            <button
-                              type="button"
-                              onClick={() => handleActivateReward(reward)}
-                              disabled={isActivatingRewardId === reward.id}
-                              className="mt-6 w-full rounded-full bg-[linear-gradient(135deg,#6d3fd1_0%,#8b5cf6_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_35px_rgba(124,58,237,0.22)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              {isActivatingRewardId === reward.id
-                                ? "Activating..."
-                                : activatedRewardId === reward.id
-                                  ? "Activated"
-                                  : "Activate Reward"}
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <RewardsCatalog catalog={rewardCatalog} />
               </section>
             ) : (
               <section className="max-w-5xl space-y-8">

@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Complete your bank details and required verification before withdrawing." }, { status: 409 });
     }
     if (recipient.primaryCurrency === "USD" && Number(recipient.routeMinimum) > withdrawalAmount(body.credits) / 100) {
-      return NextResponse.json({ error: "This bank route requires a larger withdrawal amount." }, { status: 409 });
+      return NextResponse.json({ error: "This bank route does not support a $10 withdrawal. Choose another bank route." }, { status: 409 });
     }
     const { data, error } = await admin.rpc("reserve_cash_withdrawal", { p_member: auth.profile.id,
       p_request: body.idempotencyKey, p_credits: body.credits, p_recipient: recipient.id });

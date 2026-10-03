@@ -14,7 +14,6 @@ export default function CashWithdrawalPanel({ memberId, availableCredits, onBala
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [units, setUnits] = useState(1);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [widgetUrl, setWidgetUrl] = useState("");
   const [notice, setNotice] = useState("");
@@ -80,13 +79,11 @@ export default function CashWithdrawalPanel({ memberId, availableCredits, onBala
     finally { locked.current = false; setBusy(false); }
   }
   const pending = withdrawals.some(row => !terminal.has(row.status));
-  const maxUnits = Math.min(1000, Math.max(1, Math.floor(availableCredits / 920)));
-  const selectedUnits = Math.min(units, maxUnits);
-  const credits = selectedUnits * 920;
+  const credits = 920;
   return (
     <div className="rounded-3xl border border-purple-200 bg-white p-6">
       <h2 className="text-xl font-bold text-slate-900">Cash withdrawal</h2>
-      <p className="mt-2 text-sm text-slate-600">920 credits = $10 USD. Minimum: 920 credits. Withdraw in multiples of 920 credits.</p>
+      <p className="mt-2 text-sm text-slate-600">Each cash withdrawal is fixed at 920 credits for $10 USD.</p>
       <p className="mt-2 text-sm text-slate-600">Complete your bank details and any required verification with Trolley. Local currency conversion, required withholding, and receiving-bank charges may affect the final amount.</p>
       {loading ? <p className="mt-4 text-sm">Loading withdrawals…</p> : !enabled ? (
         <p className="mt-4 rounded-xl bg-purple-50 p-4 text-sm text-purple-900">Cash withdrawals are coming soon for your country. Your earned credits remain in your account.</p>
@@ -98,13 +95,7 @@ export default function CashWithdrawalPanel({ memberId, availableCredits, onBala
             <button type="button" onClick={() => setWidgetUrl("")} className="mt-2 text-sm underline">Close bank setup</button>
           </div> : null}
           <div className="flex flex-wrap items-end gap-3">
-            <label htmlFor="cash-withdrawal-units" className="text-sm text-slate-700">Withdrawal amount
-              <select id="cash-withdrawal-units" value={selectedUnits} disabled={busy || pending || retryCredits !== null} onChange={event => setUnits(Number(event.target.value))} className="mt-1 block rounded-xl border px-3 py-2">
-                {Array.from({ length: maxUnits }, (_, index) => index + 1).map(value => (
-                  <option key={value} value={value}>{value * 920} credits — ${value * 10} USD</option>
-                ))}
-              </select>
-            </label>
+            <p className="text-sm font-medium text-slate-700">920 credits — $10 USD</p>
             <button type="button" disabled={busy || pending || (retryCredits === null && availableCredits < credits)} onClick={() => act("withdraw")} className="rounded-xl bg-purple-700 px-4 py-2 font-semibold text-white disabled:opacity-50">{busy ? "Please wait…" : retryCredits !== null && !pending ? `Retry original $${retryCredits / 920 * 10} request` : "Request withdrawal"}</button>
           </div>
           {pending ? <p className="text-sm text-slate-600">A withdrawal is in progress. Its credits are reserved while it is processed or reviewed.</p> : null}

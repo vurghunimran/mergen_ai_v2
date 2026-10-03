@@ -25,8 +25,7 @@ const withEnv = async (fn) => {
 };
 test('approved cash rate, invalid amounts, and sandbox cannot enable live member withdrawals', () => withEnv(async () => {
   assert.equal(trolley.withdrawalAmount(920), 1000);
-  assert.equal(trolley.withdrawalAmount(1840), 2000);
-  for (const credits of [0, -920, '920', 921, 920.1, Infinity, 920920]) assert.throws(() => trolley.withdrawalAmount(credits));
+  for (const credits of [0, 420, -920, '920', 921, 920.1, 1840, Infinity, 920920]) assert.throws(() => trolley.withdrawalAmount(credits));
   process.env.TROLLEY_WITHDRAWALS_ENABLED = 'true';
   process.env.TROLLEY_SANDBOX_ACCESS_KEY = 'sandbox-key'; process.env.TROLLEY_SANDBOX_SECRET_KEY = 'sandbox-secret';
   assert.equal(trolley.cashWithdrawalsEnabled(), false);
@@ -76,6 +75,26 @@ test('disabled withdrawals and onboarding fail before database/provider calls', 
   assert.equal((await withdrawals.POST(new Request('https://example.invalid/api/withdrawals', { method: 'POST' }))).status, 503);
   assert.equal((await onboarding.POST(new Request('https://example.invalid/api/withdrawals/onboarding', { method: 'POST' }))).status, 503);
   assert.equal(requests, 0);
+}));
+test('enabled withdrawal API rejects values other than 920 before database or provider access', () => withEnv(async () => {
+  Object.assign(process.env, { TROLLEY_MODE: 'live', TROLLEY_WITHDRAWALS_ENABLED: 'true',
+    TROLLEY_LIVE_ACCESS_KEY: 'key', TROLLEY_LIVE_SECRET_KEY: 'secret',
+    TROLLEY_LIVE_WEBHOOK_SECRET: 'webhook', TROLLEY_ALLOWED_COUNTRIES: 'AZ' });
+  let calls = 0;
+  mocks.set('@/lib/survey-authorization', { requireAuthorizedProfile: async () => ({ profile: { id: 'member', country: 'Azerbaijan' }, response: null }) });
+  mocks.set('@/lib/supabase/admin', { createAdminClient: () => { calls++; throw Error('unexpected database request'); } });
+  global.fetch = async () => { calls++; throw Error('unexpected provider request'); };
+  delete require.cache[require.resolve('../app/api/withdrawals/route.ts')];
+  const withdrawals = require('../app/api/withdrawals/route.ts');
+  for (const credits of [420, 919, 921, 1840]) {
+    const response = await withdrawals.POST(new Request('https://example.invalid/api/withdrawals', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credits, idempotencyKey: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' })
+    }));
+    assert.equal(response.status, 400);
+    assert.match((await response.json()).error, /exactly 920 credits/);
+  }
+  assert.equal(calls, 0);
 }));
 test('webhook handles signed validation and rejects forgery without accessing database', () => withEnv(async () => {
   process.env.TROLLEY_LIVE_WEBHOOK_SECRET = 'secret';

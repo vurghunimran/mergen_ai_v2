@@ -3,6 +3,7 @@ import CommunityDashboard from "@/components/dashboard/CommunityDashboard";
 import { getAdminDashboardPath, isAdminIdentity } from "@/lib/admin-access";
 import { getDashboardPathForRole, requireAuthenticatedProfile } from "@/lib/supabase/profile-server";
 import { isAuthorizedDashboardRequest } from "@/lib/survey-authorization";
+import { getMemberRewardCatalog } from "@/lib/member-reward-catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -20,5 +21,5 @@ export default async function CommunityDashboardPage({ params }: PageProps) {
     redirect(`${getDashboardPathForRole("community", profile.id)}?error=access-denied`);
   }
 
-  return <CommunityDashboard initialProfile={profile} adminHref={adminHref} />;
+  return <CommunityDashboard initialProfile={profile} adminHref={adminHref} rewardCatalog={getMemberRewardCatalog(profile.country)} />;
 }

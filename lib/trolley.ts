@@ -36,11 +36,10 @@ export function trolleyCountryEnabled(code: string) {
   return (process.env.TROLLEY_ALLOWED_COUNTRIES ?? "").split(",").map(x => x.trim().toUpperCase()).includes(code);
 }
 export function withdrawalAmount(credits: unknown) {
-  if (typeof credits !== "number" || !Number.isSafeInteger(credits) || credits < CASH_WITHDRAWAL_CREDITS ||
-      credits > 920_000 || credits % CASH_WITHDRAWAL_CREDITS !== 0) {
-    throw new Error("Choose a multiple of 920 credits, up to 920,000 credits.");
+  if (credits !== CASH_WITHDRAWAL_CREDITS) {
+    throw new Error("Each cash withdrawal is exactly 920 credits for $10 USD.");
   }
-  return credits / CASH_WITHDRAWAL_CREDITS * CASH_WITHDRAWAL_CENTS;
+  return CASH_WITHDRAWAL_CENTS;
 }
 export async function trolleyRequest<T>(method: "GET" | "POST" | "DELETE", path: string, value?: unknown, mode = trolleyMode()): Promise<T> {
   const { key, secret } = credentials(mode);
