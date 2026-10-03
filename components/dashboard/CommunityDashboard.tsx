@@ -1924,7 +1924,7 @@ export default function CommunityDashboard({
                     <h1 className={sectionTitleClassName}>Rewards</h1>
                     <span className="rounded-full bg-[#f0e9fa] px-3 py-1 text-xs font-semibold text-[#6d3fd1]">Gift cards coming soon</span>
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-[#64748b]">Your research contributions add up. Explore rewards and keep building your balance.</p>
+                  <p className="mt-2 text-sm leading-6 text-[#64748b]">View your credits and browse rewards.</p>
                 </div>
 
                 <RewardsOverview
@@ -1932,7 +1932,6 @@ export default function CommunityDashboard({
                   earnedCredits={totalEarnedCredits}
                   redeemedCredits={redeemedCredits}
                   trustScoreLabel={trustScoreDisplay}
-                  giftCreditGoal={rewardCatalog.rewards.length ? Math.min(...rewardCatalog.rewards.map(reward => reward.credits)) : null}
                   onFindSurveys={() => setActiveSection("dashboard")}
                 />
 
