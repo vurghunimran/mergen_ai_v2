@@ -235,6 +235,10 @@ New student and institution/business survey prices use a shared integer-cent for
 
 ## Reward rollout
 
-Community members earn credits, but reward redemption and cash withdrawals are disabled until the partner contract and fulfillment setup are ready. The dashboard hides the illustrative catalog and the server rejects redemption without debiting credits. `lib/reward-availability.ts` controls the release gate; enable it only with a confirmed catalog, terms, support process, and verified fulfillment. Historical credits and activations remain intact.
+Community members earn credits, but gift reward redemption is disabled until the partner contract and fulfillment setup are ready. The dashboard hides the illustrative gift catalog and the server rejects gift redemption without debiting credits. `lib/reward-availability.ts` controls the gift release gate; enable it only with a confirmed catalog, terms, support process, and verified fulfillment. Cash withdrawals have a separate Trolley release gate described below. Historical credits and activations remain intact.
 
 `POLAR_WEBHOOK_SECRET` is the preferred signing-secret variable; `POLAR_WEBHOOK` is accepted for compatibility with the existing Vercel configuration. Configure the dedicated admin using `ADMIN_EMAIL` or immutable `ADMIN_USER_IDS`; an email-based admin must confirm the account email. The staged invitation route needs an authenticated external scheduler, including the five-hour second stage; `vercel.json` does not configure one.
+
+## Cash withdrawals
+
+Community cash payouts use Trolley at 920 credits = $10 USD, with a 920-credit minimum. The member panel, owner payout review, database reservation ledger, and signed webhook are implemented. Live withdrawals require provider approval, server credentials, funding, and reviewed destination routes. See [Trolley setup and operations](docs/trolley-withdrawals.md).

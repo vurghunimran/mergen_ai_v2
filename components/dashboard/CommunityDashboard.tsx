@@ -27,6 +27,7 @@ import {
   X
 } from "lucide-react";
 import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
+import CashWithdrawalPanel from "@/components/dashboard/CashWithdrawalPanel";
 import ProfileAvatarPicker from "@/components/dashboard/ProfileAvatarPicker";
 import SurveyAttachmentShowcase from "@/components/dashboard/SurveyAttachmentShowcase";
 import SiteLogo from "@/components/SiteLogo";
@@ -2038,6 +2039,13 @@ export default function CommunityDashboard({
                     </p>
                   </div>
                 </div>
+
+                <CashWithdrawalPanel memberId={profileSnapshot.id} availableCredits={totalCredits} onBalanceChange={async () => {
+                  const response = await fetch("/api/rewards/activations", { cache: "no-store" });
+                  const data = await response.json();
+                  if (!response.ok) throw new Error("Could not refresh your credit balance.");
+                  setRewardActivations(data.activations);
+                }} />
 
                 {rewardError ? (
                   <AutoDismissNotice

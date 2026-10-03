@@ -218,6 +218,7 @@ export default function PrivacyPage() {
                   "Survey and research information such as survey prompts, audience filters, response content, trust scoring inputs, and generated reports.",
                   "Support and communications data submitted through contact forms, emails, onboarding flows, and customer support interactions.",
                   "Payment-related context required to complete purchases. MERGEN does not store full card details directly; checkout and payment handling are processed by Polar.",
+                  "Cash withdrawal records, including reserved credits, payout amounts, provider references, and status. Trolley collects bank, identity, and tax details through its embedded onboarding form; MERGEN stores payout references rather than full bank account details.",
                   "Automatically collected information such as IP address, browser and device characteristics, operating system, usage activity, log files, and cookie-related preferences."
                 ]}
               />
@@ -271,6 +272,7 @@ export default function PrivacyPage() {
                   "Supabase for authentication, database hosting, and secure application infrastructure.",
                   "Google Gemini and related Google-hosted AI services to support AI product features described in this notice.",
                   "Polar for secure payment processing and checkout flows.",
+                  "Trolley for cash withdrawals, recipient onboarding, bank transfers, and required identity or tax verification. Your account email and member reference are shared to connect your payout profile.",
                   "Resend for transactional and operational email delivery.",
                   "Professional advisers, regulators, law enforcement, or counterparties in a merger, financing, sale, or business transfer where legally appropriate."
                 ]}

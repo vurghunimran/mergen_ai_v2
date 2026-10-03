@@ -99,6 +99,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid reward request." }, { status: 400 });
   }
   try {
+    if (body.rewardId === "withdraw-cash") {
+      return NextResponse.json({ error: "Use the cash withdrawal panel to request a bank payout." }, { status: 400 });
+    }
     const { data, error } = await createAdminClient().rpc("redeem_reward", {
       p_member: authorized.profile.id, p_reward: body.rewardId, p_request: body.idempotencyKey
     });

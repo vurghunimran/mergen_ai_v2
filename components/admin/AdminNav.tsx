@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, Gift, Users } from "lucide-react";
+import { ClipboardList, Gift, Users, Wallet } from "lucide-react";
 
 const navItems = [
   {
@@ -16,6 +16,12 @@ const navItems = [
     label: "Community stats",
     description: "Rewards, members, and demographic signals",
     icon: Users
+  },
+  {
+    href: "/withdrawals",
+    label: "Cash withdrawals",
+    description: "Review Trolley payouts and returns",
+    icon: Wallet
   },
   {
     href: "/rewards",
