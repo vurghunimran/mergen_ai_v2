@@ -242,3 +242,12 @@ Community members earn credits, but gift reward redemption is disabled until the
 ## Cash withdrawals
 
 Community cash payouts use Trolley at 920 credits = $10 USD, with a 920-credit minimum. The member panel, owner payout review, database reservation ledger, and signed webhook are implemented. Live withdrawals require provider approval, server credentials, funding, and reviewed destination routes. See [Trolley setup and operations](docs/trolley-withdrawals.md).
+
+
+### Production provider access
+
+Production uses `POLAR_SERVER=production`, `TROLLEY_MODE=live`, and `TREMENDOUS_MODE=production`. Tremendous reads the real catalog from `https://api.tremendous.com/api/v2` using a server-only `TREMENDOUS_API_KEY` beginning with `PROD_`. A sandbox key is never used as a production fallback. The owner catalog and JSON endpoint identify the selected environment.
+
+The owner-only `/dashboard/admin/integrations` page and `/api/admin/integrations` endpoint read current provider configuration with deployed credentials. Checks expose no credential values, create no financial transactions, and send no messages. Access verification is distinct from testing checkout/refund, bank receipt, AI generation quota, or email delivery.
+
+Gift redemption stays disabled at the owner's request until products and pricing are chosen. The existing illustrative catalog must not be enabled: member order fulfillment, reconciliation, and delivery handling still need implementation. Cash retains the approved 920-credit/$10 minimum and separate release gate. See `docs/production-integrations.md` for the current account and release requirements.

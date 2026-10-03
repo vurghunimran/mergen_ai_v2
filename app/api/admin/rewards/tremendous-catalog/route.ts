@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { isAdminIdentity } from "@/lib/admin-access";
 import { communityRewardCountries } from "@/lib/community-reward-countries";
 import { getCurrentUserProfile } from "@/lib/supabase/profile-server";
-import { isTremendousSandboxConfigured, listTremendousSandboxProducts } from "@/lib/tremendous-sandbox";
+import { isTremendousConfigured, listTremendousProducts, tremendousMode } from "@/lib/tremendous";
 
 export const dynamic = "force-dynamic";
 
@@ -15,17 +15,17 @@ export async function GET(request: Request) {
 
   const country = new URL(request.url).searchParams.get("country")?.toUpperCase() ?? "";
   if (!previewCountries.has(country)) return NextResponse.json({ error: "Choose a supported community country." }, { status: 400 });
-  if (!isTremendousSandboxConfigured()) {
-    return NextResponse.json({ country, products: [], setupRequired: true });
+  if (!isTremendousConfigured()) {
+    return NextResponse.json({ mode: tremendousMode(), country, products: [], setupRequired: true }, { headers: { "Cache-Control": "no-store" } });
   }
 
   try {
-    const products = (await listTremendousSandboxProducts(country)).filter(
+    const products = (await listTremendousProducts(country)).filter(
       (product) => product.countries.includes(country)
     );
-    return NextResponse.json({ country, products, setupRequired: false });
+    return NextResponse.json({ mode: tremendousMode(), country, products, setupRequired: false }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    console.error("Tremendous sandbox catalog request failed.", error);
-    return NextResponse.json({ error: "Could not load the Tremendous sandbox catalog." }, { status: 502 });
+    console.error("Tremendous catalog request failed.", error);
+    return NextResponse.json({ error: "Could not load the Tremendous catalog." }, { status: 502, headers: { "Cache-Control": "no-store" } });
   }
 }

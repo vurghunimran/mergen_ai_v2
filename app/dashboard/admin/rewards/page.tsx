@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { requireAdminProfile } from "@/lib/admin-access";
 import { communityRewardCountries } from "@/lib/community-reward-countries";
-import { isTremendousSandboxConfigured, listTremendousSandboxProducts, type TremendousSandboxProduct } from "@/lib/tremendous-sandbox";
+import { isTremendousConfigured, listTremendousProducts, tremendousMode, type TremendousProduct } from "@/lib/tremendous";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ const productGroups = [
   { label: "Donations", categories: new Set<string>(["charity"]) }
 ] as const;
 
-function ProductList({ products }: { products: TremendousSandboxProduct[] }) {
+function ProductList({ products }: { products: TremendousProduct[] }) {
   if (products.length === 0) return <p className="mt-3 text-sm text-slate-500">None listed for this country.</p>;
   return (
     <>
@@ -39,18 +40,20 @@ export default async function AdminRewardCatalogPage({
 }: {
   searchParams?: Promise<{ country?: string }>;
 }) {
+  await requireAdminProfile();
   const requestedCode = (await searchParams)?.country?.toUpperCase() ?? "AZ";
   const country = communityRewardCountries.find((entry) => entry.code === requestedCode) ?? communityRewardCountries.find((entry) => entry.code === "AZ")!;
-  const configured = isTremendousSandboxConfigured();
+  const mode = tremendousMode();
+  const configured = isTremendousConfigured();
   const result = configured
-    ? await listTremendousSandboxProducts(country.code).then((products) => ({ products, error: false })).catch(() => ({ products: [] as TremendousSandboxProduct[], error: true }))
-    : { products: [] as TremendousSandboxProduct[], error: false };
+    ? await listTremendousProducts(country.code).then((products) => ({ products, error: false })).catch(() => ({ products: [] as TremendousProduct[], error: true }))
+    : { products: [] as TremendousProduct[], error: false };
   const products = result.products.filter((product) => product.countries.includes(country.code));
 
   return (
     <section className="space-y-6 rounded-[32px] border border-white/70 bg-white/80 p-6 shadow-[0_24px_65px_rgba(15,23,42,0.06)] sm:p-8">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#4153c4]">Tremendous sandbox</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#4153c4]">Tremendous {mode}</p>
         <h2 className="mt-2 text-2xl font-bold tracking-[-0.03em] text-slate-900">Country reward menu</h2>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
           Review provider products for each of MERGEN’s {communityRewardCountries.length} community countries. Catalog presence is only a candidate: confirm access, denomination, fees, and recipient experience before offering a reward to members.
@@ -68,10 +71,10 @@ export default async function AdminRewardCatalogPage({
 
       {!configured ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950">
-          Add a server-only <code>TREMENDOUS_SANDBOX_API_KEY</code> beginning with <code>TEST_</code> to load live sandbox candidates. Member redemption remains closed.
+          Add a server-only <code>{mode === "production" ? "TREMENDOUS_API_KEY" : "TREMENDOUS_SANDBOX_API_KEY"}</code> beginning with <code>{mode === "production" ? "PROD_" : "TEST_"}</code> to load the {mode} catalog. Member redemption remains closed.
         </div>
       ) : result.error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">The sandbox catalog could not be loaded. Check the key and provider connection.</div>
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">The {mode} catalog could not be loaded. Check the key and provider connection.</div>
       ) : null}
 
       {configured && !result.error ? (
@@ -86,7 +89,7 @@ export default async function AdminRewardCatalogPage({
         </div>
       ) : null}
 
-      <p className="text-sm text-slate-600">Sandbox test valuation: 500 MERGEN credits = $5. Local currency conversion can make a $5 reward ineligible for a particular gift card. Live credit pricing and member redemption remain unset.</p>
+      <p className="text-sm text-slate-600">Gift redemption remains disabled until you approve the products and credit pricing and complete live fulfillment setup. Production and sandbox accounts have separate catalogs and balances.</p>
     </section>
   );
 }

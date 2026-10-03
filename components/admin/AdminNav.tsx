@@ -2,9 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, Gift, Users, Wallet } from "lucide-react";
+import { ClipboardList, Gift, Users, Wallet, Plug } from "lucide-react";
 
 const navItems = [
+  {
+    href: "/integrations",
+    label: "Integrations",
+    description: "Check production connections and release gates",
+    icon: Plug
+  },
   {
     href: "/surveys",
     label: "Active surveys",
@@ -26,7 +32,7 @@ const navItems = [
   {
     href: "/rewards",
     label: "Reward catalog",
-    description: "Review local sandbox gift cards",
+    description: "Review country reward products",
     icon: Gift
   }
 ];

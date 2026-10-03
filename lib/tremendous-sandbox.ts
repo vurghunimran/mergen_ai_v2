@@ -1,6 +1,6 @@
 const SANDBOX_API_BASE = "https://testflight.tremendous.com/api/v2";
 
-export type TremendousSandboxProduct = {
+export type TremendousProduct = {
   id: string;
   name: string;
   category: string;
@@ -30,7 +30,9 @@ function asStringArray(value: unknown) {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
-function parseProduct(value: unknown): TremendousSandboxProduct | null {
+export type TremendousSandboxProduct = TremendousProduct;
+
+export function parseTremendousProduct(value: unknown): TremendousProduct | null {
   const product = asRecord(value);
   if (typeof product.id !== "string" || typeof product.name !== "string") return null;
   return {
@@ -69,7 +71,7 @@ export async function listTremendousSandboxProducts(countryCode: string) {
   if (!response.ok) throw new Error(`Tremendous sandbox catalog request failed (${response.status}).`);
   const body = asRecord(await response.json());
   if (!Array.isArray(body.products)) throw new Error("Tremendous sandbox returned an invalid catalog.");
-  return body.products.map(parseProduct).filter((product): product is TremendousSandboxProduct => product !== null);
+  return body.products.map(parseTremendousProduct).filter((product): product is TremendousSandboxProduct => product !== null);
 }
 
 // Internal test helper only. This does not reserve or debit MERGEN member credits.
