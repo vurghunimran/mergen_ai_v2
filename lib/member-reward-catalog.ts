@@ -20,6 +20,7 @@ export type MemberRewardCatalog = {
   catalogDate: string;
   fxDate: string;
   minimumGiftCredits: number;
+  maximumGiftCredits: number;
   giftUsdValue: number;
   rewards: MemberReward[];
 };
@@ -35,6 +36,7 @@ export function getMemberRewardCatalog(countryName: string): MemberRewardCatalog
     catalogDate: catalog.catalogDate,
     fxDate: catalog.fxDate,
     minimumGiftCredits: catalog.minimumGiftCredits,
+    maximumGiftCredits: catalog.maximumGiftCredits,
     giftUsdValue: catalog.giftUsdValue,
     rewards: (entry?.rewards ?? []).map(reward => ({
       id: reward.id,

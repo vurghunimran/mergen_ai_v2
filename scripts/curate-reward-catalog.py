@@ -64,6 +64,13 @@ def brand(name):
     return name.lower(), 0.0
 
 
+def credit_price(selection_score):
+    # Six credit tiers. Familiarity and provider popularity estimate demand;
+    # they do not change the $5 face value or represent measured member usage.
+    score = max(0, min(100, selection_score))
+    return 420 + 100 * math.floor(score / 20 + 0.5)
+
+
 def offer(row, rates):
     currency = row["Currency"]
     rate = rates.get(currency)
@@ -120,6 +127,7 @@ def main():
             # Popularity is a provider ranking proxy, never a redemption count or market-share percentage.
             score = popularity * 0.8 + familiarity * 20
             entry = {"id": f"{row['ID']}:{country['code']}:{price['currency']}", "productId": row["ID"], "company": name, "category": category(name), "imageUrl": product["card_image_path"], **price, "selectionScore": round(score, 4), "providerPopularity": round(popularity, 4), "brandGroup": group}
+            entry["credits"] = credit_price(entry["selectionScore"])
             if row["ID"] not in candidates or entry["selectionScore"] > candidates[row["ID"]]["selectionScore"]:
                 candidates[row["ID"]] = entry
         ranked = sorted(candidates.values(), key=lambda entry: (-entry["selectionScore"], entry["company"]))
@@ -139,7 +147,7 @@ def main():
             del entry["brandGroup"]
         output.append({**country, "rewards": picked})
     from datetime import datetime, timezone
-    result = {"version": 1, "catalogDate": datetime.now(timezone.utc).date().isoformat(), "fxDate": datetime.fromtimestamp(fx["time_last_update_unix"], timezone.utc).date().isoformat(), "pricingStatus": "draft", "minimumGiftCredits": 420, "giftUsdValue": 5, "cashCredits": 920, "cashUsdValue": 10, "maxRewardsPerCountry": 12, "sources": {"catalog": CATALOG_URL, "values": EXPORT_URL, "exchangeRates": "https://www.exchangerate-api.com", "popularityMeaning": "Provider catalog popularity proxy; not member usage statistics"}, "countries": output}
+    result = {"version": 1, "catalogDate": datetime.now(timezone.utc).date().isoformat(), "fxDate": datetime.fromtimestamp(fx["time_last_update_unix"], timezone.utc).date().isoformat(), "pricingStatus": "draft", "minimumGiftCredits": 420, "maximumGiftCredits": 920, "creditTiers": [420, 520, 620, 720, 820, 920], "giftUsdValue": 5, "cashCredits": 920, "cashUsdValue": 10, "maxRewardsPerCountry": 12, "sources": {"catalog": CATALOG_URL, "values": EXPORT_URL, "exchangeRates": "https://www.exchangerate-api.com", "popularityMeaning": "Provider catalog popularity proxy; not member usage statistics"}, "countries": output}
     destination = ROOT / "lib/data/curated-rewards.json"
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")

@@ -241,7 +241,7 @@ Community members earn credits, but gift reward redemption is disabled until the
 
 ## Cash withdrawals
 
-Community cash payouts use Trolley at a fixed 920 credits = $10 USD per request. Gift rewards are fixed at 420 credits for $5 USD, converted to the supported issued currency at the dated catalog rate. The member panel, owner payout review, database reservation ledger, and signed webhook are implemented. Live withdrawals require provider approval, server credentials, funding, and reviewed destination routes. Gifts remain closed pending provider approval and fulfillment setup. See [Trolley setup and operations](docs/trolley-withdrawals.md) and [member reward catalog](docs/curated-member-rewards.md).
+Community cash payouts use Trolley at a fixed 920 credits = $10 USD per request. Gift rewards cost 420–920 credits based on brand familiarity and predicted demand, for a fixed $5 USD value converted to the supported issued currency at the dated catalog rate. Cash and gifts share one searchable reward grid. The member panel, owner payout review, database reservation ledger, and signed webhook are implemented. Live withdrawals require provider approval, server credentials, funding, and reviewed destination routes. Gifts remain closed pending provider approval and fulfillment setup. See [Trolley setup and operations](docs/trolley-withdrawals.md) and [member reward catalog](docs/curated-member-rewards.md).
 
 
 ### Production provider access

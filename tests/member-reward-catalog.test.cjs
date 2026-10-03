@@ -40,7 +40,8 @@ test('curated offers use real product IDs, existing categories, $5 values and th
       assert.ok(/^[A-Z0-9]{4,20}$/.test(reward.productId));
       assert.ok(ids.has(reward.category));
       assert.equal(reward.usdValue, 5);
-      assert.ok(Number.isSafeInteger(reward.credits) && reward.credits >= 420);
+      assert.ok(Number.isSafeInteger(reward.credits) && reward.credits >= 420 && reward.credits <= 920);
+      assert.ok([420, 520, 620, 720, 820, 920].includes(reward.credits));
       assert.ok(Number.isFinite(reward.value) && reward.value > 0);
       assert.ok(/^[A-Z]{3}$/.test(reward.currency));
       assert.equal(new URL(reward.imageUrl).hostname, 'api.tremendous.com');
@@ -58,4 +59,15 @@ test('catalog card data is isolated from the snapshot and contains only browsing
   assert.equal(getMemberRewardCatalog('United States').rewards[0].company, name);
   assert.equal(first.giftUsdValue, 5);
   assert.equal(first.minimumGiftCredits, 420);
+  assert.equal(first.maximumGiftCredits, 920);
+});
+
+test('demand pricing varies within the approved range while every gift retains a $5 value', () => {
+  const rewards = snapshot.countries.flatMap(country => country.rewards);
+  assert.deepEqual([...new Set(rewards.map(reward => reward.credits))].sort((a, b) => a - b), [420, 520, 620, 720, 820, 920]);
+  const us = getMemberRewardCatalog('United States').rewards;
+  assert.equal(us.find(reward => reward.company === 'Amazon.com').credits, 920);
+  assert.equal(us.find(reward => reward.company === 'Razer Gold USD').credits, 820);
+  assert.equal(us.find(reward => reward.company === 'FreeFire USD').credits, 620);
+  assert.ok(rewards.every(reward => reward.usdValue === 5));
 });

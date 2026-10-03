@@ -27,7 +27,6 @@ import {
   X
 } from "lucide-react";
 import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
-import CashWithdrawalPanel from "@/components/dashboard/CashWithdrawalPanel";
 import RewardsCatalog from "@/components/dashboard/RewardsCatalog";
 import type { MemberRewardCatalog } from "@/lib/member-reward-catalog";
 import ProfileAvatarPicker from "@/components/dashboard/ProfileAvatarPicker";
@@ -65,7 +64,6 @@ import {
 import { type RewardActivation } from "@/lib/reward-activations";
 import { hasSurveyAttachments } from "@/lib/survey-attachments";
 import { WELCOME_SURVEY_CREDITS } from "@/lib/welcome-survey";
-import { REWARD_AVAILABILITY_MESSAGE } from "@/lib/reward-availability";
 
 const navigationItems = [
   { icon: Home, label: "Dashboard", section: "dashboard" },
@@ -1920,41 +1918,19 @@ export default function CommunityDashboard({
               </section>
             ) : activeSection === "rewards" ? (
               <section className="max-w-5xl space-y-6">
-                <div>
+                <div className="flex flex-wrap items-center gap-3">
                   <h1 className={sectionTitleClassName}>Rewards</h1>
-                  <p className="mt-3 text-[15px] uppercase tracking-[0.18em] text-[#64748b]">Rewards coming soon</p>
-                  <p className="mt-4 rounded-2xl border border-purple-200 bg-purple-50 p-5 text-base leading-7 text-purple-950">{REWARD_AVAILABILITY_MESSAGE}</p>
-                  <p className="mt-3 text-sm leading-6 text-[#64748b]">
-                    Browse selected gift rewards for your country{profileSnapshot.country ? ` (${profileSnapshot.country})` : ""} by category or search. Gift values are $5 USD, with prices starting at 420 credits.
-                  </p>
+                  <span className="rounded-full bg-[#f0e9fa] px-3 py-1 text-xs font-semibold text-[#6d3fd1]">Coming soon</span>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="rounded-[24px] border border-[#d9c7ff] bg-[#faf7ff] p-5 shadow-sm">
-                    <p className="text-sm font-medium text-[#8a94a6]">Available credit</p>
-                    <p className="mt-2 text-[34px] font-bold tracking-[-0.03em] text-[#4f2a78]">{totalCredits}</p>
-                    <p className="mt-2 text-sm text-[#667085]">
-                      Earned {totalEarnedCredits}, redeemed {redeemedCredits}. Your remaining credits are saved in your account.
-                    </p>
+                <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#e9ddff] bg-[#faf7ff] px-5 py-4">
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-3xl font-bold tracking-[-0.03em] text-[#4f2a78]">{totalCredits}</p>
+                    <p className="text-sm text-[#64748b]">available credits</p>
                   </div>
-
-                  <div className="rounded-[24px] border border-[#e9ddff] bg-white p-5 shadow-sm">
-                    <p className="text-sm font-medium text-[#8a94a6]">Current trust score</p>
-                    <p className="mt-2 text-[34px] font-bold tracking-[-0.03em] text-[#4f2a78]">{trustScoreDisplay}</p>
-                    <p className="mt-2 text-sm text-[#667085]">
-                      {trustScore === null && hasWelcomeCompletion
-                        ? "Your trust score starts after your first matched research survey."
-                        : "Higher trust scores move your survey rewards closer to the top of the 20-70 credit range."}
-                    </p>
-                  </div>
+                  <p className="text-xs text-[#64748b]">Earned {totalEarnedCredits} · Redeemed {redeemedCredits}</p>
+                  <p className="text-sm text-[#64748b]">Trust score <span className="font-semibold text-[#4f2a78]">{trustScoreDisplay}</span></p>
                 </div>
-
-                <CashWithdrawalPanel memberId={profileSnapshot.id} availableCredits={totalCredits} onBalanceChange={async () => {
-                  const response = await fetch("/api/rewards/activations", { cache: "no-store" });
-                  const data = await response.json();
-                  if (!response.ok) throw new Error("Could not refresh your credit balance.");
-                  setRewardActivations(data.activations);
-                }} />
 
                 {rewardError ? (
                   <AutoDismissNotice
@@ -1965,7 +1941,12 @@ export default function CommunityDashboard({
                   />
                 ) : null}
 
-                <RewardsCatalog catalog={rewardCatalog} />
+                <RewardsCatalog catalog={rewardCatalog} memberId={profileSnapshot.id} availableCredits={totalCredits} onBalanceChange={async () => {
+                  const response = await fetch("/api/rewards/activations", { cache: "no-store" });
+                  const data = await response.json();
+                  if (!response.ok) throw new Error("Could not refresh your credit balance.");
+                  setRewardActivations(data.activations);
+                }} />
               </section>
             ) : (
               <section className="max-w-5xl space-y-8">

@@ -18,7 +18,7 @@ Updated 2026-10-03. Site: https://mergen-ai.com.
 - `TROLLEY_MODE=live`; member payouts still require `TROLLEY_WITHDRAWALS_ENABLED=true` and a reviewed `TROLLEY_ALLOWED_COUNTRIES` allowlist.
 - Set the production webhook to https://mergen-ai.com/api/trolley/webhook and configure payment-status events.
 - Verify funding, routes, minimums, fees, onboarding, tax/KYC readiness and a real $10 payout before enabling member withdrawals. The readiness check confirms only credential access and a positive funding balance, not funding sufficiency for every withdrawal.
-- Approved cash amount: exactly 920 credits = $10 USD per new withdrawal. Gift catalog pricing is 420 credits for $5 USD, converted to the supported local currency; fulfillment remains disabled. See `docs/trolley-withdrawals.md` and `docs/curated-member-rewards.md` for details.
+- Approved cash amount: exactly 920 credits = $10 USD per new withdrawal. Gift catalog prices range from 420 to 920 credits based on estimated demand for a fixed $5 USD value, converted to the supported local currency; fulfillment remains disabled. See `docs/trolley-withdrawals.md` and `docs/curated-member-rewards.md` for details.
 
 ## Polar
 
