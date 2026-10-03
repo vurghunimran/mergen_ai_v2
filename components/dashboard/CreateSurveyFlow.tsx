@@ -1873,31 +1873,31 @@ export default function CreateSurveyFlow({ userId, onBackToDashboard, onStartChe
           </div>
 
           <div className="rounded-[28px] border border-gray-200 bg-white p-6 shadow-[0_18px_44px_rgba(15,23,42,0.04)]">
-            <h2 className="text-[22px] font-semibold text-[#111827]">Receipt</h2>
+            <h2 className="text-[22px] font-semibold text-[#111827]">Order summary</h2>
             <div className="mt-6 space-y-4">
-              <label className="block text-sm text-[#667085]">Client pricing category
-                <select aria-label="Client pricing category" value={pricingCategory} disabled className="mt-2 w-full rounded-xl border border-gray-200 bg-[#fff9f4] p-3 text-[#111827]">
+              <label className="block text-sm text-[#667085]">Account category
+                <select aria-label="Account category" value={pricingCategory} disabled className="mt-2 w-full rounded-xl border border-gray-200 bg-[#fff9f4] p-3 text-[#111827]">
                   <option value="student">Students</option><option value="institution">Institutions &amp; Businesses</option>
                 </select>
               </label>
-              <p className="text-xs text-[#667085]" role="status">{categoryStatus === "ready" ? "Category verified using your account. New formula pricing applies to this draft." : categoryStatus === "loading" ? "Checking your account pricing…" : "Could not verify account pricing. Refresh to retry before payment."}</p>
-              <label className="block text-sm text-[#667085]">Selected question allowance
+              <p className="text-xs text-[#667085]" role="status">{categoryStatus === "ready" ? "Account category verified." : categoryStatus === "loading" ? "Checking your account pricing…" : "Could not verify pricing. Refresh to retry."}</p>
+              <label className="block text-sm text-[#667085]">Question limit
                 <select value={academicQuestionCountOptions.includes(draft.questionCount as AcademicQuestionCount) ? draft.questionCount : ""} onChange={event => updateDraft("questionCount", Number(event.target.value))} className="mt-2 w-full rounded-xl border border-gray-200 p-3">
-                  <option value="" disabled>Choose an allowance</option>{academicQuestionCountOptions.map(count => <option key={count} value={count}>{count}</option>)}
+                  <option value="" disabled>Choose a question limit</option>{academicQuestionCountOptions.map(count => <option key={count} value={count}>{count}</option>)}
                 </select>
               </label>
-              <p className="text-xs text-[#667085]">{draft.questions.length} prepared questions. You may prepare 5 up to the selected allowance; pricing uses the selected allowance.</p>
+              <p className="text-xs text-[#667085]">{draft.questions.length} questions ready. Price is based on your {draft.questionCount}-question limit.</p>
               {!paymentReady ? (
                 <p role="alert" className="text-sm text-[#ad2a62]">
-                  The draft needs 5 to {draft.questionCount} nonempty questions before checkout. Return to Generate to edit them.
+                  Add 5–{draft.questionCount} complete questions in Generate to continue.
                 </p>
               ) : null}
-              {pricing ? <SurveyPriceBreakdown pricing={pricing} /> : <p role="alert" className="text-sm text-red-700">Choose a supported question allowance and response count. Unsupported saved values are not rounded.</p>}
-              <p className="text-xs text-[#667085]">Survey active window: {surveyActiveWindowDays} days</p>
+              {pricing ? <SurveyPriceBreakdown pricing={pricing} showSelections={false} /> : <p role="alert" className="text-sm text-red-700">Choose a valid question limit and response count.</p>}
+              <p className="text-xs text-[#667085]">Collecting responses for {surveyActiveWindowDays} days</p>
             </div>
 
             <p className="mt-6 rounded-2xl bg-[#fcfcfd] px-4 py-3 text-sm text-[#8a94a6]">
-              You will be redirected to Polar Checkout to complete the payment securely.
+              Secure payment via Polar.
             </p>
 
             {checkoutError ? (
