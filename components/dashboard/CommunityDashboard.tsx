@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import ImageWithFallback from "@/components/dashboard/ImageWithFallback";
 import RewardsCatalog from "@/components/dashboard/RewardsCatalog";
+import RewardsOverview from "@/components/dashboard/RewardsOverview";
 import type { MemberRewardCatalog } from "@/lib/member-reward-catalog";
 import ProfileAvatarPicker from "@/components/dashboard/ProfileAvatarPicker";
 import SurveyAttachmentShowcase from "@/components/dashboard/SurveyAttachmentShowcase";
@@ -1918,19 +1919,22 @@ export default function CommunityDashboard({
               </section>
             ) : activeSection === "rewards" ? (
               <section className="max-w-5xl space-y-6">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h1 className={sectionTitleClassName}>Rewards</h1>
-                  <span className="rounded-full bg-[#f0e9fa] px-3 py-1 text-xs font-semibold text-[#6d3fd1]">Coming soon</span>
+                <div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h1 className={sectionTitleClassName}>Rewards</h1>
+                    <span className="rounded-full bg-[#f0e9fa] px-3 py-1 text-xs font-semibold text-[#6d3fd1]">Gift cards coming soon</span>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-[#64748b]">Your research contributions add up. Explore rewards and keep building your balance.</p>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#e9ddff] bg-[#faf7ff] px-5 py-4">
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-3xl font-bold tracking-[-0.03em] text-[#4f2a78]">{totalCredits}</p>
-                    <p className="text-sm text-[#64748b]">available credits</p>
-                  </div>
-                  <p className="text-xs text-[#64748b]">Earned {totalEarnedCredits} · Redeemed {redeemedCredits}</p>
-                  <p className="text-sm text-[#64748b]">Trust score <span className="font-semibold text-[#4f2a78]">{trustScoreDisplay}</span></p>
-                </div>
+                <RewardsOverview
+                  availableCredits={totalCredits}
+                  earnedCredits={totalEarnedCredits}
+                  redeemedCredits={redeemedCredits}
+                  trustScoreLabel={trustScoreDisplay}
+                  giftCreditGoal={rewardCatalog.rewards.length ? Math.min(...rewardCatalog.rewards.map(reward => reward.credits)) : null}
+                  onFindSurveys={() => setActiveSection("dashboard")}
+                />
 
                 {rewardError ? (
                   <AutoDismissNotice
