@@ -25,7 +25,6 @@ type GeminiTrustResult = {
   risks: string[];
 };
 
-const geminiModel = "gemini-2.5-flash";
 
 function buildTrustSchema() {
   return {
@@ -65,6 +64,9 @@ function buildSystemPrompt() {
     "Review whether a respondent answered a survey thoughtfully and consistently.",
     "Use the completion time, question content, answer relevance, depth, and internal consistency.",
     "Do not judge the respondent for their opinions, only the response quality.",
+    "Use a consistent 0-100 rubric: relevance 40 points, completeness 30 points, internal consistency 20 points, and plausible completion timing 10 points.",
+    "Short but sufficient answers deserve full credit. Unusual opinions, language proficiency, and demographic characteristics are not evidence of low quality.",
+    "Timing alone must never establish dishonesty. This score measures response quality confidence, not whether the person is truthful.",
     "High trust scores mean the answers are relevant, coherent, and realistically paced.",
     "Low trust scores mean the answers are rushed, generic, contradictory, or off-topic.",
     "Keep strengths and risks short and concrete.",
@@ -98,7 +100,8 @@ function extractGeminiText(payload: GeminiTrustPayload) {
 
 export async function evaluateSurveyResponse(payload: SurveyTrustEvaluationRequest): Promise<SurveyTrustEvaluationResponse> {
   try {
-    const geminiApiKey = process.env.GEMINI_API_KEY;
+    const geminiApiKey = process.env.GEMINI_API_KEY?.trim();
+    const geminiModel = process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash";
 
     if (!payload.surveyTitle || payload.questions.length === 0 || payload.answers.length === 0) {
       throw new Error("Incomplete evaluation.");
@@ -109,7 +112,7 @@ export async function evaluateSurveyResponse(payload: SurveyTrustEvaluationReque
     }
 
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent`,
       {
         method: "POST",
         headers: {

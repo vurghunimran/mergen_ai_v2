@@ -84,10 +84,13 @@ export async function getProductionReadiness(): Promise<IntegrationCheck[]> {
       const verified = result.ok && domain && result.data?.data?.some((item: { name: string; status: string }) => item.name === domain && item.status === "verified");
       return check("Resend", verified ? "verified" : "blocked", verified ? "Production sender domain verified. This check sends no email and does not verify inbox delivery." : "Sender domain verification or account access failed.");
     }),
+    Promise.resolve(missing(["PERPLEXITY_API_KEY"]).length
+      ? check("Perplexity", "blocked", "Survey research and creation credentials are missing.", ["PERPLEXITY_API_KEY"])
+      : check("Perplexity", "unverified", "Survey creation key is configured. Verify a real survey generation to confirm access, billing, and quota.")),
     safe("Gemini", async () => {
       const absent = missing(["GEMINI_API_KEY"]);
-      if (absent.length) return check("Gemini", "blocked", "AI generation credentials are missing.", absent);
-      const result = await read("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash", { "x-goog-api-key": process.env.GEMINI_API_KEY! });
+      if (absent.length) return check("Gemini", "blocked", "Response evaluation credentials are missing.", absent);
+      const result = await read(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash")}`, { "x-goog-api-key": process.env.GEMINI_API_KEY! });
       const verified = result.ok && result.data?.supportedGenerationMethods?.includes("generateContent");
       return check("Gemini", verified ? "verified" : "blocked", verified ? "Configured model access verified. Generation quota and billing require a separate operational check." : "Configured model access failed.");
     }),

@@ -23,7 +23,6 @@ type GeminiReportPayload = {
   };
 };
 
-const geminiModel = "gemini-2.5-flash";
 
 function buildReportSchema() {
   return {
@@ -107,7 +106,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: accessError.error }, { status: accessError.status });
   }
 
-  const geminiApiKey = process.env.GEMINI_API_KEY;
+  const geminiApiKey = process.env.GEMINI_API_KEY?.trim();
+  const geminiModel = process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash";
 
   if (!geminiApiKey) {
     return NextResponse.json(buildFallbackSurveyReport(survey));
@@ -116,7 +116,7 @@ export async function POST(request: Request) {
   try {
     return await withAiBudget(authorized.profile.id, "report", async () => {
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent`,
       {
         method: "POST",
         headers: {

@@ -14,7 +14,7 @@ require.extensions['.ts'] = (module, filename) => {
   const result = ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } });
   module._compile(result.outputText, filename);
 };
-const envNames = ['TREMENDOUS_MODE', 'TREMENDOUS_API_KEY', 'TREMENDOUS_SANDBOX_API_KEY', 'TROLLEY_MODE', 'TROLLEY_LIVE_ACCESS_KEY', 'TROLLEY_LIVE_SECRET_KEY', 'TROLLEY_LIVE_WEBHOOK_SECRET', 'TROLLEY_ALLOWED_COUNTRIES', 'TROLLEY_WITHDRAWALS_ENABLED', 'POLAR_SERVER', 'POLAR_ACCESS_TOKEN', 'POLAR_SURVEY_PRODUCT_ID', 'POLAR_WEBHOOK', 'POLAR_WEBHOOK_SECRET', 'APP_BASE_URL', 'NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'RESEND_API_KEY', 'RESEND_FROM_EMAIL', 'GEMINI_API_KEY', 'TELEGRAM_BOT_TOKEN', 'TELEGRAM_WEBHOOK_SECRET', 'TELEGRAM_BOT_USERNAME', 'CRON_SECRET'];
+const envNames = ['TREMENDOUS_MODE', 'TREMENDOUS_API_KEY', 'TREMENDOUS_SANDBOX_API_KEY', 'TROLLEY_MODE', 'TROLLEY_LIVE_ACCESS_KEY', 'TROLLEY_LIVE_SECRET_KEY', 'TROLLEY_LIVE_WEBHOOK_SECRET', 'TROLLEY_ALLOWED_COUNTRIES', 'TROLLEY_WITHDRAWALS_ENABLED', 'POLAR_SERVER', 'POLAR_ACCESS_TOKEN', 'POLAR_SURVEY_PRODUCT_ID', 'POLAR_WEBHOOK', 'POLAR_WEBHOOK_SECRET', 'APP_BASE_URL', 'NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'RESEND_API_KEY', 'RESEND_FROM_EMAIL', 'GEMINI_API_KEY', 'GEMINI_MODEL', 'PERPLEXITY_API_KEY', 'TELEGRAM_BOT_TOKEN', 'TELEGRAM_WEBHOOK_SECRET', 'TELEGRAM_BOT_USERNAME', 'CRON_SECRET'];
 async function isolated(task) {
   const saved = Object.fromEntries(envNames.map(name => [name, process.env[name]]));
   const fetch = global.fetch;
@@ -62,7 +62,7 @@ test('live catalog uses the official production host; sandbox remains an explici
 test('missing production integrations remain blocked with no provider requests and no credential values', () => isolated(async () => {
   global.fetch = async () => { throw Error('unexpected network'); };
   const checks = await getProductionReadiness();
-  assert.equal(checks.length, 8);
+  assert.equal(checks.length, 9);
   assert.ok(checks.every(item => item.status === 'blocked'));
   assert.ok(checks.find(item => item.service === 'Trolley').missing.includes('TROLLEY_LIVE_WEBHOOK_SECRET'));
 }));
