@@ -1,6 +1,6 @@
 # Trolley cash withdrawals
 
-MERGEN community members can exchange **920 credits for $10 USD**. The minimum is 920 credits; amounts are multiples of 920, up to 920,000 credits per request. This rate was approved on 2026-10-03. Cash withdrawals have their own release switch; gift rewards remain closed.
+MERGEN community members can exchange **920 credits for $10 USD**. Each new member request is fixed at 920 credits; larger requests are rejected by the server. This policy was approved on 2026-10-03. The ledger retains support for historical requests. Cash withdrawals have their own release switch; gift rewards remain closed.
 
 ## Account setup and activation
 
