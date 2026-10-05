@@ -37,7 +37,8 @@ Updated 2026-10-03. Site: https://mergen-ai.com.
 - Resend's `mergen-ai.com` domain was verified for sending and receiving during the audit. Domain verification does not establish delivery to a specific inbox.
 - The available Gemini key can access `gemini-2.5-flash`; generation quotas and billing still need operational validation.
 - Telegram's token is stored as a non-exportable production secret. The deployed owner check reads bot webhook state. It does not send a message or reset the webhook.
-- The staged survey scheduler is not configured. The audited Vercel plan is Hobby, which cannot run hourly cron. Set a strong `CRON_SECRET`, then configure an external hourly scheduler with `Authorization: Bearer <secret>` for `GET https://mergen-ai.com/api/cron/survey-distribution`, or use hourly Vercel cron on a supported plan. Never publish the scheduler secret. Upgrade/subscription purchase has not been performed.
+- The survey scheduler uses Vercel Pro (verified October 5, 2026) and `vercel.json` schedules `GET /api/cron/survey-distribution` at the start of every hour. Vercel sends the production `CRON_SECRET` in the Authorization header; requests without the matching secret are rejected in every environment. The function can run for up to 300 seconds. It advances existing invitation stages and archives surveys whose targets or deadlines have been reached. It does not change payments, reward pricing or redemption availability.
+- An authorized `GET /api/cron/survey-distribution?dry_run=1` previews archive and invitation actions without database writes or sending email/Telegram messages. Run this before manual verification against production. Normal runs can send survey invitations. Vercel runtime logs record completion/failure and aggregate counts without exposing credentials or recipient details. Check the Cron Jobs page and runtime logs for execution health; configuration alone is not proof of a successful run.
 
 ## Deployment checks
 

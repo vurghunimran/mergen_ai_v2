@@ -11,7 +11,7 @@ Module._load = function (name, parent, main) {
   return originalLoad.call(this, name, parent, main);
 };
 require.extensions['.ts'] = (module, filename) => {
-  const result = ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } });
+  const result = ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, esModuleInterop: true } });
   module._compile(result.outputText, filename);
 };
 const envNames = ['TREMENDOUS_MODE', 'TREMENDOUS_API_KEY', 'TREMENDOUS_SANDBOX_API_KEY', 'TROLLEY_MODE', 'TROLLEY_LIVE_ACCESS_KEY', 'TROLLEY_LIVE_SECRET_KEY', 'TROLLEY_LIVE_WEBHOOK_SECRET', 'TROLLEY_ALLOWED_COUNTRIES', 'TROLLEY_WITHDRAWALS_ENABLED', 'POLAR_SERVER', 'POLAR_ACCESS_TOKEN', 'POLAR_SURVEY_PRODUCT_ID', 'POLAR_WEBHOOK', 'POLAR_WEBHOOK_SECRET', 'APP_BASE_URL', 'NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'RESEND_API_KEY', 'RESEND_FROM_EMAIL', 'GEMINI_API_KEY', 'GEMINI_MODEL', 'PERPLEXITY_API_KEY', 'TELEGRAM_BOT_TOKEN', 'TELEGRAM_WEBHOOK_SECRET', 'TELEGRAM_BOT_USERNAME', 'CRON_SECRET'];
@@ -65,6 +65,17 @@ test('missing production integrations remain blocked with no provider requests a
   assert.equal(checks.length, 9);
   assert.ok(checks.every(item => item.status === 'blocked'));
   assert.ok(checks.find(item => item.service === 'Trolley').missing.includes('TROLLEY_LIVE_WEBHOOK_SECRET'));
+}));
+
+test('scheduler readiness reports hourly configuration only with a nonempty secret and never exposes it', () => isolated(async () => {
+  global.fetch = async () => { throw Error('unexpected network'); };
+  process.env.CRON_SECRET = '  ';
+  assert.equal((await getProductionReadiness()).find(item => item.service === 'Survey scheduler').status, 'blocked');
+  process.env.CRON_SECRET = 'private-scheduler-secret';
+  const scheduler = (await getProductionReadiness()).find(item => item.service === 'Survey scheduler');
+  assert.equal(scheduler.status, 'verified');
+  assert.match(scheduler.detail, /Hourly Vercel cron/);
+  assert(!JSON.stringify(scheduler).includes('private-scheduler-secret'));
 }));
 
 test('readiness distinguishes limited Polar token scope from verified checkout access and contains provider failures', () => isolated(async () => {

@@ -91,9 +91,17 @@ type SurveyDistributionSummary = {
 };
 
 export type SurveyDistributionRunSummary = {
+  dryRun: boolean;
   processedSurveys: number;
   archivedSurveys: number;
   processedStageRuns: SurveyDistributionSummary[];
+  plannedArchives: number;
+  plannedStageRuns: Array<{
+    surveyId: number;
+    stage: SurveyDistributionStage;
+    matchedRecipients: number;
+    remainingResponses: number;
+  }>;
 };
 
 export type UpcomingSurveyDeliveryRecipient = {
@@ -877,6 +885,7 @@ export async function runSurveyDistributionCycle(params: {
   admin: SupabaseClient;
   appBaseUrl: string;
   now?: Date;
+  dryRun?: boolean;
 }) {
   const now = params.now ?? new Date();
   const [surveyRows, surveyResponseRows] = await Promise.all([
@@ -886,6 +895,8 @@ export async function runSurveyDistributionCycle(params: {
   const recipientPool = await loadDistributionRecipientPool(params.admin, surveyResponseRows);
   const surveyResponseCounts = buildSurveyResponseCountMap(surveyResponseRows);
   const processedStageRuns: SurveyDistributionSummary[] = [];
+  const plannedStageRuns: SurveyDistributionRunSummary["plannedStageRuns"] = [];
+  let plannedArchives = 0;
   let archivedSurveys = 0;
 
   for (const survey of surveyRows) {
@@ -894,8 +905,12 @@ export async function runSurveyDistributionCycle(params: {
     const isExpired = hasSurveyExpired(survey.distribution_expires_at, now);
 
     if (isFilled || isExpired) {
-      await archiveSurvey(params.admin, survey.id, now);
-      archivedSurveys += 1;
+      if (params.dryRun) {
+        plannedArchives += 1;
+      } else {
+        await archiveSurvey(params.admin, survey.id, now);
+        archivedSurveys += 1;
+      }
       continue;
     }
 
@@ -907,6 +922,25 @@ export async function runSurveyDistributionCycle(params: {
     });
 
     if (!dueStage) {
+      continue;
+    }
+
+    if (params.dryRun) {
+      const alreadyNotifiedIds = await listSurveyNotifiedRecipientIds(params.admin, survey.id);
+      const { matchedRecipients, remainingResponses } = selectRecipientsForStage({
+        survey,
+        stage: dueStage,
+        responseCount,
+        surveyResponseRows,
+        recipientPool,
+        alreadyNotifiedIds
+      });
+      plannedStageRuns.push({
+        surveyId: survey.id,
+        stage: dueStage,
+        matchedRecipients: matchedRecipients.length,
+        remainingResponses
+      });
       continue;
     }
 
@@ -925,8 +959,11 @@ export async function runSurveyDistributionCycle(params: {
   }
 
   return {
+    dryRun: Boolean(params.dryRun),
     processedSurveys: surveyRows.length,
     archivedSurveys,
-    processedStageRuns
+    processedStageRuns,
+    plannedArchives,
+    plannedStageRuns
   } satisfies SurveyDistributionRunSummary;
 }

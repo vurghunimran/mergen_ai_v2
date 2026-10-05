@@ -1,5 +1,6 @@
 import { trolleyConfigured, trolleyRequest, cashWithdrawalsEnabled, trolleyMode } from "@/lib/trolley";
 import { isTremendousConfigured, tremendousGet, tremendousMode } from "@/lib/tremendous";
+import vercelConfiguration from "../vercel.json";
 
 export type IntegrationCheck = {
   service: string;
@@ -101,6 +102,10 @@ export async function getProductionReadiness(): Promise<IntegrationCheck[]> {
       const verified = result.ok && result.data?.ok && base && result.data.result?.url === `${base}/api/telegram/webhook`;
       return check("Telegram", verified ? "verified" : "blocked", verified ? "Production webhook URL verified. Secret validation and opt-in message delivery still require operational validation." : "Bot access failed or its webhook is not registered to the production URL.");
     }),
-    Promise.resolve(check("Survey scheduler", "blocked", "No survey scheduler is configured for this deployment. Secure hourly calls with CRON_SECRET and configure an external scheduler or Vercel hourly cron on a supported plan.", missing(["CRON_SECRET"])))
+    Promise.resolve(check("Survey scheduler", missing(["CRON_SECRET"]).length ? "blocked" : "verified",
+      missing(["CRON_SECRET"]).length
+        ? "The hourly survey scheduler requires a production CRON_SECRET."
+        : `Hourly Vercel cron configured (${vercelConfiguration.crons[0].schedule}) with secret authorization. Check execution health in Vercel runtime logs.`,
+      missing(["CRON_SECRET"])))
   ]);
 }
