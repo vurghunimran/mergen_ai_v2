@@ -28,7 +28,7 @@ type PolarCheckoutResponse = {
   } | null;
 };
 
-function getPolarServerMode(): PolarServerMode {
+export function getPolarServerMode(): PolarServerMode {
   return process.env.POLAR_SERVER === "sandbox" ? "sandbox" : "production";
 }
 

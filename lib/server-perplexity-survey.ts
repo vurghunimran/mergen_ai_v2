@@ -1,4 +1,5 @@
 import { RequestError } from "@/lib/security/request";
+import { trackedAiFetch } from "@/lib/ai-usage";
 
 type AgentResponse = {
   status?: string;
@@ -14,7 +15,7 @@ type AgentResponse = {
 export async function generatePerplexitySurvey(
   apiKey: string, instructions: string, input: string, schema: object
 ): Promise<string> {
-  const response = await fetch("https://api.perplexity.ai/v1/agent", {
+  const response = await trackedAiFetch("Perplexity", "preset:low", "questions", "https://api.perplexity.ai/v1/agent", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({

@@ -1,4 +1,4 @@
-import { getPolarCheckout } from "@/lib/polar";
+import { getPolarCheckout, getPolarServerMode } from "@/lib/polar";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assertOrderPayment, type PersistedSurveyOrder } from "@/lib/survey-order-verification";
 
@@ -36,7 +36,7 @@ export async function verifySurveyOrder(checkoutId: string, userId: string) {
       user_id: userId, checkout_id: checkout.id, currency: "USD", total_cents: checkout.amount,
       question_count: questionCount, response_count: responseCount, include_detailed_report: report === "true",
       pricing_version: "legacy-polar-v0", pricing: { ...checkout.metadata, totalCents: checkout.amount, currency: "USD", pricingVersion: "legacy-polar-v0" },
-      status: "paid", requires_review: true
+      status: "paid", requires_review: true, provider_environment: getPolarServerMode()
     }, { onConflict: "checkout_id", ignoreDuplicates: true });
     if (insertError) throw insertError;
     const result = await admin.from("survey_orders").select("*").eq("checkout_id", checkoutId).single();

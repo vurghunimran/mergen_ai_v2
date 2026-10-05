@@ -1,4 +1,5 @@
 import { withAiBudget } from "@/lib/security/ai-budget";
+import { trackedAiFetch } from "@/lib/ai-usage";
 import { readJsonObject, RequestError, stringList } from "@/lib/security/request";
 import { getSurveyReportAccessError } from "@/lib/survey-report-access";
 import { NextResponse } from "next/server";
@@ -115,7 +116,7 @@ export async function POST(request: Request) {
 
   try {
     return await withAiBudget(authorized.profile.id, "report", async () => {
-    const geminiResponse = await fetch(
+    const geminiResponse = await trackedAiFetch("Google Gemini", geminiModel, "report",
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent`,
       {
         method: "POST",

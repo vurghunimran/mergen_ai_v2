@@ -676,7 +676,7 @@ export async function getAdminCommunityOverview(): Promise<AdminCommunityOvervie
     totalAvailableCredits,
     totalRewardActivations: activeRewardActivations.length,
     membersWithAvailableCredits: creditBalances.length,
-    countries: buildCountBreakdown(countryValues, communityMembers.length, { limit: 8 }),
+    countries: buildCountBreakdown(countryValues, communityMembers.length),
     regions: buildCountBreakdown(regionValues, communityMembers.length, { limit: 8 }),
     ages: buildCountBreakdown(ageValues, communityMembers.length, { preferredOrder: [...ageSpanOptions] }),
     genders: buildCountBreakdown(genderValues, communityMembers.length, {

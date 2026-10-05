@@ -1,4 +1,5 @@
 import { stringList } from "@/lib/security/request";
+import { trackedAiFetch } from "@/lib/ai-usage";
 import type { SurveyTrustEvaluationRequest, SurveyTrustEvaluationResponse } from "@/lib/dashboard-data";
 import { buildFallbackTrustEvaluation, calculateCreditsFromTrustScore } from "@/lib/trust-score";
 
@@ -111,7 +112,7 @@ export async function evaluateSurveyResponse(payload: SurveyTrustEvaluationReque
       return buildFallbackTrustEvaluation(payload);
     }
 
-    const geminiResponse = await fetch(
+    const geminiResponse = await trackedAiFetch("Google Gemini", geminiModel, "evaluation",
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent`,
       {
         method: "POST",

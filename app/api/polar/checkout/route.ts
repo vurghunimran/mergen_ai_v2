@@ -26,7 +26,8 @@ export async function POST(request: Request) {
       user_id: context.profile.id, currency: pricing.currency, total_cents: pricing.totalCents,
       question_count: pricing.questionCount, response_count: pricing.responseCount,
       include_detailed_report: pricing.reportFeeCents > 0, pricing_version: pricing.pricingVersion,
-      pricing, status: "pending", draft_payload: draft
+      pricing, status: "pending", draft_payload: draft,
+      provider_environment: process.env.POLAR_SERVER === "sandbox" ? "sandbox" : "production"
     }).select("id").single();
     if (error) {
       console.error("Failed to persist checkout order.", { code: error.code });

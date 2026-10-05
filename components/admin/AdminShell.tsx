@@ -16,9 +16,8 @@ export default function AdminShell({
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.9),_rgba(242,244,251,0.95)_45%,_rgba(236,240,250,1)_100%)]">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <header className="rounded-[36px] border border-white/70 bg-white/75 p-6 shadow-[0_28px_80px_rgba(15,23,42,0.08)] backdrop-blur">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-            <div className="max-w-3xl">
+        <header className="rounded-[28px] border border-white/70 bg-white/75 p-5 shadow-[0_28px_80px_rgba(15,23,42,0.08)] backdrop-blur sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
               <Link
                 href="/"
                 aria-label="Go to landing page"
@@ -30,52 +29,24 @@ export default function AdminShell({
                   textClassName="text-[18px] font-semibold text-slate-900"
                 />
               </Link>
-              <p className="mt-6 text-sm font-semibold uppercase tracking-[0.24em] text-[#4153c4]">
-                Owner Admin Panel
-              </p>
-              <h1 className="mt-3 text-3xl font-bold tracking-[-0.05em] text-slate-900 sm:text-4xl">
-                Private oversight across surveys, rewards, and community health.
-              </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600 sm:text-[15px]">
-                This area stays server-protected and is only available to the dedicated account set
-                in `ADMIN_EMAIL`.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row xl:flex-col">
+            <div className="flex items-center gap-2">
               <Link
                 href="/"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Back to site
+                Site
               </Link>
-              <div className="inline-flex items-center justify-center gap-2 rounded-full bg-[#151b3b] px-5 py-3 text-sm font-semibold text-white">
+              <div className="inline-flex items-center justify-center gap-2 rounded-full bg-[#151b3b] px-3 py-2 text-xs font-semibold text-white">
                 <ShieldCheck className="h-4 w-4" />
                 Owner only
               </div>
             </div>
           </div>
 
-          <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-            <AdminNav />
-
-            <div className="rounded-[28px] bg-[linear-gradient(135deg,#151b3b_0%,#263386_100%)] p-5 text-white shadow-[0_24px_55px_rgba(21,27,59,0.28)]">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#cdd3ff]">
-                Signed in
-              </p>
-              <p className="mt-3 text-xl font-semibold tracking-[-0.03em]">{displayName}</p>
-              <p className="mt-1 text-sm text-[#dde3ff]">{profile.email}</p>
-              <div className="mt-5 grid gap-3 text-sm text-[#dde3ff]">
-                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">
-                  Your normal role stays `{profile.role}`.
-                </div>
-                <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3">
-                  Admin access is attached to your dedicated client login email.
-                </div>
-              </div>
-            </div>
-          </div>
+          <h1 className="mt-5 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Your business at a glance.</h1>
+          <p className="mt-2 break-words text-xs text-slate-500 sm:text-sm">{displayName} · {profile.email}</p>
+          <div className="mt-5"><AdminNav /></div>
         </header>
 
         <main className="mt-6">{children}</main>

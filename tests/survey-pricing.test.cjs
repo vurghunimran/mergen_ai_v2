@@ -9,6 +9,7 @@ const mocks = new Map();
 const originalLoad = Module._load;
 Module._load = function(id, parent, isMain) {
   if (mocks.has(id)) return mocks.get(id);
+  if (id === 'server-only') return {};
   return originalLoad.call(this, id.startsWith('@/') ? path.join(root, id.slice(2)) : id, parent, isMain);
 };
 for (const extension of ['.ts', '.tsx']) require.extensions[extension] = (module, filename) => {
@@ -125,7 +126,7 @@ test('rendered preview defaults to institution and displays exact cents and opti
   const Calculator=require('../components/pricing/SurveyPricingCalculator.tsx').default;
   const Breakdown=require('../components/pricing/SurveyPriceBreakdown.tsx').default;
   const html=renderToStaticMarkup(React.createElement(Calculator));
-  assert.match(html,/value="institution" selected/);assert.match(html,/\$125\.00/);assert.match(html,/AI-generated summary not selected/);assert.doesNotMatch(html,/Basic AI summary included/);
+  assert.match(html,/value="institution" selected/);assert.match(html,/\$125\.00/);assert.match(html,/AI summary: \+\$20 per survey/);assert.doesNotMatch(html,/Basic AI summary included/);
   const student=renderToStaticMarkup(React.createElement(Breakdown,{pricing:p.calculateSurveyPricing({...valid,questionCount:5,responseCount:50})}));
   assert.match(student,/\$32\.50/);assert.match(student,/\$0\.45/);
 });
@@ -144,7 +145,7 @@ test('AI summaries require purchase and finished collection with responses', () 
   const React=require('react'),{renderToStaticMarkup}=require('react-dom/server');
   const Breakdown=require('../components/pricing/SurveyPriceBreakdown.tsx').default;
   const html=renderToStaticMarkup(React.createElement(Breakdown,{pricing:p.calculateSurveyPricing({...valid,includeDetailedReport:true})}));
-  assert.match(html,/available once the survey finishes/);assert.match(html,/\$90\.00/);
+  assert.match(html,/AI summary available after the survey ends/);assert.match(html,/\$90\.00/);
 });
 
 test('report API blocks unpaid and unfinished requests before generation', async () => {

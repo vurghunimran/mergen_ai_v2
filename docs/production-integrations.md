@@ -1,5 +1,7 @@
 # Production integrations
 
+Owner update, October 5, 2026: Polar approval received. A read-only product lookup with the locally stored production token still returned 403; token permissions, a working payout account, and a controlled checkout/refund remain to be verified. Approval is not recorded as end-to-end payment validation. No financial flows were enabled by the owner dashboard release.
+
 Updated 2026-10-03. Site: https://mergen-ai.com.
 
 ## Tremendous
