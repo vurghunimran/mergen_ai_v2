@@ -11,8 +11,15 @@ export async function POST(request: Request) {
   let event: { type?: string; data?: { id?: string; checkout_id?: string; status?: string } };
   try {
     const raw = await readBodyText(request, 256_000);
-    // Polar signs with the UTF-8 endpoint secret (same encoding as its official SDK).
-    event = new Webhook(Buffer.from(secret, 'utf8').toString('base64')).verify(raw, Object.fromEntries(request.headers)) as typeof event;
+    const headers = Object.fromEntries(request.headers);
+    // Polar secrets created from September 8, 2026 use Standard Webhooks.
+    // Older endpoints use the full secret's UTF-8 bytes as the HMAC key.
+    // Both checks retain Standard Webhooks' signature and timestamp validation.
+    try {
+      event = new Webhook(secret).verify(raw, headers) as typeof event;
+    } catch {
+      event = new Webhook(Buffer.from(secret, 'utf8').toString('base64')).verify(raw, headers) as typeof event;
+    }
     if (!event || typeof event.type !== 'string' || !event.data) throw new Error();
   } catch (error) {
     return NextResponse.json({ error: 'Invalid webhook.' }, { status: error instanceof RequestError ? error.status : 401 });

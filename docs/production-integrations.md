@@ -29,6 +29,7 @@ Updated 2026-10-03. Site: https://mergen-ai.com.
 - Inspection also needs `products:read` and `webhooks:read` (or corresponding write scopes). A 403 during inspection is not proof that checkout scopes fail.
 - Production webhook: https://mergen-ai.com/api/polar/webhook, enabled for `checkout.updated`, `order.paid`, and `order.refunded`.
 - The endpoint signing secret must match `POLAR_WEBHOOK_SECRET` (preferred) or the legacy `POLAR_WEBHOOK` variable. Do not rotate an active secret without updating both sides.
+- The handler verifies both Standard Webhooks secrets (generated from September 8, 2026) and Polar's older UTF-8 HMAC scheme, with signature and timestamp validation in both cases. Reference: https://polar.sh/docs/integrate/webhooks/delivery.
 - Verify a real checkout, durable survey fulfillment, duplicate-event handling and refund reconciliation before declaring the payment flow fully validated.
 
 ## Other services

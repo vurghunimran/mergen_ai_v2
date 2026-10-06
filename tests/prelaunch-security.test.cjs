@@ -37,6 +37,27 @@ test('F13 webhook signatures, timestamp replay rejection, idempotent processing 
  const make=(type,id='evt1',valid=true,date=new Date())=>{const body=JSON.stringify({type,data:{id:'checkout',checkout_id:'checkout',status:'succeeded'}});return new Request('https://mergen.example/api/polar/webhook',{method:'POST',body,headers:{'webhook-id':id,'webhook-timestamp':String(Math.floor(date.getTime()/1000)),'webhook-signature':valid?new Webhook(Buffer.from(secret).toString('base64')).sign(id,date,body):'bad'}})};
  try{const {POST}=load('app/api/polar/webhook/route.ts');assert.equal((await POST(make('checkout.updated','bad',false))).status,401);assert.equal((await POST(make('checkout.updated','old',true,new Date(0)))).status,401);assert.equal((await POST(make('checkout.updated'))).status,200);assert.equal((await POST(make('checkout.updated'))).status,200);assert.equal(fulfills,1);assert.equal((await POST(make('order.refunded','refund'))).status,200);assert.equal(refunds,1)}finally{if(old===undefined)delete process.env.POLAR_WEBHOOK_SECRET;else process.env.POLAR_WEBHOOK_SECRET=old;mocks.clear()}
 });
+test('Polar accepts current Standard Webhooks and legacy HMAC signatures while rejecting forged, changed and expired events',async()=>{
+ const {Webhook}=require('standardwebhooks');
+ const secret='whsec_'+Buffer.from('synthetic-32-byte-key-for-testing').toString('base64');
+ const old=process.env.POLAR_WEBHOOK_SECRET;process.env.POLAR_WEBHOOK_SECRET=secret;
+ let databaseCalls=0;mocks.set('@/lib/supabase/admin',{createAdminClient:()=>{databaseCalls++;throw Error('Unexpected payment processing')}});
+ const body=JSON.stringify({type:'checkout.updated',data:{id:'synthetic-checkout',status:'open'}});
+ const make=(key,date=new Date(),changed=false,forged=false)=>{
+  const id='synthetic-event';
+  return new Request('https://mergen.example/api/polar/webhook',{method:'POST',body:changed?body.replace('open','expired'):body,headers:{'webhook-id':id,'webhook-timestamp':String(Math.floor(date.getTime()/1000)),'webhook-signature':forged?'v1,forged':new Webhook(key).sign(id,date,body)}});
+ };
+ try{
+  const {POST}=load('app/api/polar/webhook/route.ts');
+  for(const key of [secret,Buffer.from(secret,'utf8').toString('base64')]){
+   assert.equal((await POST(make(key))).status,200);
+   assert.equal((await POST(make(key,new Date(0)))).status,401);
+   assert.equal((await POST(make(key,new Date(),true))).status,401);
+   assert.equal((await POST(make(key,new Date(),false,true))).status,401);
+  }
+  assert.equal(databaseCalls,0);
+ }finally{if(old===undefined)delete process.env.POLAR_WEBHOOK_SECRET;else process.env.POLAR_WEBHOOK_SECRET=old;mocks.clear()}
+});
 test('oversized and non-object JSON are rejected before business logic',async()=>{const {readJsonObject}=load('lib/security/request.ts');await assert.rejects(readJsonObject(request({text:'x'.repeat(100)}),20),e=>e.status===413);for(const v of [null,[],123])await assert.rejects(readJsonObject(request(v)));});
 test('F13 fulfillment uses durable draft and returns the same survey on retry',async()=>{
  let inserted=null,inserts=0;

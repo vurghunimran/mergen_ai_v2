@@ -44,11 +44,14 @@ export async function getProductionReadiness(): Promise<IntegrationCheck[]> {
       if (product.status === 403 || webhooks.status === 403) return check("Polar", "unverified", "The token lacks product or webhook read permissions. Checkout and settlement access still need verification.");
       if (!product.ok || !webhooks.ok) return check("Polar", "blocked", "Production product or webhook access failed. Check token permissions and product ID.");
       if (product.data?.is_archived !== false || product.data?.is_recurring !== false) return check("Polar", "blocked", "Survey payments require an active one-time production product.");
-      const endpoint = webhooks.data?.items?.find((item: { url?: string; enabled?: boolean; events?: string[]; secret?: string }) =>
-        item.url === `${base}/api/polar/webhook` && item.enabled &&
-        ["checkout.updated", "order.paid", "order.refunded"].every(event => item.events?.includes(event)) &&
-        item.secret === (process.env.POLAR_WEBHOOK_SECRET || process.env.POLAR_WEBHOOK));
-      if (!endpoint) return check("Polar", "blocked", "The production webhook URL, required events, enabled state, or signing secret does not match.");
+      const endpoints = webhooks.data?.items?.filter((item: { url?: string }) => item.url === `${base}/api/polar/webhook`) ?? [];
+      if (!endpoints.length) return check("Polar", "blocked", `Register the production webhook at ${base}/api/polar/webhook.`);
+      const endpoint = endpoints.find((item: { enabled?: boolean }) => item.enabled);
+      if (!endpoint) return check("Polar", "blocked", "The production webhook is disabled in Polar. Review failed deliveries before enabling it.");
+      if (endpoint.format && endpoint.format !== "raw") return check("Polar", "blocked", "The production webhook must use Raw JSON delivery format.");
+      const absentEvents = ["checkout.updated", "order.paid", "order.refunded"].filter(event => !endpoint.events?.includes(event));
+      if (absentEvents.length) return check("Polar", "blocked", `The production webhook is missing events: ${absentEvents.join(", ")}.`);
+      if (endpoint.secret !== (process.env.POLAR_WEBHOOK_SECRET || process.env.POLAR_WEBHOOK)) return check("Polar", "blocked", "The production webhook signing secret differs from Mergen's deployed secret. Update both sides to match.");
       return check("Polar", "verified", "Active one-time production product and matching payment/refund webhook verified. A real checkout and refund still need end-to-end validation.");
     }),
     safe("Trolley", async () => {

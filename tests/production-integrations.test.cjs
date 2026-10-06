@@ -96,9 +96,17 @@ test('readiness requires matching Polar webhook secret and required refund event
   global.fetch = async url => ({ ok: true, status: 200, json: async () => url.includes('/products/') ? { is_archived: false, is_recurring: false } : { items: [endpoint] } });
   assert.equal((await getProductionReadiness()).find(item => item.service === 'Polar').status, 'verified');
   endpoint.secret = 'different';
-  assert.equal((await getProductionReadiness()).find(item => item.service === 'Polar').status, 'blocked');
+  assert.match((await getProductionReadiness()).find(item => item.service === 'Polar').detail, /signing secret differs/);
   endpoint.secret = 'secret'; endpoint.events.pop();
-  assert.equal((await getProductionReadiness()).find(item => item.service === 'Polar').status, 'blocked');
+  assert.match((await getProductionReadiness()).find(item => item.service === 'Polar').detail, /missing events: order.refunded/);
+  endpoint.events.push('order.refunded'); endpoint.enabled = false;
+  assert.match((await getProductionReadiness()).find(item => item.service === 'Polar').detail, /disabled in Polar/);
+  endpoint.enabled = true; endpoint.format = 'slack';
+  assert.match((await getProductionReadiness()).find(item => item.service === 'Polar').detail, /Raw JSON/);
+  endpoint.format = 'raw'; endpoint.url = 'https://example.com/wrong';
+  assert.match((await getProductionReadiness()).find(item => item.service === 'Polar').detail, /Register the production webhook/);
+  endpoint.url = 'https://example.com/api/polar/webhook';
+  assert.equal((await getProductionReadiness()).find(item => item.service === 'Polar').status, 'verified');
 }));
 
 test('owner-only integration endpoint refuses anonymous and non-owner sessions before provider access', () => isolated(async () => {
